@@ -5,7 +5,6 @@ import { supabase } from "../lib/supabase";
 
 export default function AdminPage() {
   const [loggedIn, setLoggedIn] = useState(false);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -24,20 +23,20 @@ export default function AdminPage() {
   const addProduct = async () => {
     const { error } = await supabase.from("products").insert([
       {
-        name: name,
+        name,
         price: Number(price),
-        category: category,
+        category,
         stock: 10,
       },
     ]);
 
-    if (!error) {
+    if (error) {
+      alert("Error adding product");
+    } else {
       alert("Product Added");
       setName("");
       setPrice("");
       setCategory("");
-    } else {
-      alert("Error adding product");
     }
   };
 
@@ -45,9 +44,7 @@ export default function AdminPage() {
     return (
       <main className="min-h-screen flex items-center justify-center p-6">
         <div className="max-w-md w-full border p-6 rounded-2xl shadow">
-          <h1 className="text-3xl font-bold mb-6 text-center">
-            Admin Login
-          </h1>
+          <h1 className="text-3xl font-bold mb-6 text-center">Admin Login</h1>
 
           <input
             type="text"
@@ -78,9 +75,7 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen p-6 max-w-xl mx-auto">
-      <h1 className="text-4xl font-bold mb-8 text-center">
-        Admin Panel
-      </h1>
+      <h1 className="text-4xl font-bold mb-8 text-center">Admin Panel</h1>
 
       <input
         placeholder="Product Name"
