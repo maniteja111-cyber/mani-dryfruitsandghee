@@ -24,7 +24,7 @@ export default function AdminPage() {
   }, [loggedIn]);
 
   const login = () => {
-    if (email === "admin@mani.com" && password === "Mani@123") {
+    if (email === "a" && password === "a") {
       setLoggedIn(true);
     } else alert("Invalid Login");
   };
@@ -76,7 +76,46 @@ export default function AdminPage() {
   };
 
   if (!loggedIn) {
-    return <main className="p-10">Login Screen Same As Previous</main>;
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-[#f7f7f7] p-8">
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-lg p-8">
+          <h1 className="text-3xl font-bold mb-6 text-center">
+            Admin Login
+          </h1>
+
+          <div className="space-y-4">
+            <label className="block">
+              <span className="text-sm font-medium">Email</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@mani.com"
+                className="mt-2 w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#ffd862]"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-medium">Password</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mani@123"
+                className="mt-2 w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#ffd862]"
+              />
+            </label>
+
+            <button
+              onClick={login}
+              className="w-full bg-[#ffd862] py-3 rounded-xl font-semibold hover:bg-[#f5c347] transition"
+            >
+              Sign In
+            </button>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
