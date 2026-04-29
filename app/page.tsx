@@ -7,11 +7,12 @@ export default function Home() {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">Mani Dryfruits & Ghee</h1>
           <div className="space-x-4 hidden md:block">
-            <a href="#">Home</a>
-            <a href="#">Products</a>
-            <a href="#">Cart</a>
-            <a href="#">Contact</a>
-          </div>
+  <a href="/">Home</a>
+  <a href="/products">Products</a>
+  <a href="#">Cart</a>
+  <a href="#">Contact</a>
+  <a href="/cart">Cart</a>
+</div>
         </div>
       </nav>
 
