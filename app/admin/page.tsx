@@ -24,7 +24,7 @@ export default function AdminPage() {
   }, [loggedIn]);
 
   const login = () => {
-    if (email === "a" && password === "a") {
+    if (email === "admin@mani.com" && password === "Mani@123") {
       setLoggedIn(true);
     } else alert("Invalid Login");
   };
