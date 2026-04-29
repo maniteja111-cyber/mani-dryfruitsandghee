@@ -14,10 +14,7 @@ export default function AdminPage() {
   const [category, setCategory] = useState("");
 
   const login = () => {
-    if (
-      email === "admin@mani.com" &&
-      password === "Mani@123"
-    ) {
+    if (email === "admin@mani.com" && password === "Mani@123") {
       setLoggedIn(true);
     } else {
       alert("Invalid Login");
@@ -27,9 +24,9 @@ export default function AdminPage() {
   const addProduct = async () => {
     const { error } = await supabase.from("products").insert([
       {
-        name,
+        name: name,
         price: Number(price),
-        category,
+        category: category,
         stock: 10,
       },
     ]);
@@ -40,7 +37,7 @@ export default function AdminPage() {
       setPrice("");
       setCategory("");
     } else {
-      alert("Error");
+      alert("Error adding product");
     }
   };
 
@@ -53,6 +50,7 @@ export default function AdminPage() {
           </h1>
 
           <input
+            type="text"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -107,7 +105,7 @@ export default function AdminPage() {
 
       <button
         onClick={addProduct}
-        className="bg-[#ffd862] px-6 py-3 rounded-xl w-full font-semibold"
+        className="bg-[#ffd862] w-full py-3 rounded-xl font-semibold"
       >
         Add Product
       </button>
