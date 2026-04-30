@@ -4,196 +4,252 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 export default function AdminPage() {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [logged,setLogged]=useState(false);
+  const [email,setEmail]=useState("");
+  const [pass,setPass]=useState("");
 
-  const [products, setProducts] = useState<any[]>([]);
+  const [products,setProducts]=useState<any[]>([]);
+  const [coupons,setCoupons]=useState<any[]>([]);
+  const [tab,setTab]=useState("products");
 
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState("");
-  const [category, setCategory] = useState("");
+  const [editId,setEditId]=useState<number|null>(null);
+  const [editName,setEditName]=useState("");
+  const [editCat,setEditCat]=useState("");
+  const [editPrice,setEditPrice]=useState("");
+  const [editStock,setEditStock]=useState("");
 
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editPrice, setEditPrice] = useState("");
-  const [editCategory, setEditCategory] = useState("");
+  const [code,setCode]=useState("");
+  const [value,setValue]=useState("");
 
-  useEffect(() => {
-    if (loggedIn) loadProducts();
-  }, [loggedIn]);
+  useEffect(()=>{
+    if(logged) load();
+  },[logged]);
 
-  const login = () => {
-    if (email === "a" && password === "a") {
-      setLoggedIn(true);
-    } else alert("Invalid Login");
+  const login=()=>{
+    if(email==="a" && pass==="a") setLogged(true);
+    else alert("Wrong Login");
   };
 
-  const loadProducts = async () => {
-    const { data } = await supabase.from("products").select("*").order("id");
-    setProducts(data || []);
+  const load=async()=>{
+    const {data:p}=await supabase.from("products").select("*").order("id");
+    const {data:c}=await supabase.from("coupons").select("*").order("id",{ascending:false});
+
+    setProducts(p||[]);
+    setCoupons(c||[]);
   };
 
-  const addProduct = async () => {
-    await supabase.from("products").insert([
-      { name, price: Number(price), category, stock: 10 },
+  const delProduct=async(id:number)=>{
+    await supabase.from("products").delete().eq("id",id);
+    load();
+  };
+
+  const startEdit=(x:any)=>{
+    setEditId(x.id);
+    setEditName(x.name);
+    setEditCat(x.category);
+    setEditPrice(String(x.price));
+    setEditStock(String(x.stock));
+  };
+
+  const saveEdit=async()=>{
+    await supabase.from("products")
+      .update({
+        name:editName,
+        category:editCat,
+        price:Number(editPrice),
+        stock:Number(editStock)
+      })
+      .eq("id",editId);
+
+    setEditId(null);
+    load();
+    alert("Updated");
+  };
+
+  const addCoupon=async()=>{
+    const {error}=await supabase.from("coupons").insert([
+      {
+        code:code,
+        type:"percent",
+        value:Number(value),
+        active:true
+      }
     ]);
 
-    setName("");
-    setPrice("");
-    setCategory("");
-    loadProducts();
+    if(error){
+      alert("Coupon error");
+      return;
+    }
+
+    setCode("");
+    setValue("");
+    load();
+    alert("Coupon Added");
   };
 
-  const deleteProduct = async (id: number) => {
-    const ok = confirm("Delete this product?");
-    if (!ok) return;
-
-    await supabase.from("products").delete().eq("id", id);
-    loadProducts();
+  const delCoupon=async(id:number)=>{
+    await supabase.from("coupons").delete().eq("id",id);
+    load();
   };
 
-  const startEdit = (item: any) => {
-    setEditingId(item.id);
-    setEditName(item.name);
-    setEditPrice(item.price.toString());
-    setEditCategory(item.category);
-  };
+  if(!logged){
+    return(
+      <main className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-2xl shadow w-full max-w-md">
+          <h1 className="text-3xl font-bold mb-6 text-center">Admin Login</h1>
 
-  const saveEdit = async () => {
-    await supabase
-      .from("products")
-      .update({
-        name: editName,
-        price: Number(editPrice),
-        category: editCategory,
-      })
-      .eq("id", editingId);
+          <input
+            placeholder="Email"
+            value={email}
+            onChange={(e)=>setEmail(e.target.value)}
+            className="border p-3 w-full mb-4 rounded-xl"
+          />
 
-    alert("Updated Successfully");
-    setEditingId(null);
-    loadProducts();
-  };
+          <input
+            type="password"
+            placeholder="Password"
+            value={pass}
+            onChange={(e)=>setPass(e.target.value)}
+            className="border p-3 w-full mb-4 rounded-xl"
+          />
 
-  if (!loggedIn) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-[#f7f7f7] p-8">
-        <div className="w-full max-w-md bg-white rounded-3xl shadow-lg p-8">
-          <h1 className="text-3xl font-bold mb-6 text-center">
-            Admin Login
-          </h1>
-
-          <div className="space-y-4">
-            <label className="block">
-              <span className="text-sm font-medium">Email</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@mani.com"
-                className="mt-2 w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#ffd862]"
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium">Password</span>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mani@123"
-                className="mt-2 w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#ffd862]"
-              />
-            </label>
-
-            <button
-              onClick={login}
-              className="w-full bg-[#ffd862] py-3 rounded-xl font-semibold hover:bg-[#f5c347] transition"
-            >
-              Sign In
-            </button>
-          </div>
+          <button
+            onClick={login}
+            className="w-full bg-[#ffd862] py-3 rounded-xl font-bold"
+          >
+            Login
+          </button>
         </div>
       </main>
     );
   }
 
-  return (
-    <main className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-4xl font-bold mb-8 text-center">
-        Admin Dashboard
-      </h1>
+  return(
+    <main className="max-w-6xl mx-auto p-6">
 
-      <div className="grid md:grid-cols-4 gap-3 mb-8">
-        <input placeholder="Name" value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="border p-3 rounded-lg" />
+      <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
 
-        <input placeholder="Price" value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className="border p-3 rounded-lg" />
-
-        <input placeholder="Category" value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="border p-3 rounded-lg" />
-
-        <button onClick={addProduct}
-          className="bg-[#ffd862] rounded-lg font-semibold">
-          Add Product
-        </button>
+      <div className="flex gap-3 mb-8">
+        <button onClick={()=>setTab("products")} className="bg-[#ffd862] px-5 py-2 rounded-xl font-bold">Products</button>
+        <button onClick={()=>setTab("coupons")} className="bg-[#ffd862] px-5 py-2 rounded-xl font-bold">Coupons</button>
       </div>
 
-      <div className="space-y-4">
-        {products.map((item) => (
-          <div key={item.id}
-            className="border rounded-xl p-4">
+      {tab==="products" && (
+        <div className="space-y-4">
 
-            {editingId === item.id ? (
-              <div className="grid md:grid-cols-4 gap-3">
-                <input value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="border p-2 rounded" />
+          {products.map((x)=>(
+            <div key={x.id} className="bg-white shadow rounded-2xl p-4">
 
-                <input value={editPrice}
-                  onChange={(e) => setEditPrice(e.target.value)}
-                  className="border p-2 rounded" />
+              {editId===x.id ? (
+                <div className="grid md:grid-cols-4 gap-3">
 
-                <input value={editCategory}
-                  onChange={(e) => setEditCategory(e.target.value)}
-                  className="border p-2 rounded" />
+                  <input value={editName}
+                    onChange={(e)=>setEditName(e.target.value)}
+                    className="border p-2 rounded-xl"/>
 
-                <button onClick={saveEdit}
-                  className="bg-green-600 text-white rounded">
-                  Save
-                </button>
-              </div>
-            ) : (
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="font-bold">{item.name}</h2>
-                  <p>{item.category}</p>
-                  <p>₹{item.price}</p>
-                </div>
+                  <input value={editCat}
+                    onChange={(e)=>setEditCat(e.target.value)}
+                    className="border p-2 rounded-xl"/>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => startEdit(item)}
-                    className="bg-blue-500 text-white px-4 py-2 rounded-lg">
-                    Edit
-                  </button>
+                  <input value={editPrice}
+                    onChange={(e)=>setEditPrice(e.target.value)}
+                    className="border p-2 rounded-xl"/>
+
+                  <input value={editStock}
+                    onChange={(e)=>setEditStock(e.target.value)}
+                    className="border p-2 rounded-xl"/>
 
                   <button
-                    onClick={() => deleteProduct(item.id)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg">
-                    Delete
+                    onClick={saveEdit}
+                    className="bg-green-500 text-white py-2 rounded-xl md:col-span-2">
+                    Save
                   </button>
+
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="flex justify-between items-center">
+
+                  <div>
+                    <h3 className="font-bold">{x.name}</h3>
+                    <p>{x.category}</p>
+                    <p>₹{x.price} | Stock {x.stock}</p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={()=>startEdit(x)}
+                      className="bg-blue-500 text-white px-4 rounded-xl">
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={()=>delProduct(x.id)}
+                      className="bg-red-500 text-white px-4 rounded-xl">
+                      Delete
+                    </button>
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+          ))}
+
+        </div>
+      )}
+
+      {tab==="coupons" && (
+        <div>
+
+          <div className="grid md:grid-cols-3 gap-3 mb-6">
+
+            <input
+              placeholder="WELCOME10"
+              value={code}
+              onChange={(e)=>setCode(e.target.value)}
+              className="border p-3 rounded-xl"
+            />
+
+            <input
+              placeholder="10"
+              value={value}
+              onChange={(e)=>setValue(e.target.value)}
+              className="border p-3 rounded-xl"
+            />
+
+            <button
+              onClick={addCoupon}
+              className="bg-green-500 text-white rounded-xl font-bold">
+              Add Coupon
+            </button>
 
           </div>
-        ))}
-      </div>
+
+          <div className="space-y-3">
+
+            {coupons.map((x)=>(
+              <div key={x.id}
+                className="bg-white shadow rounded-2xl p-4 flex justify-between">
+
+                <div>
+                  <h3 className="font-bold">{x.code}</h3>
+                  <p>{x.value}% OFF</p>
+                </div>
+
+                <button
+                  onClick={()=>delCoupon(x.id)}
+                  className="bg-red-500 text-white px-4 rounded-xl">
+                  Delete
+                </button>
+
+              </div>
+            ))}
+
+          </div>
+
+        </div>
+      )}
+
     </main>
   );
 }
