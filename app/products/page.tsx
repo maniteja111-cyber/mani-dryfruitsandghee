@@ -13,18 +13,21 @@ function ProductsContent() {
   const [category, setCategory] = useState(start);
   const [products, setProducts] = useState<any[]>([]);
   const [weights, setWeights] = useState<any>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     load();
   }, []);
 
   const load = async () => {
+    setLoading(true);
     const { data } = await supabase
       .from("products")
       .select("*")
       .order("id");
 
     setProducts(data || []);
+    setLoading(false);
   };
 
   const filtered =
@@ -128,6 +131,13 @@ function ProductsContent() {
         </Link>
 
       </div>
+
+      {loading && (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#ffd862] border-t-transparent"></div>
+          <p className="mt-2 text-gray-600">Loading products...</p>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-4 gap-6">
 

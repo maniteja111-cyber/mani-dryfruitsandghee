@@ -7,12 +7,14 @@ import { supabase } from "./lib/supabase";
 export default function HomePage() {
   const [featured, setFeatured] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     load();
   }, []);
 
   const load = async () => {
+    setLoading(true);
     const { data } = await supabase
       .from("products")
       .select("*");
@@ -21,6 +23,7 @@ export default function HomePage() {
 
     setFeatured(rows.filter((x) => x.featured));
     setOffers(rows.filter((x) => x.discount > 0));
+    setLoading(false);
   };
 
   const card = (item: any) => (
@@ -102,6 +105,13 @@ export default function HomePage() {
 
         </div>
       </section>
+
+      {loading && (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#ffd862] border-t-transparent"></div>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      )}
 
       <section className="max-w-7xl mx-auto p-8">
         <h2 className="text-3xl font-bold mb-6">
