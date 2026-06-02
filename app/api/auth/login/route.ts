@@ -18,11 +18,11 @@ export async function POST(req: NextRequest) {
     setTimeout(() => otpStore.delete(phone), 5 * 60 * 1000)
 
     // In real app, send OTP via WhatsApp/SMS
-    if (phone !== '9999999999') console.log(`OTP for ${phone}: ${otp}`)
+    console.log(`OTP for ${phone}: ${otp}`)
 
     return NextResponse.json({ message: 'OTP sent successfully', otp: phone === '9999999999' ? otp : undefined })
   } catch (error: any) {
     console.error('Login error:', error)
-    return NextResponse.json({ error: 'Internal server error', details: String(error) }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 })
   }
 }

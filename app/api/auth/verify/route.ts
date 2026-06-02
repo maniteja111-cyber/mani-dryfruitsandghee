@@ -8,8 +8,11 @@ export async function POST(req: NextRequest) {
   try {
     const { phone, otp } = await req.json()
 
+    // Admin bypass - no OTP required for 9999999999
+    const isAdmin = phone === '9999999999'
     const storedOtp = otpStore.get(phone)
-    if (!storedOtp || storedOtp !== otp) {
+    
+    if (!isAdmin && (!storedOtp || storedOtp !== otp)) {
       return NextResponse.json({ error: 'Invalid OTP', debug: { stored: storedOtp ? 'exists' : 'missing', phone } }, { status: 400 })
     }
 

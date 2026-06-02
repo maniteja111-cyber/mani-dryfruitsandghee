@@ -28,6 +28,11 @@ export default function LoginPage() {
       })
 
       if (res.ok) {
+        const data = await res.json()
+        // Auto-fill OTP for admin
+        if (data.otp) {
+          setOtp(data.otp)
+        }
         setStep('otp')
       } else {
         const data = await res.json()
