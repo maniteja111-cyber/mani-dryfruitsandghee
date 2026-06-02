@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     const { phone, otp } = await req.json()
 
-    // Admin bypass - no OTP required for 9999999999
+    // Admin bypass - skip OTP check
     const isAdmin = phone === '9999999999'
     const storedOtp = otpStore.get(phone)
     
@@ -16,48 +16,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid OTP' }, { status: 400 })
     }
 
-    // Clear OTP after use
     otpStore.delete(phone)
 
-    // Find or create user - with graceful DB error handling
-    let user
-    try {
-      user = await prisma.user.findUnique({ 
-        where: { phone },
-        cacheStrategy: { ttl: 30 }
-      })
-    } catch (dbError: any) {
-      console.error('DB find error:', dbError.message)
-    }
-
+    let user = await prisma.user.findUnique({ where: { phone } }).catch(() => null)
+    
     if (!user) {
       try {
         user = await prisma.user.create({
           data: { phone, name: `User ${phone.slice(-4)}` }
         })
-      } catch (createError: any) {
-        console.error('DB create error:', createError.message)
-        // If create fails due to race condition, try find again
-        try {
-          user = await prisma.user.findUnique({ where: { phone } })
-        } catch {}
+      } catch {
+        // Race condition - user might exist now
+        user = await prisma.user.findUnique({ where: { phone } }).catch(() => null)
       }
     }
 
     if (!user) {
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 503 })
+      return NextResponse.json({ error: 'Failed to create/find user' }, { status: 500 })
     }
 
-    // Generate JWT
     const token = signToken({ id: user.id, phone: user.phone })
-
     return NextResponse.json({
       message: 'Login successful',
       token,
       user: { id: user.id, phone: user.phone, name: user.name }
     })
   } catch (error: any) {
-    console.error('Verify OTP error:', error)
-    return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 })
+    console.error('Verify error:', error.message)
+    return NextResponse.json({ error: 'Server error', details: error.message }, { status: 500 })
   }
 }
