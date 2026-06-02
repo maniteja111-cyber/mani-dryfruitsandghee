@@ -13,18 +13,39 @@ export async function POST(req: NextRequest) {
     const storedOtp = otpStore.get(phone)
     
     if (!isAdmin && (!storedOtp || storedOtp !== otp)) {
-      return NextResponse.json({ error: 'Invalid OTP', debug: { stored: storedOtp ? 'exists' : 'missing', phone } }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid OTP' }, { status: 400 })
     }
 
     // Clear OTP after use
     otpStore.delete(phone)
 
-    // Find or create user
-    let user = await prisma.user.findUnique({ where: { phone } })
-    if (!user) {
-      user = await prisma.user.create({
-        data: { phone, name: `User ${phone.slice(-4)}` }
+    // Find or create user - with graceful DB error handling
+    let user
+    try {
+      user = await prisma.user.findUnique({ 
+        where: { phone },
+        cacheStrategy: { ttl: 30 }
       })
+    } catch (dbError: any) {
+      console.error('DB find error:', dbError.message)
+    }
+
+    if (!user) {
+      try {
+        user = await prisma.user.create({
+          data: { phone, name: `User ${phone.slice(-4)}` }
+        })
+      } catch (createError: any) {
+        console.error('DB create error:', createError.message)
+        // If create fails due to race condition, try find again
+        try {
+          user = await prisma.user.findUnique({ where: { phone } })
+        } catch {}
+      }
+    }
+
+    if (!user) {
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 503 })
     }
 
     // Generate JWT
