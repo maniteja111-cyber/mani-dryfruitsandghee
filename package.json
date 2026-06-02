@@ -1,0 +1,38 @@
+{
+  "name": "mani-ecommerce",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@prisma/adapter-planetscale": "^7.8.0",
+    "@prisma/client": "^5.22.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
+    "next": "16.2.4",
+    "prisma": "^5.22.0",
+    "razorpay": "^2.9.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "tailwindcss": "^4",
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}
