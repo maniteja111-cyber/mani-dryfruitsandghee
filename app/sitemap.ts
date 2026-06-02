@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://yourdomain.com' // Replace with actual domain
+  const baseUrl = 'https://manidryfruitsandghee.in' // Updated to actual domain
 
   const products = await prisma.product.findMany({ select: { slug: true, updatedAt: true } })
   const categories = await prisma.category.findMany({ select: { slug: true, updatedAt: true } })

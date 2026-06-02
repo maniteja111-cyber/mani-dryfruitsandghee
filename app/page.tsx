@@ -11,8 +11,14 @@ import Footer from '@/components/Footer'
 import { prisma } from '@/lib/prisma'
 
 export const metadata = {
-  title: 'Mani Dry Fruits Pickles and Ghee Stores - Premium Quality Products',
-  description: 'Shop for premium dry fruits, authentic pickles, and pure ghee. Fast delivery across India.',
+  title: 'Mani Dry Fruits & Pure Ghee Stores - Premium Quality Products',
+  description: 'Shop for premium dry fruits, authentic pickles, and pure ghee. Fast delivery across India. Buy almonds, cashews, dates, ghee online at best prices.',
+  keywords: 'dry fruits, ghee, pickle, buy online, premium quality, organic, manidryfruitsandghee, Mani Dry Fruits Stores',
+  openGraph: {
+    title: 'Mani Dry Fruits & Pure Ghee Stores',
+    description: 'Premium dry fruits, authentic pickles and pure ghee delivered to your doorstep',
+    type: 'website'
+  }
 }
 
 async function getHomeData() {

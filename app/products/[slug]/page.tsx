@@ -40,8 +40,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     })
     if (product) {
       return {
-        title: `${product.name} - Mani Dry Fruits Stores`,
-        description: product.description || `Buy ${product.name} online. Premium quality products.`,
+        title: `${product.name} - Buy Online | Mani Dry Fruits & Ghee Stores`,
+        description: product.description || `Buy ${product.name} online at best price. Premium quality ${product.category.name.toLowerCase()}. Fast delivery across India.`,
+        keywords: `${product.name}, ${product.category.name}, dry fruits, ghee, pickle, buy online, manidryfruitsandghee`,
+        openGraph: {
+          title: product.name,
+          description: product.description || `Buy ${product.name} online`,
+          type: 'product',
+        }
       }
     }
   } catch (error) {
@@ -49,6 +55,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
   return {
     title: 'Product - Mani Dry Fruits Stores',
+    description: 'Buy premium dry fruits, ghee, and pickles online',
   }
 }
 
