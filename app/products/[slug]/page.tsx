@@ -47,6 +47,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
           title: product.name,
           description: product.description || `Buy ${product.name} online`,
           type: 'product',
+        },
+        alternates: {
+          canonical: `https://manidryfruitsandghee.in/products/${product.slug}`
         }
       }
     }
@@ -63,14 +66,43 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const resolvedParams = await params
   const { settings, product } = await getData(resolvedParams.slug)
 
+  const productImages = Array.isArray(product.images) ? product.images : []
+  const price = product.discountPrice || product.price
+  const ldJson = {
+    '@context': 'https://schema.org/',
+    '@type': 'Product',
+    name: product.name,
+    image: productImages,
+    description: product.description || `${product.name} - Premium quality from Mani Dry Fruits`,
+    sku: product.slug,
+    brand: {
+      '@type': 'Brand',
+      name: 'Mani Dry Fruits & Ghee'
+    },
+    offers: {
+      '@type': 'Offer',
+      url: `https://manidryfruitsandghee.in/products/${product.slug}`,
+      priceCurrency: 'INR',
+      price: price,
+      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      seller: {
+        '@type': 'Organization',
+        name: 'Mani Dry Fruits & Ghee Stores'
+      }
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header settings={settings} />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ProductDetail product={product} settings={settings} />
-      </main>
-      <Footer settings={settings} />
-      <WhatsAppButton phone={settings.whatsappNumber || '1234567890'} />
-    </div>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ldJson) }} />
+      <div className="min-h-screen bg-gray-50">
+        <Header settings={settings} />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ProductDetail product={product} settings={settings} />
+        </main>
+        <Footer settings={settings} />
+        <WhatsAppButton phone={settings.whatsappNumber || '1234567890'} />
+      </div>
+    </>
   )
 }
