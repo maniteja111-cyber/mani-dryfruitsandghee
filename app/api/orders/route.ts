@@ -3,10 +3,18 @@ import { prisma } from '@/lib/prisma'
 import Razorpay from 'razorpay'
 import { generateOrderConfirmationMessage } from '@/lib/whatsapp'
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!
-})
+const razorpay = (() => {
+  try {
+    if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET && 
+        process.env.RAZORPAY_KEY_ID !== 'your-razorpay-key-id') {
+      return new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET
+      })
+    }
+  } catch {}
+  return null
+})()
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,7 +69,7 @@ export async function POST(req: NextRequest) {
   let razorpayOrderId: string | undefined
   if (paymentMethod === 'razorpay') {
     // Check if Razorpay keys are configured (not placeholder)
-    if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_ID !== 'your-razorpay-key-id') {
+    if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_ID !== 'your-razorpay-key-id' && razorpay) {
       const options = {
         amount: total * 100, // Razorpay expects amount in paisa
         currency: 'INR',
