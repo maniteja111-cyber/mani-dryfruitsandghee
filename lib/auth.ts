@@ -1,7 +1,11 @@
 const jwt = require('jsonwebtoken')
 import { NextRequest, NextResponse } from 'next/server'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'default-secret'
+const JWT_SECRET = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'default-secret-change-me'
+
+if (!process.env.JWT_SECRET && process.env.NODE_ENV !== 'production') {
+  console.warn('JWT_SECRET not set, using default')
+}
 
 export function signToken(payload: object): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
