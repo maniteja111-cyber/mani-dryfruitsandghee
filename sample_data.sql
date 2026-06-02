@@ -19,7 +19,8 @@ INSERT INTO settings (id, `key`, value) VALUES
 ('set2', 'logo', 'https://example.com/logo.png'),
 ('set3', 'themeColor', '#ffd862'),
 ('set4', 'whatsappNumber', '919876543210'),
-('set5', 'phone', '+91 98765 43210'),
+('set5', 'phone', '+91 
+5 43210'),
 ('set6', 'email', 'info@manidryfruits.com'),
 ('set7', 'address', '123 Main Street, City, State 123456'),
 ('set8', 'banners', '[{"image":"https://example.com/banner1.jpg","title":"Welcome to Mani Stores","description":"Premium quality products"},{"image":"https://example.com/banner2.jpg","title":"Fresh Dry Fruits","description":"Direct from farms"}]'),

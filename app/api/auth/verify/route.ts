@@ -25,7 +25,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate JWT
-    const token = signToken({ id: user.id, phone: user.phone })
+    let token
+    try {
+      token = signToken({ id: user.id, phone: user.phone })
+    } catch (e) {
+      console.error('JWT Error:', e)
+      throw new Error('Failed to generate token')
+    }
 
     return NextResponse.json({
       message: 'Login successful',
@@ -34,6 +40,6 @@ export async function POST(req: NextRequest) {
     })
   } catch (error) {
     console.error('Verify OTP error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error', details: String(error) }, { status: 500 })
   }
 }
