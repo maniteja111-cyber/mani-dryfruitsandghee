@@ -38,7 +38,7 @@ export default function LoyaltyPopup() {
 
   const generateReferralCode = async () => {
     try {
-      const res = await fetch('/api/referrals/generate', {
+      const res = await fetch('/api/referrals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: user.phone })
@@ -65,7 +65,7 @@ export default function LoyaltyPopup() {
       <Link
         href="#"
         onClick={(e) => { e.preventDefault(); setIsOpen(true) }}
-        className="fixed bottom-6 right-20 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-lg transition-colors z-50"
+        className="fixed bottom-14 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-lg transition-colors z-50"
         aria-label="Loyalty Rewards"
       >
         <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">

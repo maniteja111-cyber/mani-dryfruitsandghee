@@ -11,17 +11,16 @@ export async function GET(req: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { phone },
-      select: { loyaltyPoints: true, referralCode: true }
-    })
+      where: { phone }
+    }).catch(() => null)
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    return NextResponse.json(user)
-  } catch (error) {
-    console.error('Get user error:', error)
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    return NextResponse.json({ loyaltyPoints: (user as any).loyaltyPoints || 0, referralCode: (user as any).referralCode })
+  } catch (error: any) {
+    console.error('Get user error:', error.message)
+    return NextResponse.json({ loyaltyPoints: 0, referralCode: null })
   }
 }

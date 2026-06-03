@@ -10,28 +10,26 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { phone },
-      select: { referralCode: true }
-    })
+      where: { phone }
+    }).catch(() => null)
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Generate code if missing
-    if (!user.referralCode) {
+    if (!(user as any).referralCode) {
       const code = `MANI${Math.random().toString(36).substring(2, 6).toUpperCase()}`
-      const updated = await prisma.user.update({
+      await prisma.user.update({
         where: { phone },
-        data: { referralCode: code },
-        select: { referralCode: true }
+        data: { referralCode: code }
       })
-      return NextResponse.json({ success: true, referralCode: updated.referralCode })
+      return NextResponse.json({ success: true, referralCode: code })
     }
 
-    return NextResponse.json({ success: true, referralCode: user.referralCode })
-  } catch (error) {
-    console.error('Referral error:', error)
+    return NextResponse.json({ success: true, referralCode: (user as any).referralCode })
+  } catch (error: any) {
+    console.error('Referral error:', error.message)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
