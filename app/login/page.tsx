@@ -21,15 +21,17 @@ export default function LoginPage() {
     setError('')
 
     try {
+      const urlParams = new URLSearchParams(window.location.search)
+      const referredBy = urlParams.get('ref')
+
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone })
+        body: JSON.stringify({ phone, referredBy })
       })
 
       if (res.ok) {
         const data = await res.json()
-        // Auto-fill OTP for admin
         if (data.otp) {
           setOtp(data.otp)
         }
@@ -55,10 +57,13 @@ export default function LoginPage() {
     setError('')
 
     try {
+      const urlParams = new URLSearchParams(window.location.search)
+      const referredBy = urlParams.get('ref')
+
       const res = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, otp })
+        body: JSON.stringify({ phone, otp, referredBy })
       })
 
       if (res.ok) {
