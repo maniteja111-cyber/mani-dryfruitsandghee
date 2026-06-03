@@ -65,10 +65,10 @@ export default function LoyaltyPopup() {
       <Link
         href="#"
         onClick={(e) => { e.preventDefault(); setIsOpen(true) }}
-        className="fixed bottom-14 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-lg transition-colors z-50"
+        className="fixed bottom-24 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-full shadow-lg transition-colors z-50"
         aria-label="Loyalty Rewards"
       >
-        <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
         </svg>
       </Link>

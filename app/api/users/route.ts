@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     const phone = searchParams.get('phone')
     
     if (!phone) {
-      return NextResponse.json({ error: 'Phone required' }, { status: 400 })
+      return NextResponse.json({ error: 'Phone required', loyaltyPoints: 0, referralCode: null })
     }
 
     const user = await prisma.user.findUnique({
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     }).catch(() => null)
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found', loyaltyPoints: 0, referralCode: null })
     }
 
     return NextResponse.json({ loyaltyPoints: (user as any).loyaltyPoints || 0, referralCode: (user as any).referralCode })
