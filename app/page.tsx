@@ -1,5 +1,6 @@
 import Header from '@/components/Header'
 import Hero from '@/components/Hero'
+import Banner from '@/components/Banner'
 import Categories from '@/components/Categories'
 import FeaturedProducts from '@/components/FeaturedProducts'
 import TodaysOffers from '@/components/TodaysOffers'
@@ -11,12 +12,12 @@ import Footer from '@/components/Footer'
 import { prisma } from '@/lib/prisma'
 
 export const metadata = {
-  title: 'Mani Dry Fruits & Pure Ghee Stores - Premium Quality Products',
+  title: 'MANI DRY FRUITS, PICKLES AND GHEE STORES - Premium Quality Products',
   description: 'Shop for premium dry fruits, authentic pickles, and pure ghee. Fast delivery across India. Buy almonds, cashews, dates, ghee online at best prices.',
   keywords: 'dry fruits, ghee, pickle, buy online, premium quality, organic, manidryfruitsandghee, Mani Dry Fruits Stores',
   openGraph: {
-    title: 'Mani Dry Fruits & Pure Ghee Stores',
-    description: 'Premium dry fruits, authentic pickles and pure ghee delivered to your doorstep',
+    title: 'MANI DRY FRUITS, PICKLES AND GHEE STORES',
+    description: 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com',
     type: 'website'
   }
 }
@@ -71,18 +72,19 @@ prisma.review.findMany({
 export default async function Home() {
   const { settings, categories, featuredProducts, todaysOffers, topReviews } = await getHomeData()
 
-  let banners = []
-  // try {
-  //   banners = settings.banners ? JSON.parse(settings.banners) : []
-  // } catch (error) {
-  //   console.error('Error parsing banners JSON:', error)
-  // }
+  let banners: any[] = []
+  try {
+    banners = settings.banners ? JSON.parse(settings.banners) : []
+  } catch (error) {
+    console.error('Error parsing banners JSON:', error)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header settings={settings} />
       <main>
-        <Hero title={settings.heroTitle || 'Premium Dry Fruits & Pure Ghee'} subtitle={settings.heroSubtitle || 'Healthy products delivered to your doorstep'} />
+        <Banner banners={banners} />
+        <Hero title={settings.heroTitle || 'MANI DRY FRUITS, PICKLES AND GHEE STORES'} subtitle={settings.heroSubtitle || 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com'} />
         <Categories categories={categories} />
         <FeaturedProducts products={featuredProducts} title="⭐ Featured Products" settings={settings} />
         <TodaysOffers products={todaysOffers} />

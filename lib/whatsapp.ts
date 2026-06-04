@@ -41,7 +41,7 @@ export function generateOrderConfirmationMessage(order: OrderForMessage, whatsap
   message += `\nItems:\n${itemsText}\n\n`
   message += `We will process your order shortly.\n`
   message += `For any queries, just reply to this message on WhatsApp.\n\n`
-  message += `Team - Mani Dry Fruits, Pickles & Ghee`
+  message += `Team - MANI DRY FRUITS, PICKLES AND GHEE STORES`
 
   return message
 }
@@ -56,8 +56,8 @@ export function generateStatusUpdateMessage(order: { id: string; name: string },
 
   const message = statusText[newStatus] || `status has been updated to *${newStatus}*.`
 
-  return `Hi ${order.name},\n\n` +
-         `Your order #${order.id.slice(0, 8)} ${message}\n\n` +
-         `For any questions, reply here.\n\n` +
-         `Team - Mani Dry Fruits, Pickles & Ghee`
+return `Hi ${order.name},\n\n` +
+          `Your order #${order.id.slice(0, 8)} ${message}\n\n` +
+          `For any questions, reply here.\n\n` +
+          `Team - MANI DRY FRUITS, PICKLES AND GHEE STORES`
 }

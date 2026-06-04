@@ -86,19 +86,23 @@ async function main() {
 
   // Create settings
   const settings = [
-    { key: 'siteName', value: 'Mani Dry Fruits Pickles and Ghee Stores' },
+    { key: 'siteName', value: 'MANI DRY FRUITS, PICKLES AND GHEE STORES' },
     { key: 'logo', value: 'https://example.com/logo.png' },
     { key: 'themeColor', value: '#ffd862' },
-    { key: 'whatsappNumber', value: '919876543210' },
-    { key: 'phone', value: '+91 98765 43210' },
-    { key: 'email', value: 'info@manidryfruits.com' },
+    { key: 'whatsappNumber', value: '919515019393' },
+    { key: 'phone', value: '+91 9515019393' },
+    { key: 'email', value: 'manidgs9393@gmail.com' },
     { key: 'address', value: '123 Main Street, City, State 123456' },
     { key: 'banners', value: JSON.stringify([
-      { image: 'https://example.com/banner1.jpg', title: 'Welcome to Mani Stores', description: 'Premium quality products' },
+      { image: 'https://example.com/banner1.jpg', title: 'MANI DRY FRUITS STORES', description: 'Healthy products delivered to your doorstep' },
       { image: 'https://example.com/banner2.jpg', title: 'Fresh Dry Fruits', description: 'Direct from farms' }
     ]) },
-    { key: 'seoTitle', value: 'Mani Dry Fruits Pickles and Ghee Stores - Premium Quality Products' },
-    { key: 'seoDescription', value: 'Shop for premium dry fruits, authentic pickles, and pure ghee. Fast delivery across India.' }
+    { key: 'seoTitle', value: 'MANI DRY FRUITS, PICKLES AND GHEE STORES - Premium Quality Products' },
+    { key: 'seoDescription', value: 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com' },
+    { key: 'heroTitle', value: 'MANI DRY FRUITS, PICKLES AND GHEE STORES' },
+    { key: 'heroSubtitle', value: 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com' },
+    { key: 'featuredProducts', value: JSON.stringify(['prod1', 'prod2', 'prod3', 'prod4']) },
+    { key: 'todaysOffers', value: JSON.stringify(['prod3', 'prod1', 'prod2', 'prod4']) }
   ]
 
   for (const setting of settings) {

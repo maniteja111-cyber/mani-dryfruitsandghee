@@ -3,9 +3,18 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
+interface User {
+  id: string
+  phone: string
+  name: string
+  loyaltyPoints: number
+  referralCode?: string
+  referredBy?: string
+}
+
 export default function LoyaltyPopup() {
   const [isOpen, setIsOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [points, setPoints] = useState(0)
   const [referralCode, setReferralCode] = useState('')
 
@@ -14,29 +23,32 @@ export default function LoyaltyPopup() {
     if (userStr) {
       try {
         const userData = JSON.parse(userStr)
-        setUser(userData)
+        setUser({
+          id: userData.id,
+          phone: userData.phone,
+          name: userData.name,
+          loyaltyPoints: userData.loyaltyPoints || 0,
+          referralCode: userData.referralCode,
+          referredBy: userData.referredBy
+        })
         setPoints(userData.loyaltyPoints || 0)
+        if (userData.referralCode) {
+          setReferralCode(userData.referralCode)
+        }
       } catch {}
     }
   }, [])
 
   useEffect(() => {
-    if (user?.phone) {
-      fetchUserPoints()
-    }
-  }, [user])
-
-  const fetchUserPoints = async () => {
-    try {
-      const res = await fetch(`/api/users?phone=${user.phone}`)
-      if (res.ok) {
-        const data = await res.json()
-        setPoints(data.loyaltyPoints || 0)
-      }
-    } catch {}
-  }
+    if (!user?.phone) return
+    fetch(`/api/users?phone=${user.phone}`)
+      .then(res => res.json())
+      .then(data => setPoints(data.loyaltyPoints || 0))
+      .catch(() => {})
+  }, [user?.phone])
 
   const generateReferralCode = async () => {
+    if (!user?.phone) return
     try {
       const res = await fetch('/api/referrals', {
         method: 'POST',
@@ -46,19 +58,35 @@ export default function LoyaltyPopup() {
       if (res.ok) {
         const data = await res.json()
         if (data.referralCode) {
-          const updatedUser = { ...user, referralCode: data.referralCode }
-          localStorage.setItem('user', JSON.stringify(updatedUser))
           setReferralCode(data.referralCode)
         }
       }
     } catch {}
   }
 
-  useEffect(() => {
-    setReferralCode(user?.referralCode || '')
-  }, [user])
+  const copyReferralLink = () => {
+    const code = user?.referralCode || referralCode
+    if (code) {
+      const link = `${window.location.origin}/login?ref=${code}`
+      navigator.clipboard.writeText(link)
+    }
+  }
 
-  if (!user) return null
+  if (!user) {
+    return (
+      <>
+        <Link
+          href="/login"
+          className="fixed bottom-24 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-full shadow-lg transition-colors z-50"
+          aria-label="Loyalty Rewards - Login to access"
+        >
+          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        </Link>
+      </>
+    )
+  }
 
   return (
     <>
@@ -107,19 +135,29 @@ export default function LoyaltyPopup() {
 
               <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                 <h4 className="font-semibold text-sm mb-2">Referral Program</h4>
-                <p className="text-xs text-gray-600 mb-2">Give 15% off, Get 100 points</p>
-                {(user as any).referralCode || referralCode ? (
-                  <div className="flex items-center gap-2">
-                    <code className="bg-white px-2 py-1 rounded font-mono">{(user as any).referralCode || referralCode}</code>
-                    <button 
-                      onClick={() => {
-                        const code = (user as any).referralCode || referralCode
-                        navigator.clipboard.writeText(code)
-                      }}
-                      className="text-xs text-blue-600"
-                    >
-                      Copy
-                    </button>
+                <p className="text-xs text-gray-600 mb-2">Share your code, give 15% off & get 100 points per referral</p>
+                {user.referralCode || referralCode ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <code className="bg-white px-2 py-1 rounded font-mono flex-1">{user.referralCode || referralCode}</code>
+                      <button 
+                        onClick={() => navigator.clipboard.writeText(user.referralCode || referralCode)}
+                        className="text-xs text-blue-600"
+                      >
+                        Copy Code
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <code className="bg-white px-2 py-1 rounded font-mono text-xs flex-1 truncate">
+                        {`${window.location.origin}/login?ref=${user.referralCode || referralCode}`}
+                      </code>
+                      <button 
+                        onClick={copyReferralLink}
+                        className="text-xs text-blue-600"
+                      >
+                        Copy Link
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <button

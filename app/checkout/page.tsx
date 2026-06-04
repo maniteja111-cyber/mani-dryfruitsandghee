@@ -16,6 +16,10 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
   const [couponError, setCouponError] = useState('')
+  const [user, setUser] = useState<any>(null)
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0)
+  const [pointsToRedeem, setPointsToRedeem] = useState(0)
+  const [welcomeCoupon, setWelcomeCoupon] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -27,7 +31,32 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     fetchSettings()
+    // Check for welcome coupon from login
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const wc = urlParams.get('welcome')
+      if (wc) {
+        setWelcomeCoupon(wc)
+        setCouponCode(wc)
+      }
+      
+      // Load user and points
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        try {
+          const parsed = JSON.parse(userStr)
+          setUser(parsed)
+          setLoyaltyPoints(parsed.loyaltyPoints || 0)
+        } catch {}
+      }
+    }
   }, [])
+  
+  useEffect(() => {
+    if (welcomeCoupon) {
+      applyCoupon()
+    }
+  }, [welcomeCoupon])
 
   const fetchSettings = async () => {
     try {
@@ -120,7 +149,7 @@ export default function CheckoutPage() {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'your_razorpay_key_id',
       amount: orderData.total * 100,
       currency: 'INR',
-      name: 'Mani Dry Fruits & Ghee',
+      name: 'MANI DRY FRUITS, PICKLES AND GHEE STORES',
       description: `Order #${order.id.slice(0, 8)}`,
       order_id: order.razorpayOrderId,
       handler: async function (response: any) {
@@ -170,14 +199,18 @@ export default function CheckoutPage() {
     e.preventDefault()
     setLoading(true)
 
-    const finalTotal = appliedCoupon ? appliedCoupon.finalTotal : total
+    let finalTotal = appliedCoupon ? appliedCoupon.finalTotal : total
+    // Apply loyalty points discount (100 pts = ₹50 off)
+    const pointsDiscount = (pointsToRedeem / 100) * 50
+    finalTotal = Math.max(0, finalTotal - pointsDiscount)
 
     const baseOrderData = {
       items,
       total: finalTotal,
       originalTotal: total,
       couponCode: appliedCoupon?.code || null,
-      discount: appliedCoupon?.discount || 0,
+      discount: (appliedCoupon?.discount || 0) + pointsDiscount,
+      pointsRedeemed: pointsToRedeem,
       paymentMethod,
       ...formData
     }
@@ -314,43 +347,64 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Coupon Section */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Have a Coupon?</h2>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter coupon code"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                  disabled={!!appliedCoupon}
-                />
-                {!appliedCoupon ? (
-                  <button
-                    type="button"
-                    onClick={applyCoupon}
-                    className="px-6 bg-gray-800 text-white rounded-md hover:bg-black"
-                  >
-                    Apply
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={removeCoupon}
-                    className="px-4 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-              {couponError && <p className="text-red-600 text-sm mt-1">{couponError}</p>}
-              {appliedCoupon && (
-                <p className="text-green-600 text-sm mt-1">
-                  Coupon applied! You save ₹{appliedCoupon.discount}
-                </p>
-              )}
-            </div>
+{/* Coupon Section */}
+             <div>
+               <h2 className="text-xl font-semibold mb-4">Have a Coupon?</h2>
+               <div className="flex gap-2">
+                 <input
+                   type="text"
+                   placeholder="Enter coupon code"
+                   value={couponCode}
+                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                   disabled={!!appliedCoupon}
+                 />
+                 {!appliedCoupon ? (
+                   <button
+                     type="button"
+                     onClick={applyCoupon}
+                     className="px-6 bg-gray-800 text-white rounded-md hover:bg-black"
+                   >
+                     Apply
+                   </button>
+                 ) : (
+                   <button
+                     type="button"
+                     onClick={removeCoupon}
+                     className="px-4 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+                   >
+                     Remove
+                   </button>
+                 )}
+               </div>
+               {couponError && <p className="text-red-600 text-sm mt-1">{couponError}</p>}
+               {appliedCoupon && (
+                 <p className="text-green-600 text-sm mt-1">
+                   Coupon applied! You save ₹{appliedCoupon.discount}
+                 </p>
+               )}
+             </div>
+
+             {/* Loyalty Points Redemption */}
+             {loyaltyPoints > 0 && (
+               <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
+                 <h3 className="font-semibold text-sm mb-2">Redeem Loyalty Points</h3>
+                 <p className="text-xs text-gray-600 mb-2">You have {loyaltyPoints} points (100 pts = ₹50 off)</p>
+                 <input
+                   type="number"
+                   min="0"
+                   max={Math.floor(loyaltyPoints / 100) * 100}
+                   step="100"
+                   value={pointsToRedeem}
+                   onChange={(e) => setPointsToRedeem(Number(e.target.value))}
+                   placeholder="Enter points to redeem (multiples of 100)"
+                   className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                 />
+                 <p className="text-xs text-green-600 mt-1">
+                   Discount: ₹{(pointsToRedeem / 100) * 50}
+                 </p>
+               </div>
+             )}
 
             <div>
               <h2 className="text-xl font-semibold mb-4">Payment Method</h2>

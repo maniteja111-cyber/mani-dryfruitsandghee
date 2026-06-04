@@ -40,14 +40,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     })
     if (product) {
       return {
-        title: `${product.name} - Buy Online | Mani Dry Fruits & Ghee Stores`,
+        title: `${product.name} - Buy Online | MANI DRY FRUITS, PICKLES AND GHEE STORES`,
         description: product.description || `Buy ${product.name} online at best price. Premium quality ${product.category.name.toLowerCase()}. Fast delivery across India.`,
         keywords: `${product.name}, ${product.category.name}, dry fruits, ghee, pickle, buy online, manidryfruitsandghee`,
-        openGraph: {
-          title: product.name,
-          description: product.description || `Buy ${product.name} online`,
-          type: 'product',
-        },
         alternates: {
           canonical: `https://manidryfruitsandghee.in/products/${product.slug}`
         }
@@ -57,7 +52,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     console.error('Error generating metadata:', error)
   }
   return {
-    title: 'Product - Mani Dry Fruits Stores',
+    title: 'Product - MANI DRY FRUITS, PICKLES AND GHEE STORES',
     description: 'Buy premium dry fruits, ghee, and pickles online',
   }
 }
@@ -73,11 +68,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     '@type': 'Product',
     name: product.name,
     image: productImages,
-    description: product.description || `${product.name} - Premium quality from Mani Dry Fruits`,
+    description: product.description || `${product.name} - Premium quality`,
     sku: product.slug,
     brand: {
       '@type': 'Brand',
-      name: 'Mani Dry Fruits & Ghee'
+      name: 'MANI DRY FRUITS, PICKLES AND GHEE STORES'
     },
     offers: {
       '@type': 'Offer',
@@ -87,7 +82,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       seller: {
         '@type': 'Organization',
-        name: 'Mani Dry Fruits & Ghee Stores'
+        name: 'MANI DRY FRUITS, PICKLES AND GHEE STORES'
       }
     }
   }

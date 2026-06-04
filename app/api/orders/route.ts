@@ -18,7 +18,8 @@ const razorpay = (() => {
 
 export async function POST(req: NextRequest) {
   try {
-  const { items, total, paymentMethod: originalPaymentMethod, name, phone, address, city, state, pincode, couponCode, discount } = await req.json()
+    const body = await req.json()
+    const { items, total, paymentMethod: originalPaymentMethod, name, phone, address, city, state, pincode, couponCode, discount, pointsRedeemed } = body
 
   // === Stock Validation (before creating order) ===
   for (const item of items) {
@@ -116,6 +117,23 @@ export async function POST(req: NextRequest) {
         }
       }
     })
+
+    // Deduct loyalty points if used
+    if (pointsRedeemed > 0 && user) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { loyaltyPoints: { decrement: pointsRedeemed } }
+      }).catch(() => {})
+    }
+
+    // Award loyalty points for purchase (10 pts per ₹100)
+    if (user && total >= 100) {
+      const pointsToAdd = Math.floor(total / 100) * 10
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { loyaltyPoints: { increment: pointsToAdd } }
+      }).catch(() => {})
+    }
 
     // === Stock deduction ===
     for (const item of items) {

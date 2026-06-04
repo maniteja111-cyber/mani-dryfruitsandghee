@@ -18,9 +18,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found', loyaltyPoints: 0, referralCode: null })
     }
 
-    return NextResponse.json({ loyaltyPoints: (user as any).loyaltyPoints || 0, referralCode: (user as any).referralCode })
-  } catch (error: any) {
-    console.error('Get user error:', error.message)
+    return NextResponse.json({ loyaltyPoints: user.loyaltyPoints, referralCode: user.referralCode })
+  } catch (error) {
+    console.error('Get user error:', error)
     return NextResponse.json({ loyaltyPoints: 0, referralCode: null })
   }
 }

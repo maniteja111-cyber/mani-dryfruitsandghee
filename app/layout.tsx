@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mani Dry Fruits Stores",
-  description: "Premium dry fruits, ghee, and pickles online. Fast delivery across India.",
+  title: "MANI DRY FRUITS, PICKLES AND GHEE STORES",
+  description: "Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com",
 };
 
 export default function RootLayout({

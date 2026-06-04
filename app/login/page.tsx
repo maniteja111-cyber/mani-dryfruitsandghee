@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
@@ -9,7 +9,16 @@ export default function LoginPage() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [referralCode, setReferralCode] = useState('')
   const router = useRouter()
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const ref = urlParams.get('ref')
+    if (ref) {
+      setReferralCode(ref)
+    }
+  }, [])
 
   const handleSendOtp = async () => {
     if (!phone || !/^\d{10}$/.test(phone)) {
@@ -21,8 +30,20 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const urlParams = new URLSearchParams(window.location.search)
-      const referredBy = urlParams.get('ref')
+      const referredBy = referralCode
+      
+      // Validate referral code exists
+      if (referredBy) {
+        const refCheck = await fetch(`/api/referrals?check=${encodeURIComponent(referredBy)}`)
+        if (refCheck.ok) {
+          const refData = await refCheck.json()
+          if (!refData.valid) {
+            setError('Invalid referral code')
+            setLoading(false)
+            return
+          }
+        }
+      }
 
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -66,10 +87,18 @@ export default function LoginPage() {
         body: JSON.stringify({ phone, otp, referredBy })
       })
 
-      if (res.ok) {
+if (res.ok) {
         const data = await res.json()
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
+        
+        // Show welcome coupon if user was referred - redirect to checkout
+        if (data.welcomeCoupon && data.user.phone !== '9999999999') {
+          alert(`Welcome! Your referral coupon is: ${data.welcomeCoupon}\nUse this for 15% off orders above ₹200`)
+          router.push('/checkout?welcome=' + data.welcomeCoupon)
+          return
+        }
+        
         // Redirect admins to admin panel, others to home
         if (data.user.phone === '9999999999') {
           router.push('/admin')
@@ -102,6 +131,13 @@ export default function LoginPage() {
           </div>
         )}
 
+        {referralCode && step === 'phone' && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+            <p className="font-medium">You were referred!</p>
+            <p className="text-sm">Enter your phone to get 15% off your first order using referral code: <code className="font-bold">{referralCode}</code></p>
+          </div>
+        )}
+
         {step === 'phone' ? (
           <div className="space-y-4">
             <div>
@@ -124,6 +160,9 @@ export default function LoginPage() {
             >
               {loading ? 'Sending...' : 'Send OTP'}
             </button>
+            <div className="text-center">
+              <p className="text-sm text-gray-500">Already have an account? Login to check your loyalty points!</p>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">

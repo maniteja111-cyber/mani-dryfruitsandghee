@@ -9,9 +9,16 @@ interface HeaderProps {
   settings: Record<string, string>
 }
 
+interface User {
+  id: string
+  phone: string
+  name: string
+  loyaltyPoints: number
+}
+
 export default function Header({ settings }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const { itemCount } = useCart()
 
   useEffect(() => {
@@ -19,7 +26,12 @@ export default function Header({ settings }: HeaderProps) {
     if (userStr) {
       try {
         const parsed = JSON.parse(userStr)
-        setUser(parsed)
+        setUser({
+          id: parsed.id,
+          phone: parsed.phone,
+          name: parsed.name,
+          loyaltyPoints: parsed.loyaltyPoints || 0
+        })
       } catch {}
     }
   }, [])
@@ -43,7 +55,7 @@ export default function Header({ settings }: HeaderProps) {
                 className="text-xl font-bold"
                 style={{ color: settings.themeColor || '#374151' }}
               >
-                {settings.siteName || 'Mani Dry Fruits'}
+                {settings.siteName || 'MANI DRY FRUITS, PICKLES AND GHEE STORES'}
               </span>
             )}
           </Link>
@@ -70,40 +82,47 @@ export default function Header({ settings }: HeaderProps) {
                 )}
               </Link>
 
-             {/* User / Login section */}
-             {user ? (
-               <>
-                 <Link 
-                   href="/my-orders" 
-                   className="hidden md:block font-medium"
-                   style={{ color: settings.themeColor || '#374151' }}
-                 >
-                   My Orders
-                 </Link>
-                 <span className="text-sm text-gray-600 hidden md:block">
-                   Hi, {user.name?.split(' ')[0] || 'User'}
-                 </span>
-                 <button
-                   onClick={() => {
-                     localStorage.removeItem('user')
-                     localStorage.removeItem('token')
-                     window.location.href = '/'
-                   }}
-                   className="text-sm hover:underline hidden md:block"
-                   style={{ color: settings.themeColor || '#dc2626' }}
-                 >
-                   Logout
-                 </button>
-               </>
-             ) : (
-               <Link 
-                 href="/login" 
-                 className="hidden md:block"
-                 style={{ color: settings.themeColor || '#374151' }}
-               >
-                 Login
-               </Link>
-             )}
+{/* User / Login section */}
+              {user ? (
+                <>
+                  <Link 
+                    href="/my-orders" 
+                    className="hidden md:block font-medium"
+                    style={{ color: settings.themeColor || '#374151' }}
+                  >
+                    My Orders
+                  </Link>
+                  <div className="hidden md:flex items-center space-x-2">
+                    {user.loyaltyPoints > 0 && (
+                      <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-medium">
+                        {user.loyaltyPoints} pts
+                      </span>
+                    )}
+                    <span className="text-sm text-gray-600">
+                      Hi, {user.name?.split(' ')[0] || 'User'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('user')
+                      localStorage.removeItem('token')
+                      window.location.href = '/'
+                    }}
+                    className="text-sm hover:underline hidden md:block"
+                    style={{ color: settings.themeColor || '#dc2626' }}
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link 
+                  href="/login" 
+                  className="hidden md:block"
+                  style={{ color: settings.themeColor || '#374151' }}
+                >
+                  Login
+                </Link>
+              )}
 
              {/* Mobile menu button */}
              <button
@@ -127,23 +146,28 @@ export default function Header({ settings }: HeaderProps) {
                 <Link href="/about" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 hover:underline">About</Link>
                 <Link href="/contact" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 hover:underline">Contact</Link>
 
-                 {user ? (
-                   <>
-                     <Link href="/my-orders" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 font-medium hover:underline">My Orders</Link>
-                     <button
-                       onClick={() => {
-                         localStorage.removeItem('user')
-                         localStorage.removeItem('token')
-                         window.location.href = '/'
-                       }}
-                       className="px-2 py-1 text-left text-red-600 hover:text-red-700"
-                     >
-                       Logout
-                     </button>
-                   </>
-                 ) : (
-                  <Link href="/login" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 hover:underline">Login</Link>
-                )}
+{user ? (
+                    <>
+                      {user.loyaltyPoints > 0 && (
+                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium">
+                          {user.loyaltyPoints} pts
+                        </span>
+                      )}
+                      <Link href="/my-orders" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 font-medium hover:underline">My Orders</Link>
+                      <button
+                        onClick={() => {
+                          localStorage.removeItem('user')
+                          localStorage.removeItem('token')
+                          window.location.href = '/'
+                        }}
+                        className="px-2 py-1 text-left text-red-600 hover:text-red-700"
+                      >
+                        Logout
+                      </button>
+                    </>
+                  ) : (
+                   <Link href="/login" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 hover:underline">Login</Link>
+                 )}
               </nav>
            </div>
          )}

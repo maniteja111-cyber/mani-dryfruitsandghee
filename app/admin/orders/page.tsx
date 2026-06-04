@@ -429,7 +429,7 @@ export default function AdminOrdersPage() {
                     const printWindow = window.open('', '_blank')
                     if (!printWindow) return alert('Please allow popups for invoice')
 
-                    const storeName = settingsObj['siteName'] || 'Mani Dry Fruits & Ghee'
+                    const storeName = settingsObj['siteName'] || 'MANI DRY FRUITS, PICKLES AND GHEE STORES'
                     const address = settingsObj['address'] || ''
                     const phone = settingsObj['phone'] || ''
                     const email = settingsObj['email'] || ''

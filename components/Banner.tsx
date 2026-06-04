@@ -15,8 +15,8 @@ export default function Banner({ banners }: BannerProps) {
     return (
       <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-64 flex items-center justify-center">
         <div className="text-center text-white">
-          <h1 className="text-4xl font-bold mb-4">Welcome to Mani Dry Fruits</h1>
-          <p className="text-xl">Premium quality dry fruits and ghee</p>
+          <h1 className="text-4xl font-bold mb-4">MANI DRY FRUITS, PICKLES AND GHEE STORES</h1>
+          <p className="text-xl">Healthy products delivered to your doorstep. Contact: +91 9515019393</p>
         </div>
       </div>
     )

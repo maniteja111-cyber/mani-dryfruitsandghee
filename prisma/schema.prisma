@@ -124,7 +124,7 @@ model Coupon {
 model Setting {
   id    String @id @default(cuid())
   key   String @unique
-  value String
+  value String @db.Text
 
   @@map("settings")
 }

@@ -1,4 +1,4 @@
--- Sample data for Mani Dry Fruits Pickles and Ghee Stores
+-- Sample data for MANI DRY FRUITS, PICKLES AND GHEE STORES
 
 -- Insert categories
 INSERT INTO categories (id, name, slug, description, image, createdAt, updatedAt) VALUES
@@ -15,19 +15,18 @@ INSERT INTO products (id, name, slug, description, price, discountPrice, stock, 
 
 -- Insert settings
 INSERT INTO settings (id, `key`, value) VALUES
-('set1', 'siteName', 'Mani Dry Fruits Pickles and Ghee Stores'),
+('set1', 'siteName', 'MANI DRY FRUITS, PICKLES AND GHEE STORES'),
 ('set2', 'logo', 'https://example.com/logo.png'),
 ('set3', 'themeColor', '#ffd862'),
-('set4', 'whatsappNumber', '919876543210'),
-('set5', 'phone', '+91 
-5 43210'),
-('set6', 'email', 'info@manidryfruits.com'),
+('set4', 'whatsappNumber', '919515019393'),
+('set5', 'phone', '+91 9515019393'),
+('set6', 'email', 'manidgs9393@gmail.com'),
 ('set7', 'address', '123 Main Street, City, State 123456'),
-('set8', 'banners', '[{"image":"https://example.com/banner1.jpg","title":"Welcome to Mani Stores","description":"Premium quality products"},{"image":"https://example.com/banner2.jpg","title":"Fresh Dry Fruits","description":"Direct from farms"}]'),
-('set9', 'seoTitle', 'Mani Dry Fruits Pickles and Ghee Stores - Premium Quality Products'),
-('set10', 'seoDescription', 'Shop for premium dry fruits, authentic pickles, and pure ghee. Fast delivery across India.'),
-('set11', 'heroTitle', 'Premium Dry Fruits & Pure Ghee'),
-('set12', 'heroSubtitle', 'Healthy products delivered to your doorstep'),
+('set8', 'banners', '[{"image":"https://example.com/banner1.jpg","title":"MANI DRY FRUITS STORES","description":"Healthy products delivered to your doorstep"},{"image":"https://example.com/banner2.jpg","title":"Fresh Dry Fruits","description":"Direct from farms"}]'),
+('set9', 'seoTitle', 'MANI DRY FRUITS, PICKLES AND GHEE STORES - Premium Quality Products'),
+('set10', 'seoDescription', 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com'),
+('set11', 'heroTitle', 'MANI DRY FRUITS, PICKLES AND GHEE STORES'),
+('set12', 'heroSubtitle', 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com'),
 ('set13', 'featuredProducts', '["prod1", "prod2", "prod3", "prod4"]'),
 ('set14', 'todaysOffers', '["prod3", "prod1", "prod2", "prod4"]');
 

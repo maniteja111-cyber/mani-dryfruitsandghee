@@ -44,7 +44,7 @@ interface ProductsPageProps {
 }
 
 export const metadata = {
-  title: 'Products - Mani Dry Fruits Pickles and Ghee Stores',
+  title: 'Products - MANI DRY FRUITS, PICKLES AND GHEE STORES',
   description: 'Browse our collection of premium dry fruits, pickles, and ghee. High quality products with fast delivery.',
 }
 
