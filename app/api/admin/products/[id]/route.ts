@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { revalidatePath } from 'next/cache'
 
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -31,6 +32,9 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
       include: { category: true }
     })
 
+    revalidatePath('/')
+    revalidatePath('/products')
+
     return NextResponse.json(product)
   } catch (error) {
     console.error('Update product error:', error)
@@ -48,6 +52,9 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
       prisma.orderItem.deleteMany({ where: { productId: id } }),
       prisma.product.delete({ where: { id } }),
     ])
+
+    revalidatePath('/')
+    revalidatePath('/products')
 
     return NextResponse.json({ message: 'Product deleted' })
   } catch (error) {

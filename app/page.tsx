@@ -68,6 +68,8 @@ prisma.review.findMany({
   }
 }
 
+export const revalidate = 0
+
 export default async function Home() {
   const { settings, categories, featuredProducts, todaysOffers, topReviews } = await getHomeData()
 
