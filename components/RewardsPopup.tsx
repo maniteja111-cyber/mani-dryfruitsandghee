@@ -143,7 +143,7 @@ export default function RewardsPopup({ isOpen, onClose, onLoginSuccess }: Reward
                 {referralCode && step === 'phone' && (
                   <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm">
                     <p className="font-medium">🎉 You were referred!</p>
-                    <p className="text-xs mt-1">Code: <code className="font-bold">{refercode}</code> — Get 15% off your first order!</p>
+                    <p className="text-xs mt-1">Code: <code className="font-bold">{referralCode}</code> — Get 15% off your first order!</p>
                   </div>
                 )}
 
