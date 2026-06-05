@@ -12,6 +12,8 @@ interface User {
   referredBy: string | null
 }
 
+type PrismaError = { code?: string }
+
 export async function POST(req: NextRequest) {
   try {
     const { phone, otp, referredBy } = await req.json()
@@ -30,7 +32,11 @@ export async function POST(req: NextRequest) {
       select: { id: true, phone: true, name: true, loyaltyPoints: true, referralCode: true, referredBy: true }
     }).catch(() => null) as User | null
 
+    // Track if this is a new user with referral (for welcome coupon)
+    let wasNewWithReferral = false
+
     if (!user) {
+      if (referredBy) wasNewWithReferral = true
       user = await prisma.user.create({
         data: { 
           phone, 
@@ -39,8 +45,8 @@ export async function POST(req: NextRequest) {
           referredBy: referredBy || undefined
         },
         select: { id: true, phone: true, name: true, loyaltyPoints: true, referralCode: true, referredBy: true }
-      }).catch(async (e: any) => {
-        if (e.code === 'P2002') {
+      }).catch(async (e: PrismaError) => {
+        if (e?.code === 'P2002') {
           const existingUser = await prisma.user.findUnique({ where: { phone }, select: { id: true, phone: true, name: true, loyaltyPoints: true, referralCode: true, referredBy: true } })
           return existingUser as User | null
         }
@@ -58,8 +64,8 @@ export async function POST(req: NextRequest) {
       }) as User
     }
 
-    // Award points to referrer if this user was referred
-    if (referredBy && user && !user.referredBy) {
+    // Award points to referrer if this is a new referred user
+    if (wasNewWithReferral && referredBy) {
       await prisma.user.update({
         where: { phone: referredBy },
         data: { loyaltyPoints: { increment: 100 } }
@@ -68,7 +74,7 @@ export async function POST(req: NextRequest) {
 
     // Generate 15% coupon for referred user
     let welcomeCoupon = null
-    if (referredBy && user && !user.referredBy) {
+    if (wasNewWithReferral) {
       const couponCode = `WELCOME${Math.random().toString(36).substring(2, 6).toUpperCase()}`
       const coupon = await prisma.coupon.create({
         data: {

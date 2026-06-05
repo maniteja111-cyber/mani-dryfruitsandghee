@@ -163,7 +163,7 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
       <div>
         <div className="aspect-square relative mb-4">
           <Image
-            src={images[selectedImage] && images[selectedImage] !== '' ? images[selectedImage] : '/placeholder.jpg'}
+            src={images[selectedImage] && images[selectedImage] !== '' ? images[selectedImage] : '/placeholder.svg'}
             alt={product.name}
             fill
             className="object-cover rounded-lg"
@@ -189,7 +189,7 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
                 }`}
               >
                 <Image
-                  src={image && image !== '' ? image : '/placeholder.jpg'}
+                   src={image && image !== '' ? image : '/placeholder.svg'}
                   alt={`${product.name} ${index + 1}`}
                   fill
                   className="object-cover rounded"

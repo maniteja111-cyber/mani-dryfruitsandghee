@@ -78,13 +78,10 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const urlParams = new URLSearchParams(window.location.search)
-      const referredBy = urlParams.get('ref')
-
       const res = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, otp, referredBy })
+        body: JSON.stringify({ phone, otp, referredBy: referralCode })
       })
 
 if (res.ok) {

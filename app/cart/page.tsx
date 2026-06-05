@@ -68,7 +68,7 @@ export default function CartPage() {
                   <div className="flex items-center space-x-4">
                     <div className="flex-shrink-0 w-20 h-20 relative">
                       <Image
-                        src={item.images && item.images.length > 0 && item.images[0] ? item.images[0] : '/placeholder.jpg'}
+                        src={item.images && item.images.length > 0 && item.images[0] ? item.images[0] : '/placeholder.svg'}
                         alt={item.name}
                         fill
                         className="object-cover rounded"

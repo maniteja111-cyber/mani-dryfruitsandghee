@@ -1,6 +1,5 @@
 import Header from '@/components/Header'
 import Hero from '@/components/Hero'
-import Banner from '@/components/Banner'
 import Categories from '@/components/Categories'
 import FeaturedProducts from '@/components/FeaturedProducts'
 import TodaysOffers from '@/components/TodaysOffers'
@@ -72,18 +71,10 @@ prisma.review.findMany({
 export default async function Home() {
   const { settings, categories, featuredProducts, todaysOffers, topReviews } = await getHomeData()
 
-  let banners: any[] = []
-  try {
-    banners = settings.banners ? JSON.parse(settings.banners) : []
-  } catch (error) {
-    console.error('Error parsing banners JSON:', error)
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header settings={settings} />
       <main>
-        <Banner banners={banners} />
         <Hero title={settings.heroTitle || 'MANI DRY FRUITS, PICKLES AND GHEE STORES'} subtitle={settings.heroSubtitle || 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com'} />
         <Categories categories={categories} />
         <FeaturedProducts products={featuredProducts} title="⭐ Featured Products" settings={settings} />

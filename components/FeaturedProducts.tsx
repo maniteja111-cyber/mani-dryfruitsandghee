@@ -11,8 +11,9 @@ interface Product {
   slug: string
   price: number
   discountPrice?: number | null
-  images: string[] | any
+  images: any
   stock: number
+  category: { name: string }
   variants?: any
 }
 
@@ -66,6 +67,7 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
     setWishlist(newWishlist)
     localStorage.setItem('wishlist', JSON.stringify(newWishlist))
   }
+
   if (!products || products.length === 0) {
     return null
   }
@@ -77,29 +79,38 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {products.map((product) => {
               let images = []
-              try {
-                images = JSON.parse(product.images)
-              } catch (error) {
-                images = product.images && typeof product.images === 'string' && product.images.trim() ? [product.images] : []
+              if (product.images) {
+                if (typeof product.images === 'string') {
+                  try {
+                    const parsed = JSON.parse(product.images)
+                    images = Array.isArray(parsed) ? parsed : []
+                  } catch {}
+                } else if (Array.isArray(product.images)) {
+                  images = product.images
+                }
               }
+              const imageSrc = images[0]?.url || images[0] || ''
 
               let variants = []
-              try {
-                variants = product.variants || []
-              } catch {}
-
+              if (product.variants) {
+                if (typeof product.variants === 'string') {
+                  try { variants = JSON.parse(product.variants) } catch {}
+                } else {
+                  variants = product.variants
+                }
+              }
               const selectedVariant = selectedVariants[product.id] || variants[0]
 
-              return (
-                <div key={product.id} className="bg-white rounded-2xl shadow hover:shadow-lg transition-all p-4 group">
-                  <div className="relative">
-                    {images && images.length > 0 ? (
-                      <img
-                        src={images[0]}
-                        alt={product.name}
-                        className="h-40 w-full object-cover rounded-xl group-hover:scale-[1.02] transition-transform"
-                      />
-                    ) : (
+return (
+                 <div key={product.id} className="bg-white rounded-2xl shadow hover:shadow-lg transition-all p-4 group">
+                   <div className="relative">
+                     {images && images.length > 0 ? (
+                       <img
+                         src={imageSrc}
+                         alt={product.name}
+                         className="h-40 w-full object-cover rounded-xl group-hover:scale-[1.02] transition-transform"
+                       />
+                     ) : (
                       <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
                         <span className="text-gray-500">No Image</span>
                       </div>

@@ -99,7 +99,7 @@ model OrderItem {
   orderId   String
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
-  product   Product @relation(fields: [productId], references: [id])
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int
   price     Float   // Price at the time of order
   variant   Json?   // Stores the selected variant { size: "250g", price: 180, weightGrams?: 250, ... }

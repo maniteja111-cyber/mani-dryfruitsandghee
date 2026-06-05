@@ -11,7 +11,7 @@ interface Product {
   slug: string
   price: number
   discountPrice?: number | null
-  images: string[] | any
+  images: any
   stock: number
   category: { name: string }
   variants?: any
@@ -28,35 +28,44 @@ export default function TodaysOffers({ products }: TodaysOffersProps) {
     return null
   }
 
-  return (
-    <section className="py-12 bg-red-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">🔥 Today's Offers</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {products.map((product) => {
-              let images = []
-              try {
-                images = JSON.parse(product.images)
-              } catch (error) {
-                images = product.images && typeof product.images === 'string' && product.images.trim() ? [product.images] : []
-              }
+return (
+       <section className="py-12 bg-red-50">
+         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+           <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">🔥 Today's Offers</h2>
+           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+             {products.map((product) => {
+               let images = []
+               if (product.images) {
+                 if (typeof product.images === 'string') {
+                   try {
+                     const parsed = JSON.parse(product.images)
+                     images = Array.isArray(parsed) ? parsed : []
+                   } catch {}
+                 } else if (Array.isArray(product.images)) {
+                   images = product.images
+                 }
+               }
+               const imageSrc = images[0]?.url || images[0] || ''
 
-              let variants = []
-              try {
-                variants = product.variants || []
-              } catch {}
+               let variants = []
+               if (product.variants) {
+                 if (typeof product.variants === 'string') {
+                   try { variants = JSON.parse(product.variants) } catch {}
+                 } else {
+                   variants = product.variants
+                 }
+               }
+               const selectedVariant = selectedVariants[product.id] || variants[0]
 
-              const selectedVariant = selectedVariants[product.id] || variants[0]
-
-              return (
-                <div key={product.id} className="bg-white rounded-2xl shadow p-4">
-                  {images && images.length > 0 ? (
-                    <img
-                      src={images[0]}
-                      alt={product.name}
-                      className="h-40 w-full object-cover rounded-xl"
-                    />
-                  ) : (
+               return (
+                 <div key={product.id} className="bg-white rounded-2xl shadow p-4">
+                   {images && images.length > 0 ? (
+                     <img
+                       src={imageSrc}
+                       alt={product.name}
+                       className="h-40 w-full object-cover rounded-xl"
+                     />
+                   ) : (
                     <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
                       <span className="text-gray-500">No Image</span>
                     </div>

@@ -41,9 +41,13 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params
-    await prisma.product.delete({
-      where: { id }
-    })
+
+    await prisma.$transaction([
+      prisma.review.deleteMany({ where: { productId: id } }),
+      prisma.wishlist.deleteMany({ where: { productId: id } }),
+      prisma.orderItem.deleteMany({ where: { productId: id } }),
+      prisma.product.delete({ where: { id } }),
+    ])
 
     return NextResponse.json({ message: 'Product deleted' })
   } catch (error) {
