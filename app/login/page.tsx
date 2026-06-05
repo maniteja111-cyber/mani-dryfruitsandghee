@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
-export default function LoginPage() {
+function LoginContent() {
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [step, setStep] = useState<'phone' | 'otp'>('phone')
@@ -151,7 +152,6 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Rewards info */}
         <div className="bg-gray-50 rounded-lg p-4 mt-4">
           <h3 className="font-semibold text-sm mb-2 text-gray-700">🎁 Earn Rewards</h3>
           <div className="space-y-1 text-xs text-gray-600">
@@ -163,5 +163,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div>Loading...</div></div>}>
+      <LoginContent />
+    </Suspense>
   )
 }
