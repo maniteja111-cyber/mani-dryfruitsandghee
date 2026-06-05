@@ -77,7 +77,7 @@ export default async function Home() {
     <div className="min-h-screen bg-gray-50">
       <Header settings={settings} />
       <main>
-        <Hero title={settings.heroTitle || 'MANI DRY FRUITS, PICKLES AND GHEE STORES'} subtitle={settings.heroSubtitle || 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com'} />
+        <Hero title={settings.heroTitle || 'MANI DRY FRUITS, PICKLES AND GHEE STORES ABROAD PICKLES PACKING'} subtitle={settings.heroSubtitle || 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com'} />
         <Categories categories={categories} />
         <FeaturedProducts products={featuredProducts} title="⭐ Featured Products" settings={settings} />
         <TodaysOffers products={todaysOffers} />
@@ -86,7 +86,7 @@ export default async function Home() {
         <Testimonials />
       </main>
       <Footer settings={settings} />
-      <WhatsAppButton phone={settings.whatsappNumber || '1234567890'} />
+      <WhatsAppButton phone={settings.whatsappNumber || '9515019393'} />
     </div>
   )
 }
