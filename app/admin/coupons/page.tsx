@@ -9,8 +9,12 @@ interface Coupon {
   discountType: string
   value: number
   minOrder?: number
+  maxDiscount?: number
   expiry?: string
+  usageLimit?: number
+  perUserLimit?: number
   isActive: boolean
+  usedCount: number
 }
 
 export default function AdminCouponsPage() {
@@ -22,7 +26,10 @@ export default function AdminCouponsPage() {
     discountType: 'percent',
     value: '',
     minOrder: '',
+    maxDiscount: '',
     expiry: '',
+    usageLimit: '',
+    perUserLimit: '',
     isActive: true
   })
   const router = useRouter()
@@ -63,7 +70,10 @@ export default function AdminCouponsPage() {
         ...formData,
         value: parseFloat(formData.value),
         minOrder: formData.minOrder ? parseFloat(formData.minOrder) : null,
-        expiry: formData.expiry || null
+        maxDiscount: formData.maxDiscount ? parseFloat(formData.maxDiscount) : null,
+        expiry: formData.expiry || null,
+        usageLimit: formData.usageLimit ? parseInt(formData.usageLimit) : null,
+        perUserLimit: formData.perUserLimit ? parseInt(formData.perUserLimit) : null
       }
 
       const url = editingCoupon ? `/api/admin/coupons/${editingCoupon.id}` : '/api/admin/coupons'
@@ -93,7 +103,10 @@ export default function AdminCouponsPage() {
       discountType: coupon.discountType,
       value: coupon.value.toString(),
       minOrder: coupon.minOrder?.toString() || '',
+      maxDiscount: coupon.maxDiscount?.toString() || '',
       expiry: coupon.expiry ? new Date(coupon.expiry).toISOString().split('T')[0] : '',
+      usageLimit: coupon.usageLimit?.toString() || '',
+      perUserLimit: '',
       isActive: coupon.isActive
     })
     setShowForm(true)
@@ -118,7 +131,10 @@ export default function AdminCouponsPage() {
       discountType: 'percent',
       value: '',
       minOrder: '',
+      maxDiscount: '',
       expiry: '',
+      usageLimit: '',
+      perUserLimit: '',
       isActive: true
     })
   }
@@ -167,6 +183,16 @@ export default function AdminCouponsPage() {
                 step="0.01"
                 required
               />
+              {formData.discountType === 'percent' && (
+                <input
+                  type="number"
+                  placeholder="Max Discount (optional, ₹)"
+                  value={formData.maxDiscount}
+                  onChange={(e) => setFormData(prev => ({ ...prev, maxDiscount: e.target.value }))}
+                  className="border border-gray-300 rounded px-3 py-2"
+                  step="0.01"
+                />
+              )}
               <input
                 type="number"
                 placeholder="Minimum Order (optional)"
@@ -174,6 +200,20 @@ export default function AdminCouponsPage() {
                 onChange={(e) => setFormData(prev => ({ ...prev, minOrder: e.target.value }))}
                 className="border border-gray-300 rounded px-3 py-2"
                 step="0.01"
+              />
+              <input
+                type="number"
+                placeholder="Usage Limit (optional)"
+                value={formData.usageLimit}
+                onChange={(e) => setFormData(prev => ({ ...prev, usageLimit: e.target.value }))}
+                className="border border-gray-300 rounded px-3 py-2"
+              />
+              <input
+                type="number"
+                placeholder="Per User Limit (optional)"
+                value={formData.perUserLimit}
+                onChange={(e) => setFormData(prev => ({ ...prev, perUserLimit: e.target.value }))}
+                className="border border-gray-300 rounded px-3 py-2"
               />
               <input
                 type="date"
@@ -209,6 +249,7 @@ export default function AdminCouponsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Min Order</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Used</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -223,6 +264,9 @@ export default function AdminCouponsPage() {
                     {coupon.discountType === 'percent' ? `${coupon.value}%` : `₹${coupon.value}`}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{coupon.minOrder ? `₹${coupon.minOrder}` : '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {coupon.usageLimit ? `${coupon.usedCount}/${coupon.usageLimit}` : coupon.usedCount}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{coupon.expiry ? new Date(coupon.expiry).toLocaleDateString() : '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${coupon.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>

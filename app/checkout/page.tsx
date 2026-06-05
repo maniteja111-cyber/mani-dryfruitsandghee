@@ -89,7 +89,8 @@ export default function CheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: couponCode.trim(),
-          orderTotal: total
+          orderTotal: total,
+          userId: user?.id || null
         })
       })
 

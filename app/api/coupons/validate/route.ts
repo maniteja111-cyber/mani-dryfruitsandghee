@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(req: NextRequest) {
   try {
-    const { code, orderTotal } = await req.json()
+    const { code, orderTotal, userId } = await req.json()
 
     if (!code || !orderTotal) {
       return NextResponse.json({ error: 'Code and orderTotal are required' }, { status: 400 })
@@ -31,17 +31,28 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
-    // Calculate discount
+    if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
+      return NextResponse.json({ error: 'This coupon has reached its usage limit' }, { status: 400 })
+    }
+
+    if (userId && coupon.perUserLimit) {
+      const userUsageCount = await prisma.couponUsage.count({
+        where: { couponId: coupon.id, userId }
+      })
+      if (userUsageCount >= coupon.perUserLimit) {
+        return NextResponse.json({ error: 'You have already used this coupon maximum times' }, { status: 400 })
+      }
+    }
+
     let discount = 0
     if (coupon.discountType === 'percent') {
       discount = (orderTotal * coupon.value) / 100
+      if (coupon.maxDiscount) discount = Math.min(discount, coupon.maxDiscount)
     } else {
       discount = coupon.value
     }
 
-    // Don't allow discount more than order total
     discount = Math.min(discount, orderTotal)
-
     const finalTotal = Math.max(0, orderTotal - discount)
 
     return NextResponse.json({

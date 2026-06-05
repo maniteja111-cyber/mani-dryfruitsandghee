@@ -23,13 +23,46 @@ model User {
   loyaltyPoints  Int      @default(0)
   referralCode   String?  @unique
   referredBy     String?  // phone of who referred them
+  lastLoginDate  DateTime?
+  firstPurchase  Boolean  @default(false)
+  securityQuestion String?
+  securityAnswer String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   orders    Order[]
   wishlist  Wishlist[]
+  pointTransactions LoyaltyTransaction[]
+  referralsMade     Referral[] @relation("Referrer")
+  referralsReceived Referral[] @relation("Referred")
 
   @@map("users")
+}
+
+model LoyaltyTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  points    Int      // positive = earned, negative = redeemed
+  type      String   // "purchase", "referral", "daily_login", "first_purchase", "redeemed", "welcome_bonus", "manual"
+  description String?
+  createdAt DateTime @default(now())
+
+  @@map("loyalty_transactions")
+}
+
+model Referral {
+  id          String   @id @default(cuid())
+  referrerId  String
+  referrer    User     @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredPhone String
+  referred    User?    @relation("Referred", fields: [referredPhone], references: [phone])
+  status      String   @default("pending") // pending, completed, rewarded
+  pointsAwarded Boolean @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([referrerId, referredPhone])
+  @@map("referrals")
 }
 
 model Category {
@@ -113,12 +146,27 @@ model Coupon {
   discountType String  // percent or fixed
   value       Float
   minOrder    Float?
+  maxDiscount Float?
   expiry      DateTime?
   isActive    Boolean  @default(true)
+  usageLimit  Int?     // max total uses
+  perUserLimit Int?    // max uses per user
+  usedCount   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("coupons")
+}
+
+model CouponUsage {
+  id        String   @id @default(cuid())
+  couponId  String
+  userId    String
+  orderId   String?
+  createdAt DateTime @default(now())
+
+  @@unique([couponId, userId, orderId])
+  @@map("coupon_usages")
 }
 
 model Setting {

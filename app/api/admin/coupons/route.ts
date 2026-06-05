@@ -15,7 +15,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { code, discountType, value, minOrder, expiry } = await req.json()
+    const { code, discountType, value, minOrder, maxDiscount, expiry, usageLimit, perUserLimit } = await req.json()
 
     const coupon = await prisma.coupon.create({
       data: {
@@ -23,7 +23,10 @@ export async function POST(req: NextRequest) {
         discountType,
         value: parseFloat(value),
         minOrder: minOrder ? parseFloat(minOrder) : null,
-        expiry: expiry ? new Date(expiry) : null
+        maxDiscount: maxDiscount ? parseFloat(maxDiscount) : null,
+        expiry: expiry ? new Date(expiry) : null,
+        usageLimit: usageLimit ? parseInt(usageLimit) : null,
+        perUserLimit: perUserLimit ? parseInt(perUserLimit) : null
       }
     })
 

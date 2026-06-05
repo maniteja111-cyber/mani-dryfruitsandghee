@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 // TODO: auth check handled by admin layout — remove guard from here once layout is verified
 
 export default function AdminPage() {
-  const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, pendingOrders: 0, lowStock: 0 })
+  const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, pendingOrders: 0, lowStock: 0, users: 0, totalPoints: 0 })
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [lowStockProducts, setLowStockProducts] = useState<any[]>([])
 
@@ -15,24 +15,29 @@ export default function AdminPage() {
 
   const fetchStats = async () => {
     try {
-      const [productsRes, ordersRes] = await Promise.all([
+      const [productsRes, ordersRes, usersRes] = await Promise.all([
         fetch('/api/admin/products'),
-        fetch('/api/admin/orders')
+        fetch('/api/admin/orders'),
+        fetch('/api/admin/users')
       ])
 
       const products = productsRes.ok ? await productsRes.json() : []
       const orders = ordersRes.ok ? await ordersRes.json() : []
+      const users = usersRes.ok ? await usersRes.json() : []
 
       const revenue = orders.reduce((sum: number, order: any) => sum + order.total, 0)
       const pending = orders.filter((o: any) => o.status === 'pending').length
       const lowStockItems = products.filter((p: any) => p.stock > 0 && p.stock <= 10)
+      const totalPoints = users.reduce((sum: number, u: any) => sum + (u.loyaltyPoints || 0), 0)
 
       setStats({
         products: products.length,
         orders: orders.length,
         revenue,
         pendingOrders: pending,
-        lowStock: lowStockItems.length
+        lowStock: lowStockItems.length,
+        users: users.length,
+        totalPoints
       })
 
       setRecentOrders(orders.slice(0, 5))
@@ -51,6 +56,17 @@ export default function AdminPage() {
         </div>
 
         <div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-2xl shadow">
+              <h3 className="text-sm text-gray-500">Total Users</h3>
+              <p className="text-3xl font-bold text-purple-600 mt-1">{stats.users}</p>
+            </div>
+            <div className="bg-white p-6 rounded-2xl shadow">
+              <h3 className="text-sm text-gray-500">Loyalty Points Outstanding</h3>
+              <p className="text-3xl font-bold text-yellow-600 mt-1">{stats.totalPoints.toLocaleString()}</p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             <div className="bg-white p-6 rounded-2xl shadow">
               <h3 className="text-sm text-gray-500">Total Products</h3>
@@ -144,6 +160,9 @@ export default function AdminPage() {
                 </a>
                 <a href="/admin/coupons" className="block w-full text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded">
                   Manage Coupons
+                </a>
+                <a href="/admin/users" className="block w-full text-left px-4 py-2 bg-yellow-100 hover:bg-yellow-200 rounded font-medium">
+                  🎁 Users & Loyalty Points
                 </a>
                 <a href="/admin/settings" className="block w-full text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded">
                   Website Settings

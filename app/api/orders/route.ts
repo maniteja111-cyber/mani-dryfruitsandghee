@@ -120,19 +120,57 @@ export async function POST(req: NextRequest) {
 
     // Deduct loyalty points if used
     if (pointsRedeemed > 0 && user) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { loyaltyPoints: { decrement: pointsRedeemed } }
-      }).catch(() => {})
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: user.id },
+          data: { loyaltyPoints: { decrement: pointsRedeemed } }
+        }),
+        prisma.loyaltyTransaction.create({
+          data: {
+            userId: user.id,
+            points: -pointsRedeemed,
+            type: 'redeemed',
+            description: `Redeemed ${pointsRedeemed} points for ₹${(pointsRedeemed / 100) * 50} discount`
+          }
+        })
+      ]).catch(() => {})
     }
 
     // Award loyalty points for purchase (10 pts per ₹100)
     if (user && total >= 100) {
       const pointsToAdd = Math.floor(total / 100) * 10
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { loyaltyPoints: { increment: pointsToAdd } }
-      }).catch(() => {})
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: user.id },
+          data: { loyaltyPoints: { increment: pointsToAdd } }
+        }),
+        prisma.loyaltyTransaction.create({
+          data: {
+            userId: user.id,
+            points: pointsToAdd,
+            type: 'purchase',
+            description: `Earned ${pointsToAdd} points for ₹${total} purchase`
+          }
+        })
+      ]).catch(() => {})
+
+      // First purchase bonus (50 points)
+      if (!user.firstPurchase) {
+        await prisma.$transaction([
+          prisma.user.update({
+            where: { id: user.id },
+            data: { firstPurchase: true, loyaltyPoints: { increment: 50 } }
+          }),
+          prisma.loyaltyTransaction.create({
+            data: {
+              userId: user.id,
+              points: 50,
+              type: 'first_purchase',
+              description: 'First purchase bonus'
+            }
+          })
+        ]).catch(() => {})
+      }
     }
 
     // === Stock deduction ===
@@ -178,6 +216,26 @@ export async function POST(req: NextRequest) {
 
     const whatsappNumber = settingsObj.whatsappNumber || '919515019393'
     const whatsappMessage = generateOrderConfirmationMessage(order, whatsappNumber)
+
+    // Track coupon usage
+    if (couponCode && user) {
+      const coupon = await prisma.coupon.findUnique({ where: { code: couponCode } })
+      if (coupon) {
+        await prisma.$transaction([
+          prisma.coupon.update({
+            where: { id: coupon.id },
+            data: { usedCount: { increment: 1 } }
+          }),
+          prisma.couponUsage.create({
+            data: {
+              couponId: coupon.id,
+              userId: user.id,
+              orderId: order.id
+            }
+          })
+        ]).catch(() => {})
+      }
+    }
 
     return NextResponse.json({
       ...order,

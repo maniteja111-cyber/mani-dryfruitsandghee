@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/app/contexts/CartContext'
+import RewardsPopup from '@/components/RewardsPopup'
+import RewardsPanel from '@/components/RewardsPanel'
 
 interface HeaderProps {
   settings: Record<string, string>
@@ -14,164 +16,192 @@ interface User {
   phone: string
   name: string
   loyaltyPoints: number
+  referralCode: string | null
 }
 
 export default function Header({ settings }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [showRewardsPopup, setShowRewardsPopup] = useState(false)
+  const [showRewardsPanel, setShowRewardsPanel] = useState(false)
   const { itemCount } = useCart()
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user')
-    if (userStr) {
-      try {
-        const parsed = JSON.parse(userStr)
-        setUser({
-          id: parsed.id,
-          phone: parsed.phone,
-          name: parsed.name,
-          loyaltyPoints: parsed.loyaltyPoints || 0
-        })
-      } catch {}
+    const loadUser = () => {
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        try {
+          const parsed = JSON.parse(userStr)
+          setUser({
+            id: parsed.id,
+            phone: parsed.phone,
+            name: parsed.name,
+            loyaltyPoints: parsed.loyaltyPoints || 0,
+            referralCode: parsed.referralCode || null
+          })
+          // Fetch fresh points from server
+          fetch(`/api/users?phone=${parsed.phone}`)
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+              if (data && data.loyaltyPoints !== undefined) {
+                const updated = { ...parsed, loyaltyPoints: data.loyaltyPoints, referralCode: data.referralCode }
+                localStorage.setItem('user', JSON.stringify(updated))
+                setUser({
+                  id: updated.id,
+                  phone: updated.phone,
+                  name: updated.name,
+                  loyaltyPoints: updated.loyaltyPoints,
+                  referralCode: updated.referralCode || null
+                })
+              }
+            })
+            .catch(() => {})
+        } catch {}
+      } else {
+        setUser(null)
+      }
+    }
+    loadUser()
+
+    // Listen for login updates from popups
+    window.addEventListener('storage', loadUser)
+    window.addEventListener('userLogin', loadUser)
+    return () => {
+      window.removeEventListener('storage', loadUser)
+      window.removeEventListener('userLogin', loadUser)
     }
   }, [])
 
+  const handleRewardsClick = () => {
+    if (user) {
+      setShowRewardsPanel(true)
+    } else {
+      setShowRewardsPopup(true)
+    }
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('user')
+    localStorage.removeItem('token')
+    setUser(null)
+    window.location.href = '/'
+  }
+
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center">
-            {settings.logo && settings.logo !== '' ? (
-              <Image
-                src={settings.logo}
-                alt={settings.siteName || 'Logo'}
-                width={40}
-                height={40}
-                className="h-10 w-auto"
-              />
-            ) : (
-              <span
-                className="text-xl font-bold"
-                style={{ color: settings.themeColor || '#374151' }}
-              >
-                {settings.siteName || 'MANI DRY FRUITS, PICKLES AND GHEE STORES'}
-              </span>
-            )}
-          </Link>
+    <>
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2">
+              {settings.logo && settings.logo !== '' ? (
+                <Image src={settings.logo} alt={settings.siteName || 'Logo'} width={40} height={40} className="h-10 w-auto" />
+              ) : (
+                <span className="text-lg font-bold truncate max-w-[200px]" style={{ color: settings.themeColor || '#374151' }}>
+                  {settings.siteName || 'MANI DRY FRUITS'}
+                </span>
+              )}
+            </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            <Link href="/" style={{ color: settings.themeColor || '#374151' }} className="hover:underline">Home</Link>
-            <Link href="/products" style={{ color: settings.themeColor || '#374151' }} className="hover:underline">Products</Link>
-            <Link href="/categories" style={{ color: settings.themeColor || '#374151' }} className="hover:underline">Categories</Link>
-            <Link href="/about" style={{ color: settings.themeColor || '#374151' }} className="hover:underline">About</Link>
-            <Link href="/contact" style={{ color: settings.themeColor || '#374151' }} className="hover:underline">Contact</Link>
-          </nav>
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex space-x-6">
+              <Link href="/" style={{ color: settings.themeColor || '#374151' }} className="hover:underline text-sm">Home</Link>
+              <Link href="/products" style={{ color: settings.themeColor || '#374151' }} className="hover:underline text-sm">Products</Link>
+              <Link href="/categories" style={{ color: settings.themeColor || '#374151' }} className="hover:underline text-sm">Categories</Link>
+            </nav>
 
-              {/* Right side */}
-            <div className="flex items-center space-x-4">
-              <Link href="/cart" style={{ color: settings.themeColor || '#374151' }} className="relative">
+            {/* Right side */}
+            <div className="flex items-center space-x-3">
+              {/* Rewards Button */}
+              <button onClick={handleRewardsClick} className="relative p-2 rounded-full hover:bg-yellow-50 transition" title="Loyalty Rewards">
+                <svg className="h-6 w-6 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                </svg>
+                {user && user.loyaltyPoints > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
+                    {user.loyaltyPoints > 99 ? '99' : user.loyaltyPoints}
+                  </span>
+                )}
+              </button>
+
+              {/* Cart */}
+              <Link href="/cart" style={{ color: settings.themeColor || '#374151' }} className="relative p-2">
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H19M7 13l-1.1 5M7 13h10m0 0v8a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 002 2v6a2 2 0 002 2z" />
                 </svg>
                 {itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {itemCount}
                   </span>
                 )}
               </Link>
 
-{/* User / Login section */}
+              {/* User section */}
               {user ? (
-                <>
-                  <Link 
-                    href="/my-orders" 
-                    className="hidden md:block font-medium"
-                    style={{ color: settings.themeColor || '#374151' }}
-                  >
-                    My Orders
-                  </Link>
-                  <div className="hidden md:flex items-center space-x-2">
-                    {user.loyaltyPoints > 0 && (
-                      <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-medium">
-                        {user.loyaltyPoints} pts
-                      </span>
-                    )}
-                    <span className="text-sm text-gray-600">
-                      Hi, {user.name?.split(' ')[0] || 'User'}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      localStorage.removeItem('user')
-                      localStorage.removeItem('token')
-                      window.location.href = '/'
-                    }}
-                    className="text-sm hover:underline hidden md:block"
-                    style={{ color: settings.themeColor || '#dc2626' }}
-                  >
-                    Logout
-                  </button>
-                </>
+                <div className="hidden md:flex items-center space-x-3">
+                  <Link href="/my-orders" className="text-sm font-medium" style={{ color: settings.themeColor || '#374151' }}>My Orders</Link>
+                  <span className="text-sm text-gray-600">Hi, {user.name?.split(' ')[0] || 'User'}</span>
+                  <button onClick={handleLogout} className="text-sm text-red-600 hover:underline">Logout</button>
+                </div>
               ) : (
-                <Link 
-                  href="/login" 
-                  className="hidden md:block"
-                  style={{ color: settings.themeColor || '#374151' }}
-                >
+                <button onClick={() => setShowRewardsPopup(true)} className="hidden md:block text-sm font-medium px-3 py-1.5 rounded-lg" style={{ backgroundColor: settings.themeColor || '#f59e0b', color: '#fff' }}>
                   Login
-                </Link>
+                </button>
               )}
 
-             {/* Mobile menu button */}
-             <button
-               onClick={() => setIsMenuOpen(!isMenuOpen)}
-               className="md:hidden p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-             >
-               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-               </svg>
-             </button>
-           </div>
-        </div>
+              {/* Mobile menu */}
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100">
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
 
-         {/* Mobile Navigation */}
-         {isMenuOpen && (
-           <div className="md:hidden border-t border-gray-200 py-2">
+          {/* Mobile Navigation */}
+          {isMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 py-3">
               <nav className="flex flex-col space-y-2">
-                <Link href="/" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 hover:underline">Home</Link>
-                <Link href="/products" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 hover:underline">Products</Link>
-                <Link href="/categories" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 hover:underline">Categories</Link>
-                <Link href="/about" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 hover:underline">About</Link>
-                <Link href="/contact" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 hover:underline">Contact</Link>
-
-{user ? (
-                    <>
-                      {user.loyaltyPoints > 0 && (
-                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium">
-                          {user.loyaltyPoints} pts
-                        </span>
-                      )}
-                      <Link href="/my-orders" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 font-medium hover:underline">My Orders</Link>
-                      <button
-                        onClick={() => {
-                          localStorage.removeItem('user')
-                          localStorage.removeItem('token')
-                          window.location.href = '/'
-                        }}
-                        className="px-2 py-1 text-left text-red-600 hover:text-red-700"
-                      >
-                        Logout
-                      </button>
-                    </>
-                  ) : (
-                   <Link href="/login" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1 hover:underline">Login</Link>
-                 )}
+                <Link href="/" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1.5 hover:underline">Home</Link>
+                <Link href="/products" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1.5 hover:underline">Products</Link>
+                <Link href="/categories" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1.5 hover:underline">Categories</Link>
+                <hr />
+                {user ? (
+                  <>
+                    <Link href="/my-orders" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1.5 font-medium hover:underline">My Orders</Link>
+                    <button onClick={handleLogout} className="px-2 py-1.5 text-left text-red-600">Logout</button>
+                  </>
+                ) : (
+                  <button onClick={() => { setShowRewardsPopup(true); setIsMenuOpen(false); }} className="px-2 py-1.5 text-left font-medium text-yellow-600">Login / Register</button>
+                )}
               </nav>
-           </div>
-         )}
-      </div>
-    </header>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Rewards Popup (for non-logged-in users) */}
+      <RewardsPopup
+        isOpen={showRewardsPopup}
+        onClose={() => setShowRewardsPopup(false)}
+        onLoginSuccess={(userData) => {
+          localStorage.setItem('user', JSON.stringify(userData))
+          setUser({
+            id: userData.id,
+            phone: userData.phone,
+            name: userData.name,
+            loyaltyPoints: userData.loyaltyPoints,
+            referralCode: userData.referralCode || null
+          })
+          window.dispatchEvent(new Event('userLogin'))
+        }}
+      />
+
+      {/* Rewards Panel (for logged-in users) */}
+      <RewardsPanel
+        isOpen={showRewardsPanel}
+        onClose={() => setShowRewardsPanel(false)}
+      />
+    </>
   )
 }
