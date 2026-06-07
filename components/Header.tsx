@@ -39,8 +39,8 @@ export default function Header({ settings }: HeaderProps) {
             loyaltyPoints: parsed.loyaltyPoints || 0,
             referralCode: parsed.referralCode || null
           })
-          // Fetch fresh points from server
-          fetch(`/api/users?phone=${parsed.phone}`)
+          // Fetch fresh points from server and check daily bonus
+          fetch(`/api/users/daily-bonus?phone=${parsed.phone}`)
             .then(res => res.ok ? res.json() : null)
             .then(data => {
               if (data && data.loyaltyPoints !== undefined) {
@@ -53,6 +53,9 @@ export default function Header({ settings }: HeaderProps) {
                   loyaltyPoints: updated.loyaltyPoints,
                   referralCode: updated.referralCode || null
                 })
+                if (data.bonusAwarded) {
+                  alert('🎉 Bonus awarded! You earned 5 loyalty points for today\'s login.')
+                }
               }
             })
             .catch(() => {})
