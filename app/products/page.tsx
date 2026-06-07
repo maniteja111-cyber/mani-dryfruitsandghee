@@ -1,6 +1,7 @@
 import ProductList from '@/components/ProductList'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import WhatsAppButton from '@/components/WhatsAppButton'
 import RewardsButton from '@/components/RewardsButton'
 import { prisma } from '@/lib/prisma'
 
@@ -64,6 +65,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         />
       </main>
       <Footer settings={settings} />
+      <WhatsAppButton phone={settings.whatsappNumber || '1234567890'} />
       <RewardsButton phone={settings.whatsappNumber || '1234567890'} />
     </div>
   )
