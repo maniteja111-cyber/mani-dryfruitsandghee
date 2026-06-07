@@ -13,7 +13,7 @@ interface Product {
   discountPrice?: number | null
   images: any
   stock: number
-  category: { name: string }
+  category?: { name: string }
   variants?: any
 }
 
