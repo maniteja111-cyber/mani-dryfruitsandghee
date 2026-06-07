@@ -169,17 +169,17 @@ export default function AdminSettingsPage() {
         <div className="bg-white rounded-2xl shadow p-6">
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-4">Current Settings</h2>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li><strong>siteName:</strong> Main website title</li>
-              <li><strong>logo:</strong> Full URL to logo image</li>
-              <li><strong>themeColor:</strong> Hex color code (e.g., #ffd862)</li>
-              <li><strong>whatsappNumber:</strong> Business WhatsApp number (with country code)</li>
-              <li><strong>phone/email/address:</strong> Contact information</li>
-              <li><strong>banners:</strong> JSON array of banner objects with image, title, description</li>
-              <li><strong>featuredProducts:</strong> JSON array of product IDs for homepage featured section</li>
-              <li><strong>todaysOffers:</strong> JSON array of product IDs for homepage deals section</li>
-              <li><strong>seoTitle/seoDescription:</strong> Homepage SEO metadata</li>
-            </ul>
+<ul className="text-sm text-blue-700 space-y-1">
+               <li><strong>siteName:</strong> Main website title</li>
+               <li><strong>logo:</strong> Full URL to logo image</li>
+               <li><strong>themeColor:</strong> Hex color code (e.g., #ffd862)</li>
+               <li><strong>whatsappNumber:</strong> Business WhatsApp number (with country code)</li>
+               <li><strong>phone/email/address:</strong> Contact information</li>
+               <li><strong>banners:</strong> JSON array of banner objects with image, title, description</li>
+               <li><strong>heroTitle:</strong> Hero section main title</li>
+               <li><strong>heroSubtitle:</strong> Hero section subtitle (auto-saved on blur)</li>
+               <li><strong>seoTitle/seoDescription:</strong> Homepage SEO metadata</li>
+             </ul>
           </div>
 
           <div className="border-t pt-6">
@@ -192,13 +192,16 @@ export default function AdminSettingsPage() {
                     <span className="text-xs text-gray-400">{setting.key === 'logo' || setting.key === 'themeColor' ? 'saved instantly' : 'auto-saved on blur'}</span>
                   </div>
 
-                  {setting.key === 'featuredProducts' || setting.key === 'todaysOffers' ? (
-                     <ProductSelector
-                       value={setting.value}
-                       onChange={(v) => handleSave(setting.key, v)}
-                       label={setting.key === 'featuredProducts' ? 'Featured Products' : "Today's Offers"}
-                     />
-                   ) : setting.key === 'logo' ? (
+{setting.key === 'heroSubtitle' ? (
+                    <textarea
+                      value={setting.value}
+                      onChange={(e) => handleInputChange(setting.key, e.target.value)}
+                      onBlur={(e) => handleSave(setting.key, e.target.value)}
+                      placeholder="Enter hero subtitle..."
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  ) : setting.key === 'logo' ? (
                     <div className="flex flex-col gap-2 mt-2">
                       <input
                         type="text"

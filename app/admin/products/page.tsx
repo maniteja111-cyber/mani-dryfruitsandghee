@@ -624,6 +624,9 @@ export default function AdminProductsPage() {
                   Stock
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Category
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -647,6 +650,15 @@ export default function AdminProductsPage() {
                     {product.stock >= 1000000 ? (product.stock / 1000000) + ' tons' 
                      : product.stock >= 1000 ? (product.stock / 1000) + ' kg' 
                      : product.stock + ' g'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex flex-col gap-1">
+                      <span className={`inline-block px-2 py-0.5 text-xs rounded-full ${product.isVisible ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                        {product.isVisible ? 'Visible' : 'Hidden'}
+                      </span>
+                      {product.isFeatured && <span className="text-xs text-yellow-600 font-medium">★ Featured</span>}
+                      {product.isTodayOffer && <span className="text-xs text-red-600 font-medium">🔥 Offer</span>}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {product.category.name}
