@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,57 +8,58 @@ datasource db {
 }
 
 model User {
-  id             String   @id @default(cuid())
-  phone          String   @unique
-  name           String?
-  email          String?
-  password       String?
-  address        String?
-  city           String?
-  state          String?
-  pincode        String?
-  loyaltyPoints  Int      @default(0)
-  referralCode   String?  @unique
-  referredBy     String?  // phone of who referred them
-  lastLoginDate  DateTime?
-  firstPurchase  Boolean  @default(false)
-  securityQuestion String?
-  securityAnswer String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  orders    Order[]
-  wishlist  Wishlist[]
+  id                String               @id @default(cuid())
+  phone             String               @unique
+  name              String?
+  email             String?
+  password          String?
+  address           String?
+  city              String?
+  state             String?
+  pincode           String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  loyaltyPoints     Int                  @default(0)
+  referralCode      String?              @unique
+  referredBy        String?
+  firstPurchase     Boolean              @default(false)
+  lastLoginDate     DateTime?
+  securityAnswer    String?
+  securityQuestion  String?
   pointTransactions LoyaltyTransaction[]
-  referralsMade     Referral[] @relation("Referrer")
-  referralsReceived Referral[] @relation("Referred")
+  orders            Order[]
+  referralsReceived Referral[]           @relation("Referred")
+  referralsMade     Referral[]           @relation("Referrer")
+  wishlist          Wishlist[]
 
   @@map("users")
 }
 
 model LoyaltyTransaction {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  points    Int      // positive = earned, negative = redeemed
-  type      String   // "purchase", "referral", "daily_login", "first_purchase", "redeemed", "welcome_bonus", "manual"
+  id          String   @id @default(cuid())
+  userId      String
+  points      Int
+  type        String
   description String?
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId], map: "loyalty_transactions_userId_fkey")
   @@map("loyalty_transactions")
 }
 
 model Referral {
-  id          String   @id @default(cuid())
-  referrerId  String
-  referrer    User     @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  referrerId    String
   referredPhone String
-  referred    User?    @relation("Referred", fields: [referredPhone], references: [phone])
-  status      String   @default("pending") // pending, completed, rewarded
-  pointsAwarded Boolean @default(false)
-  createdAt   DateTime @default(now())
+  status        String   @default("pending")
+  pointsAwarded Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  referred      User     @relation("Referred", fields: [referredPhone], references: [phone])
+  referrer      User     @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
 
   @@unique([referrerId, referredPhone])
+  @@index([referredPhone], map: "referrals_referredPhone_fkey")
   @@map("referrals")
 }
 
@@ -73,90 +71,91 @@ model Category {
   image       String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  products Product[]
+  products    Product[]
 
   @@map("categories")
 }
 
 model Product {
-  id            String   @id @default(cuid())
-  name          String
-  slug          String   @unique
-  description   String?
-  price         Float    // Base price (deprecated, use variants)
-  discountPrice Float?   // Base discount (deprecated)
-  stock             Int      @default(0)
-  measurementType String   @default("quantity")   // "quantity" | "weight"
-  images            Json     // Array of image URLs
-  variants          Json?    // Array of {size: "250g", price: 100, discountPrice?: 90, weightGrams?: 250, pieces?: 1}
-  categoryId    String
-  category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  isFeatured    Boolean  @default(false)
-  isTodayOffer  Boolean  @default(false)
-  isVisible     Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String      @id @default(cuid())
+  name            String
+  slug            String      @unique
+  description     String?
+  price           Float
+  discountPrice   Float?
+  stock           Int         @default(0)
+  images          String      @db.LongText
+  variants        String?     @db.LongText
+  categoryId      String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  measurementType String      @default("quantity")
+  isFeatured      Boolean     @default(false)
+  isTodayOffer    Boolean     @default(false)
+  isVisible       Boolean     @default(true)
+  orderItems      OrderItem[]
+  category        Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  reviews         Review[]
+  wishlist        Wishlist[]
 
-  orderItems OrderItem[]
-  wishlist   Wishlist[]
-  reviews    Review[]
-
+  @@index([categoryId], map: "products_categoryId_fkey")
   @@map("products")
 }
 
 model Order {
-  id               String      @id @default(cuid())
-  userId           String
-  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  total            Float
-  status           String      @default("pending") // pending, confirmed, shipped, delivered, cancelled
-  paymentMethod    String      // razorpay or cod
-  razorpayOrderId  String?
+  id                String      @id @default(cuid())
+  userId            String
+  total             Float
+  status            String      @default("pending")
+  paymentMethod     String
+  razorpayOrderId   String?
   razorpayPaymentId String?
-  name             String
-  phone            String
-  address          String
-  city             String
-  state            String
-  pincode          String
-  couponCode       String?
-  discount         Float       @default(0)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  name              String
+  phone             String
+  address           String
+  city              String
+  state             String
+  pincode           String
+  couponCode        String?
+  discount          Float       @default(0)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  orderItems        OrderItem[]
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  orderItems       OrderItem[]
-
+  @@index([userId], map: "orders_userId_fkey")
   @@map("orders")
 }
 
 model OrderItem {
   id        String  @id @default(cuid())
   orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   quantity  Int
-  price     Float   // Price at the time of order
-  variant   Json?   // Stores the selected variant { size: "250g", price: 180, weightGrams?: 250, ... }
+  price     Float
+  variant   String? @db.LongText
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([orderId], map: "order_items_orderId_fkey")
+  @@index([productId], map: "order_items_productId_fkey")
   @@map("order_items")
 }
 
 model Coupon {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  discountType String  // percent or fixed
-  value       Float
-  minOrder    Float?
-  maxDiscount Float?
-  expiry      DateTime?
-  isActive    Boolean  @default(true)
-  usageLimit  Int?     // max total uses
-  perUserLimit Int?    // max uses per user
-  usedCount   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String    @id @default(cuid())
+  code         String    @unique
+  discountType String
+  value        Float
+  minOrder     Float?
+  expiry       DateTime?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  maxDiscount  Float?
+  perUserLimit Int?
+  usageLimit   Int?
+  usedCount    Int       @default(0)
 
   @@map("coupons")
 }
@@ -183,19 +182,19 @@ model Setting {
 model Wishlist {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
+  @@index([productId], map: "wishlists_productId_fkey")
   @@map("wishlists")
 }
 
 model Review {
   id        String   @id @default(cuid())
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   name      String
   phone     String
   rating    Int      @default(5)
@@ -203,6 +202,8 @@ model Review {
   approved  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([productId], map: "reviews_productId_fkey")
   @@map("reviews")
 }
