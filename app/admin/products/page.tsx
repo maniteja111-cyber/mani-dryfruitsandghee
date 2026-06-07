@@ -11,6 +11,9 @@ interface Product {
   discountPrice?: number
   stock: number
   category: { name: string }
+  isFeatured: boolean
+  isTodayOffer: boolean
+  isVisible: boolean
 }
 
 interface Category {
@@ -33,7 +36,10 @@ export default function AdminProductsPage() {
     stock: '',
     images: [] as string[],
     categoryId: '',
-    measurementType: 'quantity' as 'quantity' | 'weight'
+    measurementType: 'quantity' as 'quantity' | 'weight',
+    isFeatured: false,
+    isTodayOffer: false,
+    isVisible: true
   })
 
   // User-friendly variants editor
@@ -88,7 +94,10 @@ export default function AdminProductsPage() {
         ...formData,
         images: formData.images.filter(Boolean),
         variants: cleanVariants.length > 0 ? cleanVariants : null,
-        measurementType: formData.measurementType
+        measurementType: formData.measurementType,
+        isFeatured: formData.isFeatured,
+        isTodayOffer: formData.isTodayOffer,
+        isVisible: formData.isVisible
       }
 
       const url = editingProduct ? `/api/admin/products/${editingProduct.id}` : '/api/admin/products'
@@ -141,7 +150,10 @@ export default function AdminProductsPage() {
       stock: product.stock.toString(),
       images: loadedImages,
       categoryId: product.categoryId,
-      measurementType: (product.measurementType as 'quantity' | 'weight') || 'quantity'
+      measurementType: (product.measurementType as 'quantity' | 'weight') || 'quantity',
+      isFeatured: product.isFeatured || false,
+      isTodayOffer: product.isTodayOffer || false,
+      isVisible: product.isVisible !== false
     })
 
     // Load variants into nice editor
@@ -213,7 +225,10 @@ export default function AdminProductsPage() {
       stock: '',
       images: ['', '', ''],
       categoryId: '',
-      measurementType: 'quantity'
+      measurementType: 'quantity',
+      isFeatured: false,
+      isTodayOffer: false,
+      isVisible: true
     })
     setVariants([])
   }
@@ -556,6 +571,40 @@ export default function AdminProductsPage() {
                 >
                   Cancel
                 </button>
+              </div>
+
+              {/* Display Options */}
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <h3 className="text-lg font-semibold text-gray-800">Display Options</h3>
+                <div className="flex gap-6">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.isFeatured}
+                      onChange={(e) => setFormData(prev => ({ ...prev, isFeatured: e.target.checked }))}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm">Featured Product</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.isTodayOffer}
+                      onChange={(e) => setFormData(prev => ({ ...prev, isTodayOffer: e.target.checked }))}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm">Today's Offer</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.isVisible}
+                      onChange={(e) => setFormData(prev => ({ ...prev, isVisible: e.target.checked }))}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-sm">Visible on Site</span>
+                  </label>
+                </div>
               </div>
             </form>
           </div>

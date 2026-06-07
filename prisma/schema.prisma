@@ -92,6 +92,9 @@ model Product {
   variants          Json?    // Array of {size: "250g", price: 100, discountPrice?: 90, weightGrams?: 250, pieces?: 1}
   categoryId    String
   category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  isFeatured    Boolean  @default(false)
+  isTodayOffer  Boolean  @default(false)
+  isVisible     Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

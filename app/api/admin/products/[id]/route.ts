@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params
-    const { name, slug, description, price, discountPrice, stock, images, categoryId, variants, measurementType } = await req.json()
+    const { name, slug, description, price, discountPrice, stock, images, categoryId, variants, measurementType, isFeatured, isTodayOffer, isVisible } = await req.json()
 
     let cleanSlug = (slug || name || 'product')
       .toLowerCase()
@@ -27,7 +27,10 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
         measurementType: measurementType || 'quantity',
         images: JSON.stringify(images || []),
         variants: variants || null,
-        categoryId
+        categoryId,
+        isFeatured: isFeatured || false,
+        isTodayOffer: isTodayOffer || false,
+        isVisible: isVisible !== false
       },
       include: { category: true }
     })

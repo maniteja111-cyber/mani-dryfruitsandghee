@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# uploaded images (use external storage like Cloudinary)
+/public/uploads/

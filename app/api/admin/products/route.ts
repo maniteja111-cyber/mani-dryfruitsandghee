@@ -16,9 +16,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, slug, description, price, discountPrice, stock, images, categoryId, variants, measurementType } = await req.json()
+    const { name, slug, description, price, discountPrice, stock, images, categoryId, variants, measurementType, isFeatured, isTodayOffer, isVisible } = await req.json()
 
-    // Always sanitize the slug to prevent spaces and invalid characters in URLs
     let cleanSlug = (slug || name || 'product')
       .toLowerCase()
       .trim()
@@ -38,7 +37,10 @@ export async function POST(req: NextRequest) {
         measurementType: measurementType || 'quantity',
         images: JSON.stringify(images || []),
         variants: variants || null,
-        categoryId
+        categoryId,
+        isFeatured: isFeatured || false,
+        isTodayOffer: isTodayOffer || false,
+        isVisible: isVisible !== false
       },
       include: { category: true }
     })

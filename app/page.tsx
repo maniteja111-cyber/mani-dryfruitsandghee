@@ -24,43 +24,23 @@ export const metadata = {
 
 async function getHomeData() {
   try {
-    const [settingsData, categories, allProducts, topReviews] = await Promise.all([
+    const [settingsData, categories, featuredProducts, todaysOffers, topReviews] = await Promise.all([
       prisma.setting.findMany(),
       prisma.category.findMany({ orderBy: { createdAt: 'desc' } }),
-      prisma.product.findMany({ include: { category: true }, orderBy: { createdAt: 'desc' } }),
-prisma.review.findMany({
-         where: { approved: true },
-         orderBy: { createdAt: 'desc' },
-         take: 3,
-         include: { product: { select: { name: true, slug: true } } }
-       })
+      prisma.product.findMany({ where: { isFeatured: true }, include: { category: true }, orderBy: { createdAt: 'desc' } }),
+      prisma.product.findMany({ where: { isTodayOffer: true }, include: { category: true }, orderBy: { createdAt: 'desc' } }),
+      prisma.review.findMany({
+        where: { approved: true },
+        orderBy: { createdAt: 'desc' },
+        take: 3,
+        include: { product: { select: { name: true, slug: true } } }
+      })
     ])
 
     const settingsObj = settingsData.reduce((acc, setting) => {
       acc[setting.key] = setting.value
       return acc
     }, {} as Record<string, string>)
-
-    // Parse featured and offers
-    let featuredIds = []
-    let offerIds = []
-    try {
-      featuredIds = settingsObj.featuredProducts ? JSON.parse(settingsObj.featuredProducts) : []
-    } catch {}
-    try {
-      offerIds = settingsObj.todaysOffers ? JSON.parse(settingsObj.todaysOffers) : []
-    } catch {}
-
-    // Default to first 4 products if not configured
-    if (featuredIds.length === 0) {
-      featuredIds = allProducts.slice(0, 4).map(p => p.id)
-    }
-    if (offerIds.length === 0) {
-      offerIds = allProducts.slice(0, 4).map(p => p.id)
-    }
-
-    const featuredProducts = allProducts.filter(p => featuredIds.includes(p.id))
-    const todaysOffers = allProducts.filter(p => offerIds.includes(p.id))
 
     return { settings: settingsObj, categories, featuredProducts, todaysOffers, topReviews }
   } catch (error) {
