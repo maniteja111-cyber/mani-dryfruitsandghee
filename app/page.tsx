@@ -6,7 +6,7 @@ import TodaysOffers from '@/components/TodaysOffers'
 import WhyChooseUs from '@/components/WhyChooseUs'
 import Testimonials from '@/components/Testimonials'
 import TopReviews from '@/components/TopReviews'
-import WhatsAppButton from '@/components/WhatsAppButton'
+import RewardsButton from '@/components/RewardsButton'
 import Footer from '@/components/Footer'
 import { prisma } from '@/lib/prisma'
 
@@ -86,7 +86,7 @@ export default async function Home() {
         <Testimonials />
       </main>
       <Footer settings={settings} />
-      <WhatsAppButton phone={settings.whatsappNumber || '9515019393'} />
+      <RewardsButton phone={settings.whatsappNumber || '9515019393'} />
     </div>
   )
 }

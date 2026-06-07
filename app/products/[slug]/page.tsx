@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import WhatsAppButton from '@/components/WhatsAppButton'
+import RewardsButton from '@/components/RewardsButton'
 import ProductDetail from '@/components/ProductDetail'
 import { prisma } from '@/lib/prisma'
 
@@ -96,7 +96,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <ProductDetail product={product} settings={settings} />
         </main>
         <Footer settings={settings} />
-        <WhatsAppButton phone={settings.whatsappNumber || '1234567890'} />
+        <RewardsButton phone={settings.whatsappNumber || '1234567890'} />
       </div>
     </>
   )

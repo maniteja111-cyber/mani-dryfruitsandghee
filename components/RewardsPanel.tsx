@@ -38,6 +38,12 @@ export default function RewardsPanel({ isOpen, onClose }: RewardsPanelProps) {
     return () => { document.body.style.overflow = '' }
   }, [isOpen])
 
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
   const fetchUserData = async (phone: string) => {
     try {
       const res = await fetch(`/api/users?phone=${phone}`)
