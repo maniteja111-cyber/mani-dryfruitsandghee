@@ -14,15 +14,31 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Create uploads directory if it doesn't exist
+    let processedBuffer: Buffer = buffer
+    let filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`
+
+    if (filename.endsWith('.jpg') || filename.endsWith('.jpeg') || filename.endsWith('.png') || filename.endsWith('.webp')) {
+      try {
+        const sharp = (await import('sharp')).default
+        const format = filename.endsWith('.webp') ? 'webp' : filename.endsWith('.png') ? 'png' : 'jpeg'
+        const quality = format === 'png' ? 80 : 75
+        
+        processedBuffer = await sharp(Buffer.from(bytes))
+          .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+          .toFormat(format as 'jpeg' | 'png' | 'webp', { quality })
+          .toBuffer() as Buffer
+        
+        filename = filename.replace(/\.[^/.]+$/, `.${format}`)
+      } catch (sharpError) {
+        console.warn('Sharp processing failed, using original:', sharpError)
+      }
+    }
+
     const uploadsDir = join(process.cwd(), 'public', 'uploads')
     await mkdir(uploadsDir, { recursive: true })
 
-    // Generate unique filename
-    const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`
     const filepath = join(uploadsDir, filename)
-
-    await writeFile(filepath, buffer)
+    await writeFile(filepath, processedBuffer)
 
     const imageUrl = `/uploads/${filename}`
 
