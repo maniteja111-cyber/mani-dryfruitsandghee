@@ -28,6 +28,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ### Image Upload
 - Auto-compression: Resize to 1200px max, compress to ~100kb
 - Uses sharp library
+- **Cloudinary integration:** Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` in `.env` to store images on Cloudinary instead of local storage
+- Without Cloudinary config, images are stored locally in `public/uploads/`
 
 ## Recent Changes
 - Removed Banner slider from homepage
