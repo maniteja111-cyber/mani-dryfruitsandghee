@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
-import { v4 as uuidv4 } from 'uuid'
+import { uploadToCloudinary } from '@/lib/cloudinary'
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,17 +14,32 @@ export async function POST(req: NextRequest) {
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
+    const filename = file.name.replace(/[^a-zA-Z0-9.]/g, '')
 
-    const uploadsDir = join(process.cwd(), 'public', 'uploads')
-    await mkdir(uploadsDir, { recursive: true })
+    let url: string
 
-    const ext = file.name.split('.').pop()
-    const filename = `${uuidv4()}.${ext}`
-    const filepath = join(uploadsDir, filename)
+    if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+      try {
+        url = await uploadToCloudinary(buffer, filename)
+      } catch (uploadError) {
+        console.warn('Cloudinary upload failed, falling back to local:', uploadError)
+        const uploadsDir = join(process.cwd(), 'public', 'uploads')
+        await mkdir(uploadsDir, { recursive: true })
+        const localFilename = `${Date.now()}-${filename}`
+        const filepath = join(uploadsDir, localFilename)
+        await writeFile(filepath, buffer)
+        url = `/uploads/${localFilename}`
+      }
+    } else {
+      const uploadsDir = join(process.cwd(), 'public', 'uploads')
+      await mkdir(uploadsDir, { recursive: true })
+      const localFilename = `${Date.now()}-${filename}`
+      const filepath = join(uploadsDir, localFilename)
+      await writeFile(filepath, buffer)
+      url = `/uploads/${localFilename}`
+    }
 
-    await writeFile(filepath, buffer)
-
-    return NextResponse.json({ url: `/uploads/${filename}` })
+    return NextResponse.json({ url })
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
