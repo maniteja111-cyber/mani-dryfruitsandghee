@@ -1,3 +1,6 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 interface FooterProps {
@@ -5,6 +8,15 @@ interface FooterProps {
 }
 
 export default function Footer({ settings }: FooterProps) {
+  const [totalVisits, setTotalVisits] = useState(0)
+
+  useEffect(() => {
+    fetch('/api/visits', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => setTotalVisits(data.totalVisits || 0))
+      .catch(() => {})
+  }, [])
+
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -21,7 +33,7 @@ export default function Footer({ settings }: FooterProps) {
             <ul className="space-y-2 text-sm">
               <li><Link href="/" className="text-gray-300 hover:text-white">Home</Link></li>
               <li><Link href="/products" className="text-gray-300 hover:text-white">Products</Link></li>
-              <li><Link href="/cart" className="text-gray-300 hover:text-white">Cart</Link></li>
+              <li><Link href="/categories" className="text-gray-300 hover:text-white">Categories</Link></li>
               <li><Link href="/contact" className="text-gray-300 hover:text-white">Contact</Link></li>
             </ul>
           </div>
@@ -30,12 +42,13 @@ export default function Footer({ settings }: FooterProps) {
             <div className="text-sm text-gray-300 space-y-2">
               <p>📞 {settings.phone || '+91 9515019393'}</p>
               <p>✉️ {settings.email || 'manidgs9393@gmail.com'}</p>
-              <p>📍 {settings.address ? settings.address.split(',')[0] : 'Hyderabad'}</p>
+              <p>📍 Hyderabad, Telangana</p>
             </div>
           </div>
           <div className="text-center">
-            <h4 className="text-md font-semibold mb-4">Follow Us</h4>
-            <p className="text-sm text-gray-300">Stay connected for updates and offers</p>
+            <h4 className="text-md font-semibold mb-4">Site Stats</h4>
+            <p className="text-2xl font-bold text-yellow-400">{totalVisits.toLocaleString()}</p>
+            <p className="text-sm text-gray-400">Total Visitors</p>
           </div>
         </div>
 

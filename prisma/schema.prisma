@@ -206,3 +206,11 @@ model Review {
 
   @@map("reviews")
 }
+
+model SiteVisit {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now())
+  count     Int      @default(0)
+
+  @@map("site_visits")
+}
