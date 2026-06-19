@@ -30,11 +30,9 @@ export async function GET(req: NextRequest) {
             id: true,
             name: true,
             slug: true,
-            price: true,
-            discountPrice: true,
-            images: true,
-            stock: true,
-            measurementType: true
+            pricePerKg: true,
+            stockGrams: true,
+            images: true
           }
         }
       }

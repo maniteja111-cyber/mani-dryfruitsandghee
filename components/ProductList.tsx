@@ -10,12 +10,10 @@ interface Product {
   id: string
   name: string
   slug: string
-  price: number
-  discountPrice?: number | null
+  pricePerKg: number | null
+  stockGrams: number
   images: string[] | any
-  stock: number
   category: { name: string }
-  variants?: any
 }
 
 interface Category {
@@ -193,92 +191,103 @@ export default function ProductList({ initialProducts, categories, searchParams,
                 images = product.images && typeof product.images === 'string' && product.images.trim() ? [product.images] : []
               }
 
-              let variants = []
-              try {
-                variants = product.variants || []
-              } catch {}
+              const VARIANTS = [
+        { size: '125g', grams: 125 },
+        { size: '250g', grams: 250 },
+        { size: '500g', grams: 500 },
+        { size: '1kg', grams: 1000 }
+      ]
 
-              const selectedVariant = selectedVariants[product.id] || variants[0] || { size: 'Standard', price: product.price, discountPrice: product.discountPrice }
-              const currentPrice = selectedVariant.discountPrice || selectedVariant.price
-              const originalPrice = selectedVariant.price
+      function calculatePrice(basePricePerKg: number | null, grams: number): number {
+        if (!basePricePerKg) return 0
+        if (grams === 500) return Math.round(basePricePerKg * 0.56)
+        if (grams === 250) return Math.round(basePricePerKg * 0.31)
+        if (grams === 125) return Math.round(basePricePerKg * 0.19)
+        return Math.round(basePricePerKg)
+      }
 
-              return (
-                <div key={product.id} className="bg-white rounded-2xl shadow p-4 group">
-                  <div className="relative">
-                    {images && images.length > 0 ? (
-                      <img
-                        src={images[0]}
-                        alt={product.name}
-                        className="h-40 w-full object-cover rounded-xl group-hover:scale-[1.02] transition"
-                      />
-                    ) : (
-                      <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
-                        <span className="text-gray-500">No Image</span>
-                      </div>
-                    )}
+      const availableVariants = VARIANTS.filter(v => product.stockGrams >= v.grams)
+      const selectedVariant = selectedVariants[product.id] || availableVariants[0] || VARIANTS[3]
+      const price = calculatePrice(product.pricePerKg, selectedVariant.grams)
+      const inStock = product.stockGrams > 0
 
-                    <button
-                      onClick={() => toggleWishlist(product.id)}
-                      className="absolute top-3 right-3 p-1.5 bg-white/90 rounded-full shadow hover:bg-white"
-                    >
-                      <span className="text-lg" style={{ color: wishlist.includes(product.id) ? (settings.themeColor || '#ef4444') : '#9ca3af' }}>
-                        {wishlist.includes(product.id) ? '♥' : '♡'}
-                      </span>
-                    </button>
-                  </div>
-                  {product.stock === 0 && (
-                    <div className="mt-2 text-center">
-                      <span className="bg-red-500 text-white px-2 py-1 text-xs rounded">Out of Stock</span>
-                    </div>
-                  )}
-                  <select
-                    value={selectedVariant.size}
-                    onChange={(e) => {
-                      const variant = variants.find((v: any) => v.size === e.target.value) || { size: 'Standard', price: product.price, discountPrice: product.discountPrice }
-                      setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
-                    }}
-                    className="w-full mt-2 border border-gray-300 rounded px-2 py-1 text-sm"
-                  >
-                    {(variants.length > 0 ? variants : [{ size: 'Standard', price: product.price, discountPrice: product.discountPrice }]).map((variant: any) => (
-                      <option key={variant.size} value={variant.size}>
-                        {variant.size} - ₹{variant.discountPrice || variant.price}
-                      </option>
-                    ))}
-                  </select>
-                  <h3 className="font-bold mt-3">{product.name}</h3>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <p className="font-bold text-xl">₹{currentPrice}</p>
-                    {(selectedVariant.discountPrice && originalPrice !== currentPrice) && (
-                      <p className="text-sm text-gray-500 line-through">₹{originalPrice}</p>
-                    )}
-                  </div>
-                  <div className="flex space-x-2 mt-3">
-                      <button
-                        onClick={() => addItem({
-                          id: product.id + (selectedVariant ? `-${selectedVariant.size}` : ''),
-                          productId: product.id,
-                          name: `${product.name}${selectedVariant ? ` (${selectedVariant.size})` : ''}`,
-                          slug: product.slug,
-                          price: selectedVariant.price,
-                          discountPrice: selectedVariant.discountPrice,
-                          images: images,
-                          selectedVariant
-                        })}
-                        style={{ backgroundColor: settings.themeColor || '#3b82f6' }}
-                        className="flex-1 text-white px-3 py-2 rounded-lg font-bold text-sm hover:opacity-90"
-                      >
-                        Add to Cart
-                      </button>
-                      <a
-                        style={{ backgroundColor: settings.themeColor || '#FFD60A' }}
-                        className="flex-1 text-black px-3 py-2 rounded-lg font-bold text-sm text-center hover:opacity-90"
-                        href={`/products/${product.slug}`}
-                      >
-                        View
-                      </a>
-                  </div>
-                </div>
-              )
+      return (
+        <div key={product.id} className="bg-white rounded-2xl shadow p-4 group">
+          <div className="relative">
+            {images && images.length > 0 ? (
+              <img
+                src={images[0]}
+                alt={product.name}
+                className="h-40 w-full object-cover rounded-xl group-hover:scale-[1.02] transition"
+              />
+            ) : (
+              <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
+                <span className="text-gray-500">No Image</span>
+              </div>
+            )}
+
+            <button
+              onClick={() => toggleWishlist(product.id)}
+              className="absolute top-3 right-3 p-1.5 bg-white/90 rounded-full shadow hover:bg-white"
+            >
+              <span className="text-lg" style={{ color: wishlist.includes(product.id) ? (settings.themeColor || '#ef4444') : '#9ca3af' }}>
+                {wishlist.includes(product.id) ? '♥' : '♡'}
+              </span>
+            </button>
+          </div>
+          {!inStock && (
+            <div className="mt-2 text-center">
+              <span className="bg-red-500 text-white px-2 py-1 text-xs rounded">Out of Stock</span>
+            </div>
+          )}
+          <select
+            value={selectedVariant.size}
+            onChange={(e) => {
+              const variant = availableVariants.find((v) => v.size === e.target.value) || availableVariants[0]
+              setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
+            }}
+            className="w-full mt-2 border border-gray-300 rounded px-2 py-1 text-sm"
+          >
+            {availableVariants.map((variant) => (
+              <option key={variant.size} value={variant.size}>
+                {variant.size} - ₹{calculatePrice(product.pricePerKg, variant.grams)}
+              </option>
+            ))}
+            {availableVariants.length === 0 && (
+              <option value="">Out of Stock</option>
+            )}
+          </select>
+          <h3 className="font-bold mt-3">{product.name}</h3>
+          <div className="flex items-center space-x-2 mt-1">
+            <p className="font-bold text-xl">₹{price}</p>
+          </div>
+          <div className="flex space-x-2 mt-3">
+            <button
+              onClick={() => addItem({
+                id: product.id + `-${selectedVariant.size}`,
+                productId: product.id,
+                name: `${product.name} (${selectedVariant.size})`,
+                slug: product.slug,
+                price,
+                images: images,
+                selectedVariant
+              })}
+              style={{ backgroundColor: settings.themeColor || '#3b82f6' }}
+              className={`flex-1 text-white px-3 py-2 rounded-lg font-bold text-sm hover:opacity-90 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={!inStock}
+            >
+              Add to Cart
+            </button>
+            <a
+              style={{ backgroundColor: settings.themeColor || '#FFD60A' }}
+              className="flex-1 text-black px-3 py-2 rounded-lg font-bold text-sm text-center hover:opacity-90"
+              href={`/products/${product.slug}`}
+            >
+              View
+            </a>
+          </div>
+        </div>
+      )
             })}
           </div>
         )}

@@ -30,28 +30,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Product not found` }, { status: 400 })
     }
 
-    const measurementType = product.measurementType || 'quantity'
     const variant = item.selectedVariant || {}
 
     let required = 0
-    if (measurementType === 'weight') {
-      // Try weightGrams first, then parse from size (e.g., "250g" -> 250)
-      if (variant.weightGrams) {
-        required = variant.weightGrams * (item.quantity || 1)
-      } else if (variant.size) {
-        const match = variant.size.match(/(\d+)\s*(g|kg|gm)/i)
-        if (match) {
-          let weight = parseInt(match[1])
-          if (match[2].toLowerCase() === 'kg') weight = weight * 1000
-          required = weight * (item.quantity || 1)
-        }
+    if (variant.size) {
+      const match = variant.size.match(/(\d+)\s*(g|kg|gm)/i)
+      if (match) {
+        let weight = parseInt(match[1])
+        if (match[2].toLowerCase() === 'kg') weight = weight * 1000
+        required = weight * (item.quantity || 1)
       }
     } else {
       required = (variant.pieces || 1) * (item.quantity || 1)
     }
 
-    if (required > product.stock) {
-      const stockDisplay = product.stock >= 1000 ? `${product.stock / 1000}kg` : `${product.stock}g`
+    const stockGrams = product.stockGrams
+    if (required > 0 && required > stockGrams) {
+      const stockDisplay = stockGrams >= 1000 ? `${stockGrams / 1000}kg` : `${stockGrams}g`
       return NextResponse.json({ 
         error: `Not enough stock for "${product.name}". Only ${stockDisplay} available.` 
       }, { status: 400 })
@@ -179,21 +174,15 @@ export async function POST(req: NextRequest) {
       const product = await prisma.product.findUnique({ where: { id: realProductId } })
       if (!product) continue
 
-      const measurementType = product.measurementType || 'quantity'
       const variant = item.selectedVariant || {}
 
       let deduction = 0
-      if (measurementType === 'weight') {
-        // Try weightGrams first, then parse from size (e.g., "250g" -> 250)
-        if (variant.weightGrams) {
-          deduction = variant.weightGrams * (item.quantity || 1)
-        } else if (variant.size) {
-          const match = variant.size.match(/(\d+)\s*(g|kg|gm)/i)
-          if (match) {
-            let weight = parseInt(match[1])
-            if (match[2].toLowerCase() === 'kg') weight = weight * 1000
-            deduction = weight * (item.quantity || 1)
-          }
+      if (variant.size) {
+        const match = variant.size.match(/(\d+)\s*(g|kg|gm)/i)
+        if (match) {
+          let weight = parseInt(match[1])
+          if (match[2].toLowerCase() === 'kg') weight = weight * 1000
+          deduction = weight * (item.quantity || 1)
         }
       } else {
         deduction = (variant.pieces || 1) * (item.quantity || 1)
@@ -202,7 +191,7 @@ export async function POST(req: NextRequest) {
       if (deduction > 0) {
         await prisma.product.update({
           where: { id: realProductId },
-          data: { stock: Math.max(0, product.stock - deduction) }
+          data: { stockGrams: Math.max(0, product.stockGrams - deduction) }
         })
       }
     }

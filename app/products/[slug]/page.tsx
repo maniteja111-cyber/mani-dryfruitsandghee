@@ -91,8 +91,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { settings, product, relatedProducts } = await getData(resolvedParams.slug)
 
   const productImages = Array.isArray(product.images) ? product.images.map(String) : []
-  const price = product.discountPrice || product.price
+  const price = product.pricePerKg || 0
   const categoryName = product.category?.name || 'Product'
+  const stockGrams = product.stockGrams
+  const inStock = product.stockGrams > 0
   const reviews = await prisma.review.findMany({
     where: { productId: product.id, approved: true },
     orderBy: { createdAt: 'desc' }
@@ -118,7 +120,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       url: `https://manidryfruitsandghee.in/products/${product.slug}`,
       priceCurrency: 'INR',
       price: price,
-      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       seller: {
         '@type': 'Organization',
         name: 'MANI DRY FRUITS, PICKLES AND GHEE STORES'

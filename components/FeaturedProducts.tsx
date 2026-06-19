@@ -9,12 +9,10 @@ interface Product {
   id: string
   name: string
   slug: string
-  price: number
-  discountPrice?: number | null
+  pricePerKg: number | null
+  stockGrams: number
   images: any
-  stock: number
   category?: { name: string }
-  variants?: any
 }
 
 interface FeaturedProductsProps {
@@ -24,6 +22,21 @@ interface FeaturedProductsProps {
 }
 
 export default function FeaturedProducts({ products, title = "⭐ Featured Products", settings }: FeaturedProductsProps) {
+  const VARIANTS = [
+    { size: '125g', grams: 125 },
+    { size: '250g', grams: 250 },
+    { size: '500g', grams: 500 },
+    { size: '1kg', grams: 1000 }
+  ]
+
+  function calculatePrice(basePricePerKg: number | null, grams: number): number {
+    if (!basePricePerKg) return 0
+    if (grams === 500) return Math.round(basePricePerKg * 0.56)
+    if (grams === 250) return Math.round(basePricePerKg * 0.31)
+    if (grams === 125) return Math.round(basePricePerKg * 0.19)
+    return Math.round(basePricePerKg)
+  }
+
   const [selectedVariants, setSelectedVariants] = useState<Record<string, any>>({})
   const [wishlist, setWishlist] = useState<string[]>([])
   const { addItem } = useCart()
@@ -77,7 +90,7 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">{title}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {products.map((product) => {
+          {products.map((product) => {
               let images = []
               if (product.images) {
                 if (typeof product.images === 'string') {
@@ -91,32 +104,27 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
               }
               const imageSrc = images[0]?.url || images[0] || ''
 
-              let variants = []
-              if (product.variants) {
-                if (typeof product.variants === 'string') {
-                  try { variants = JSON.parse(product.variants) } catch {}
-                } else {
-                  variants = product.variants
-                }
-              }
-              const selectedVariant = selectedVariants[product.id] || variants[0]
+              const availableVariants = VARIANTS.filter(v => product.stockGrams >= v.grams)
+              const selectedVariant = selectedVariants[product.id] || availableVariants[0] || VARIANTS[3]
+              const price = calculatePrice(product.pricePerKg, selectedVariant.grams)
+              const stockKg = Math.round(product.stockGrams / 1000)
+              const inStock = product.stockGrams > 0
 
-return (
-                 <div key={product.id} className="bg-white rounded-2xl shadow hover:shadow-lg transition-all p-4 group">
-                   <div className="relative">
-                     {images && images.length > 0 ? (
-                       <img
-                         src={imageSrc}
-                         alt={product.name}
-                         className="h-40 w-full object-cover rounded-xl group-hover:scale-[1.02] transition-transform"
-                       />
-                     ) : (
+              return (
+                <div key={product.id} className="bg-white rounded-2xl shadow hover:shadow-lg transition-all p-4 group">
+                  <div className="relative">
+                    {images && images.length > 0 ? (
+                      <img
+                        src={imageSrc}
+                        alt={product.name}
+                        className="h-40 w-full object-cover rounded-xl group-hover:scale-[1.02] transition-transform"
+                      />
+                    ) : (
                       <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
                         <span className="text-gray-500">No Image</span>
                       </div>
                     )}
 
-                    {/* Wishlist Heart */}
                     <button
                       onClick={() => toggleWishlist(product.id)}
                       className="absolute top-3 right-3 p-2 bg-white/90 rounded-full shadow hover:bg-white transition"
@@ -126,58 +134,49 @@ return (
                       </span>
                     </button>
                   </div>
-                  {product.stock === 0 && (
+                  {!inStock && (
                     <div className="mt-2 text-center">
                       <span className="bg-red-500 text-white px-2 py-1 text-xs rounded">Out of Stock</span>
                     </div>
                   )}
                   <h3 className="font-bold mt-3">{product.name}</h3>
 
-                  {/* Variant Select + Price */}
                   <select
                     value={selectedVariant?.size || ''}
                     onChange={(e) => {
-                      const variant = variants.find((v: any) => v.size === e.target.value) || { size: 'Standard', price: product.price, discountPrice: product.discountPrice }
+                      const variant = availableVariants.find((v) => v.size === e.target.value) || availableVariants[0]
                       setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
                     }}
                     className="w-full mt-2 border border-gray-300 rounded px-2 py-1 text-sm"
                   >
-                    {(variants.length > 0 ? variants : [{ size: 'Standard', price: product.price, discountPrice: product.discountPrice }]).map((variant: any) => (
+                    {availableVariants.map((variant) => (
                       <option key={variant.size} value={variant.size}>
-                        {variant.size} - ₹{variant.discountPrice || variant.price}
+                        {variant.size} - ₹{calculatePrice(product.pricePerKg, variant.grams)}
                       </option>
                     ))}
+                    {availableVariants.length === 0 && (
+                      <option value="">Out of Stock</option>
+                    )}
                   </select>
 
                   <div className="flex items-center space-x-2 mt-1">
-                    {(() => {
-                      const currentPrice = selectedVariant?.discountPrice || selectedVariant?.price || product.discountPrice || product.price
-                      const originalPrice = selectedVariant?.price || product.price
-                      return (
-                        <>
-                          <p className="font-bold text-xl">₹{currentPrice}</p>
-                          {((selectedVariant?.discountPrice || product.discountPrice) && originalPrice !== currentPrice) && (
-                            <p className="text-sm text-gray-500 line-through">₹{originalPrice}</p>
-                          )}
-                        </>
-                      )
-                    })()}
+                    <p className="font-bold text-xl">₹{price}</p>
                   </div>
 
                   <div className="flex space-x-2 mt-3">
                     <button
                       onClick={() => addItem({
-                        id: product.id + (selectedVariant ? `-${selectedVariant.size}` : ''),
+                        id: product.id + `-${selectedVariant.size}`,
                         productId: product.id,
-                        name: `${product.name}${selectedVariant ? ` (${selectedVariant.size})` : ''}`,
+                        name: `${product.name} (${selectedVariant.size})`,
                         slug: product.slug,
-                        price: selectedVariant?.price || product.price,
-                        discountPrice: selectedVariant?.discountPrice || product.discountPrice,
+                        price,
                         images: images,
                         selectedVariant
                       })}
                       style={{ backgroundColor: settings.themeColor || '#10b981' }}
-                      className="flex-1 text-white px-3 py-2.5 rounded-xl font-semibold text-sm transition hover:opacity-90"
+                      className={`flex-1 text-white px-3 py-2.5 rounded-xl font-semibold text-sm transition hover:opacity-90 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={!inStock}
                     >
                       Add to Cart
                     </button>

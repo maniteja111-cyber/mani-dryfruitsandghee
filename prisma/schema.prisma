@@ -80,37 +80,32 @@ model Category {
 }
 
 model Product {
-  id                String   @id @default(cuid())
-  name              String
-  slug              String   @unique
-  description       String?
-  shortDescription  String?
-  price             Float
-  discountPrice     Float?
-  stock             Int      @default(0)
-  measurementType   String   @default("quantity")
-  images            Json
-  variants          Json?
-  categoryId        String
-  category          Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  isFeatured        Boolean  @default(false)
-  isTodayOffer      Boolean  @default(false)
-  isVisible         Boolean  @default(true)
-  
-  productOverview       String?
-  whyChoose            String?
-  ingredients          String?
-  nutritionalInfo      String?
-  storageInstructions  String?
-  shelfLife            String?
-  origin               String?
-  benefits             String?
-  shippingInfo         String?
-  faqs                 Json?
-  seoKeywords          String?
-  
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  description   String?
+  shortDescription String?
+  pricePerKg    Float?
+  stockGrams    Int      @default(0)
+  images        Json
+  categoryId    String
+  category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  isFeatured    Boolean  @default(false)
+  isTodayOffer  Boolean  @default(false)
+  isVisible     Boolean  @default(true)
+  productOverview String?
+  whyChoose     String?
+  ingredients   String?
+  nutritionalInfo String?
+  storageInstructions String?
+  shelfLife     String?
+  origin        String?
+  benefits      String?
+  shippingInfo  String?
+  faqs          Json?
+  seoKeywords   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   orderItems OrderItem[]
   wishlist   Wishlist[]

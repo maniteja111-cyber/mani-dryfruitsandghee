@@ -11,14 +11,11 @@ interface Product {
   slug: string
   description: string | null
   shortDescription: string | null
-  price: number
-  discountPrice?: number | null
-  stock: number
+  pricePerKg: number | null
+  stockGrams: number
   images: string[] | any
   category?: { name: string }
   categoryId?: string
-  measurementType?: string
-  variants?: any
   origin?: string | null
   benefits?: string | null
   ingredients?: string | null
@@ -43,6 +40,23 @@ interface ProductDetailProps {
   relatedProducts?: Product[]
 }
 
+const VARIANTS = [
+  { size: '125g', grams: 125 },
+  { size: '250g', grams: 250 },
+  { size: '500g', grams: 500 },
+  { size: '1kg', grams: 1000 }
+]
+
+function calculatePrice(basePricePerKg: number | null, grams: number): number {
+  if (!basePricePerKg) return 0
+  const kgPrice = basePricePerKg
+  const price = (kgPrice * grams) / 1000
+  if (grams === 500) return Math.round(kgPrice * 0.56)
+  if (grams === 250) return Math.round(kgPrice * 0.31)
+  if (grams === 125) return Math.round(kgPrice * 0.19)
+  return Math.round(kgPrice)
+}
+
 export default function ProductDetail({ product, settings, relatedProducts = [] }: ProductDetailProps) {
   let images = []
   try {
@@ -51,14 +65,9 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
     images = product.images && typeof product.images === 'string' && product.images.trim() ? [product.images] : []
   }
 
-  let variants = []
-  try {
-    variants = product.variants || []
-  } catch {}
-
+  const [selectedVariant, setSelectedVariant] = useState(VARIANTS[3])
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
-  const [selectedVariant, setSelectedVariant] = useState(variants[0])
   const [inWishlist, setInWishlist] = useState(false)
   const [reviews, setReviews] = useState<Review[]>([])
   const [reviewCount, setReviewCount] = useState(0)
@@ -69,6 +78,9 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
   const [deliveryInfo, setDeliveryInfo] = useState<{available: boolean, days: string, cod: boolean, shipping: string} | null>(null)
   const [activeTab, setActiveTab] = useState('description')
   const { addItem } = useCart()
+
+  const stockKg = Math.round(product.stockGrams / 1000)
+  const stockGramsRemaining = product.stockGrams
 
   useEffect(() => {
     const saved = localStorage.getItem('wishlist')
@@ -168,15 +180,12 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
     setInWishlist(newState)
   }
 
-  const measurementType = product.measurementType || 'quantity'
-  const isWeight = measurementType === 'weight'
-  const price = selectedVariant?.discountPrice || selectedVariant?.price || product.discountPrice || product.price
-  const mrp = selectedVariant?.price || product.price
-  const savings = mrp - price
-  const savingsPercent = Math.round((savings / mrp) * 100)
+  const price = calculatePrice(product.pricePerKg, selectedVariant.grams)
+  const maxQuantity = Math.floor(stockGramsRemaining / selectedVariant.grams)
+  const maxKg = (maxQuantity * selectedVariant.grams / 1000).toFixed(2)
   const avgRating = reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) : 4.5
 
-  const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=Hi, I'm interested in ${product.name}. Quantity: ${quantity}. Please share details.`
+  const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=Hi, I'm interested in ${product.name} (${selectedVariant.size}). Quantity: ${quantity}. Please share details.`
 
   const ratingBreakdown = [5, 4, 3, 2, 1].map(rating => ({
     rating,
@@ -230,7 +239,7 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
 
             <div className="flex items-center gap-4 mb-6">
               <div className="flex items-center gap-1">
-                <span className="text-yellow-500 text-lg">{'★'.repeat(5)}</span>
+                <span className="text-yellow-500 text-lg">★★★★★</span>
                 <span className="text-gray-600 text-sm font-medium">{avgRating.toFixed(1)}</span>
               </div>
               <span className="text-gray-400">|</span>
@@ -240,13 +249,9 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
             <div className="mb-6">
               <div className="flex items-baseline gap-3 mb-2">
                 <span className="text-3xl font-bold text-gray-900">₹{price}</span>
-                {mrp > price && (
-                  <>
-                    <span className="text-xl text-gray-400 line-through">₹{mrp}</span>
-                    <span className="text-green-600 font-semibold">{savingsPercent}% off</span>
-                  </>
-                )}
+                <span className="text-gray-500 text-sm">({selectedVariant.size})</span>
               </div>
+              <p className="text-gray-600">Stock: {stockKg.toFixed(2)} kg available</p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
@@ -272,48 +277,30 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
               </div>
             </div>
 
-            {variants.length > 0 && (
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  {isWeight ? 'Select Weight' : 'Select Pack Size'}
-                </label>
-                <div className="flex flex-wrap gap-3">
-                  {variants.map((variant: any) => (
-                    <button
-                      key={variant.size}
-                      onClick={() => {
-                        setSelectedVariant(variant)
-                        setQuantity(1)
-                      }}
-                      className={`px-5 py-3 rounded-xl border-2 font-medium transition ${
-                        selectedVariant?.size === variant.size
-                          ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      {variant.size}
-                      {isWeight && variant.weightGrams && ` (${variant.weightGrams}g)`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {!variants || variants.length === 0 ? (
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">Weight</label>
-                <div className="flex flex-wrap gap-3">
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">Select Weight</label>
+              <div className="flex flex-wrap gap-3">
+                {VARIANTS.map((variant) => (
                   <button
-                    onClick={() => setSelectedVariant(null)}
+                    key={variant.size}
+                    onClick={() => {
+                      setSelectedVariant(variant)
+                      setQuantity(1)
+                    }}
+                    disabled={Math.floor(stockGramsRemaining / variant.grams) === 0}
                     className={`px-5 py-3 rounded-xl border-2 font-medium transition ${
-                      !selectedVariant ? 'border-yellow-500 bg-yellow-50 text-yellow-700' : 'border-gray-200 hover:border-gray-300'
+                      selectedVariant.size === variant.size
+                        ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
+                        : Math.floor(stockGramsRemaining / variant.grams) === 0
+                          ? 'border-gray-200 opacity-50 cursor-not-allowed'
+                          : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    1 Pack
+                    {variant.size}
                   </button>
-                </div>
+                ))}
               </div>
-            ) : null}
+            </div>
 
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">Check Delivery</label>
@@ -360,29 +347,30 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                   </button>
                   <span className="w-12 text-center font-medium">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                    className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-lg hover:bg-gray-100"
+                    onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
+                    disabled={maxQuantity === 0}
+                    className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-lg hover:bg-gray-100 disabled:opacity-50"
                   >
                     +
                   </button>
                 </div>
-                <span className="text-gray-500 text-sm">Max: {product.stock} packs</span>
+                <span className="text-gray-500 text-sm">Max: {maxKg} kg</span>
               </div>
 
               <div className="space-y-3">
                 <button
                   onClick={() => addItem({
-                    id: product.id + (selectedVariant ? `-${selectedVariant.size}` : ''),
+                    id: product.id + `-${selectedVariant.size}`,
                     productId: product.id,
-                    name: `${product.name}${selectedVariant ? ` (${selectedVariant.size})` : ''}`,
+                    name: `${product.name} (${selectedVariant.size})`,
                     slug: product.slug,
-                    price: selectedVariant?.price || product.price,
-                    discountPrice: selectedVariant?.discountPrice || product.discountPrice,
+                    price: price,
                     images: images,
-                    selectedVariant,
-                    stock: product.stock
+                    stock: maxQuantity,
+                    selectedVariant
                   })}
-                  className="w-full py-4 bg-yellow-600 text-white rounded-xl font-semibold text-lg hover:bg-yellow-700 transition"
+                  disabled={maxQuantity === 0}
+                  className="w-full py-4 bg-yellow-600 text-white rounded-xl font-semibold text-lg hover:bg-yellow-700 transition disabled:opacity-50"
                 >
                   Add to Cart
                 </button>
@@ -481,7 +469,6 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                   <table className="min-w-full divide-y divide-gray-200">
                     <tbody className="divide-y divide-gray-200">
                       <tr><td className="py-3 font-medium text-gray-700">Category</td><td className="py-3">{product.category?.name || '-'}</td></tr>
-                      <tr><td className="py-3 font-medium text-gray-700">Brand</td><td className="py-3">{product.brand || 'MANI DRY FRUITS & GHEE STORES'}</td></tr>
                       <tr><td className="py-3 font-medium text-gray-700">Origin</td><td className="py-3">{product.origin || '-'}</td></tr>
                       <tr><td className="py-3 font-medium text-gray-700">Shelf Life</td><td className="py-3">{product.shelfLife || '-'}</td></tr>
                       <tr><td className="py-3 font-medium text-gray-700">Storage</td><td className="py-3">{product.storageInstructions || '-'}</td></tr>
@@ -588,119 +575,28 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
             )}
           </div>
         </div>
-
-        {relatedProducts.length > 0 && (
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">You May Also Like</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {relatedProducts.map((p) => {
-                const imgs = JSON.parse(p.images as string)
-                return (
-                  <div key={p.id} className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden">
-                    <Link href={`/products/${p.slug}`}>
-                      <div className="aspect-square relative bg-gray-100">
-                        <Image
-                          src={imgs[0] || '/placeholder.svg'}
-                          alt={p.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="p-3">
-                        <p className="font-medium text-gray-900 line-clamp-2 mb-1">{p.name}</p>
-                        <p className="text-yellow-600 font-bold">₹{p.discountPrice || p.price}</p>
-                      </div>
-                    </Link>
-                    <div className="p-3 pt-0">
-                      <button
-                        onClick={() => addItem({
-                          id: p.id,
-                          productId: p.id,
-                          name: p.name,
-                          slug: p.slug,
-                          price: p.price,
-                          discountPrice: p.discountPrice,
-                          images: imgs,
-                          stock: p.stock
-                        })}
-                        className="w-full py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 transition"
-                      >
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-        )}
-
-        {relatedProducts.length > 0 && (
-          <section className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Customers Also Bought</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {relatedProducts.slice(0, 4).map((p) => {
-                const imgs = JSON.parse(p.images as string)
-                return (
-                  <div key={`also-${p.id}`} className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden">
-                    <Link href={`/products/${p.slug}`}>
-                      <div className="aspect-square relative bg-gray-100">
-                        <Image
-                          src={imgs[0] || '/placeholder.svg'}
-                          alt={p.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="p-3">
-                        <p className="font-medium text-gray-900 line-clamp-2 mb-1">{p.name}</p>
-                        <p className="text-yellow-600 font-bold">₹{p.discountPrice || p.price}</p>
-                      </div>
-                    </Link>
-                    <div className="p-3 pt-0">
-                      <button
-                        onClick={() => addItem({
-                          id: p.id,
-                          productId: p.id,
-                          name: p.name,
-                          slug: p.slug,
-                          price: p.price,
-                          discountPrice: p.discountPrice,
-                          images: imgs,
-                          stock: p.stock
-                        })}
-                        className="w-full py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 transition"
-                      >
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-        )}
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg lg:hidden">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <p className="text-lg font-bold text-gray-900">₹{price}</p>
-            {mrp > price && <p className="text-gray-400 text-sm line-through">₹{mrp}</p>}
+            <p className="text-gray-400 text-sm">({selectedVariant.size})</p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => addItem({
-                id: product.id + (selectedVariant ? `-${selectedVariant.size}` : ''),
+                id: product.id + `-${selectedVariant.size}`,
                 productId: product.id,
-                name: `${product.name}${selectedVariant ? ` (${selectedVariant.size})` : ''}`,
+                name: `${product.name} (${selectedVariant.size})`,
                 slug: product.slug,
-                price: selectedVariant?.price || product.price,
-                discountPrice: selectedVariant?.discountPrice || product.discountPrice,
+                price: price,
                 images: images,
+                stock: maxQuantity,
                 selectedVariant
               })}
-              className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-medium"
+              disabled={maxQuantity === 0}
+              className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-medium disabled:opacity-50"
             >
               Cart
             </button>
