@@ -348,13 +348,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <section>
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Related Products</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {relatedProducts.map((p) => (
-                    <Link key={p.id} href={`/products/${p.slug}`} className="bg-gray-50 rounded-lg p-3 text-center hover:shadow-md transition">
-                      <img src={Array.isArray(p.images) && p.images[0] ? String(p.images[0]) : ''} alt={p.name} className="w-full h-20 object-cover rounded mb-2" />
-                      <p className="text-sm font-medium line-clamp-2">{p.name}</p>
-                      <p className="text-yellow-600 font-bold text-sm">₹{p.discountPrice || p.price}</p>
-                    </Link>
-                  ))}
+                  {relatedProducts.map((p) => {
+                    const imgSrc = Array.isArray(p.images) && p.images[0] ? String(p.images[0]) : ''
+                    return (
+                      <Link key={p.id} href={`/products/${p.slug}`} className="bg-gray-50 rounded-lg p-3 text-center hover:shadow-md transition">
+                        {imgSrc && <img src={imgSrc} alt={p.name} className="w-full h-20 object-cover rounded mb-2" />}
+                        {!imgSrc && <div className="w-full h-20 bg-gray-200 rounded mb-2 flex items-center justify-center text-gray-500 text-xs">No Image</div>}
+                        <p className="text-sm font-medium line-clamp-2">{p.name}</p>
+                        <p className="text-yellow-600 font-bold text-sm">₹{p.discountPrice || p.price}</p>
+                      </Link>
+                    )
+                  })}
                 </div>
               </section>
             )}
@@ -363,12 +367,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <section>
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Recently Viewed Products</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {recentProducts.map((p) => (
-                    <Link key={p.id} href={`/products/${p.slug}`} className="bg-gray-50 rounded-lg p-3 text-center hover:shadow-md transition">
-                      <img src={Array.isArray(p.images) && p.images[0] ? String(p.images[0]) : ''} alt={p.name} className="w-full h-20 object-cover rounded mb-2" />
-                      <p className="text-sm font-medium line-clamp-2">{p.name}</p>
-                    </Link>
-                  ))}
+                  {recentProducts.map((p) => {
+                    const imgSrc = Array.isArray(p.images) && p.images[0] ? String(p.images[0]) : ''
+                    return (
+                      <Link key={p.id} href={`/products/${p.slug}`} className="bg-gray-50 rounded-lg p-3 text-center hover:shadow-md transition">
+                        {imgSrc && <img src={imgSrc} alt={p.name} className="w-full h-20 object-cover rounded mb-2" />}
+                        {!imgSrc && <div className="w-full h-20 bg-gray-200 rounded mb-2 flex items-center justify-center text-gray-500 text-xs">No Image</div>}
+                        <p className="text-sm font-medium line-clamp-2">{p.name}</p>
+                      </Link>
+                    )
+                  })}
                 </div>
               </section>
             )}
