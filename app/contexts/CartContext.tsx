@@ -3,8 +3,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 
 interface CartItem {
-  id: string                    // composite id for cart (productId + variant)
-  productId: string             // real product id (for orders & stock)
+  id: string
+  productId: string
   name: string
   slug: string
   price: number
@@ -12,8 +12,8 @@ interface CartItem {
   images: string[]
   quantity: number
   selectedVariant?: any
-  // For future unit-based stock
-  purchasedAmount?: number      // grams or pieces being bought in this line item
+  stock?: number
+  purchasedAmount?: number
   unitType?: 'weight' | 'quantity'
 }
 
@@ -21,7 +21,7 @@ interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'quantity'>) => void
   removeItem: (id: string) => void
-  updateQuantity: (id: string, quantity: number) => void
+  updateQuantity: (id: string, quantity: number, maxStock?: number) => void
   clearCart: () => void
   total: number
   itemCount: number
@@ -51,11 +51,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems(prev => {
       const existing = prev.find(i => i.id === item.id)
       if (existing) {
+        const maxStock = item.stock ?? 999
+        const newQty = Math.min(maxStock, existing.quantity + 1)
         return prev.map(i => 
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+          i.id === item.id ? { ...i, quantity: newQty, stock: item.stock } : i
         )
       }
-      return [...prev, { ...item, quantity: 1 }]
+      return [...prev, { ...item, quantity: 1, stock: item.stock }]
     })
   }
 
@@ -63,13 +65,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems(prev => prev.filter(i => i.id !== id))
   }
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number, maxStock?: number) => {
     if (quantity <= 0) {
       removeItem(id)
       return
     }
+    const max = maxStock ?? 999
+    const finalQty = Math.min(max, quantity)
     setItems(prev => prev.map(i => 
-      i.id === id ? { ...i, quantity } : i
+      i.id === id ? { ...i, quantity: finalQty } : i
     ))
   }
 

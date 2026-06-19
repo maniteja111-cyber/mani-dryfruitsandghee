@@ -360,13 +360,13 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                   </button>
                   <span className="w-12 text-center font-medium">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(Math.min(50, quantity + 1))}
+                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
                     className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center text-lg hover:bg-gray-100"
                   >
                     +
                   </button>
                 </div>
-                <span className="text-gray-500 text-sm">Max: 50 packs</span>
+                <span className="text-gray-500 text-sm">Max: {product.stock} packs</span>
               </div>
 
               <div className="space-y-3">
@@ -379,7 +379,8 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                     price: selectedVariant?.price || product.price,
                     discountPrice: selectedVariant?.discountPrice || product.discountPrice,
                     images: images,
-                    selectedVariant
+                    selectedVariant,
+                    stock: product.stock
                   })}
                   className="w-full py-4 bg-yellow-600 text-white rounded-xl font-semibold text-lg hover:bg-yellow-700 transition"
                 >
@@ -619,7 +620,8 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                           slug: p.slug,
                           price: p.price,
                           discountPrice: p.discountPrice,
-                          images: imgs
+                          images: imgs,
+                          stock: p.stock
                         })}
                         className="w-full py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 transition"
                       >
@@ -664,7 +666,8 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                           slug: p.slug,
                           price: p.price,
                           discountPrice: p.discountPrice,
-                          images: imgs
+                          images: imgs,
+                          stock: p.stock
                         })}
                         className="w-full py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 transition"
                       >
