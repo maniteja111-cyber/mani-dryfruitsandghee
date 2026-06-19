@@ -616,6 +616,51 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
             </div>
           </section>
         )}
+
+        {relatedProducts.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Customers Also Bought</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {relatedProducts.slice(0, 4).map((p) => {
+                const imgs = JSON.parse(p.images as string)
+                return (
+                  <div key={`also-${p.id}`} className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden">
+                    <Link href={`/products/${p.slug}`}>
+                      <div className="aspect-square relative bg-gray-100">
+                        <Image
+                          src={imgs[0] || '/placeholder.svg'}
+                          alt={p.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="p-3">
+                        <p className="font-medium text-gray-900 line-clamp-2 mb-1">{p.name}</p>
+                        <p className="text-yellow-600 font-bold">₹{p.discountPrice || p.price}</p>
+                      </div>
+                    </Link>
+                    <div className="p-3 pt-0">
+                      <button
+                        onClick={() => addItem({
+                          id: p.id,
+                          productId: p.id,
+                          name: p.name,
+                          slug: p.slug,
+                          price: p.price,
+                          discountPrice: p.discountPrice,
+                          images: imgs
+                        })}
+                        className="w-full py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 transition"
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg lg:hidden">
