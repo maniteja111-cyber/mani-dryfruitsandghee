@@ -9,7 +9,7 @@ import Link from 'next/link'
 
 async function getData(slug: string) {
   try {
-    const [settings, product, relatedProducts, recentProducts] = await Promise.all([
+    const [settings, product, relatedProducts] = await Promise.all([
       prisma.setting.findMany(),
       prisma.product.findUnique({
         where: { slug },
@@ -21,11 +21,6 @@ async function getData(slug: string) {
           NOT: { slug }
         },
         take: 4
-      }),
-      prisma.product.findMany({
-        where: { isVisible: true },
-        take: 4,
-        orderBy: { createdAt: 'desc' }
       })
     ])
 
@@ -38,7 +33,7 @@ async function getData(slug: string) {
       return acc
     }, {} as Record<string, string>)
 
-    return { settings: settingsObj, product, relatedProducts, recentProducts }
+    return { settings: settingsObj, product, relatedProducts }
   } catch (error) {
     console.error('Error fetching product data:', error)
     notFound()
@@ -85,7 +80,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params
-  const { settings, product, relatedProducts, recentProducts } = await getData(resolvedParams.slug)
+  const { settings, product, relatedProducts } = await getData(resolvedParams.slug)
 
   const productImages = Array.isArray(product.images) ? product.images.map(String) : []
   const price = product.discountPrice || product.price
@@ -177,17 +172,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     ]
   }
 
-  const reviewSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'ReviewAction',
-    'itemReviewed': productSchema,
-    'reviewRating': {
-      '@type': 'Rating',
-      'ratingValue': avgRating,
-      'bestRating': '5'
-    }
-  }
-
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -233,154 +217,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <span className="text-gray-700">{product.name}</span>
           </nav>
 
-          <ProductDetail product={product} settings={settings} />
-
-          <div className="mt-12 bg-white rounded-lg shadow p-6 space-y-10">
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Product Description</h2>
-              <p className="text-gray-600">{product.description || product.shortDescription || `${product.name} - Premium quality ${categoryName}.`}</p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Product Highlights</h2>
-              <p className="text-gray-600">{product.productOverview || product.whyChoose || `Discover the authentic taste of ${product.name}, carefully prepared with premium ingredients.`}</p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Ingredients</h2>
-              <p className="text-gray-600">{product.ingredients || 'Premium natural ingredients.'}</p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Nutritional Information</h2>
-              <p className="text-gray-600">{product.nutritionalInfo || 'Rich in essential nutrients and natural goodness.'}</p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Storage Instructions</h2>
-              <p className="text-gray-600">{product.storageInstructions || 'Store in a cool, dry place.'}</p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Shelf Life</h2>
-              <p className="text-gray-600">{product.shelfLife || '6-12 months when stored properly.'}</p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Origin</h2>
-              <p className="text-gray-600">{product.origin || 'Authentic Indian origin.'}</p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Benefits</h2>
-              <p className="text-gray-600">{product.benefits || 'Provides essential nutrition and authentic flavor.'}</p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Shipping Information</h2>
-              <p className="text-gray-600">{product.shippingInfo || 'Fast delivery across India with safe packaging.'}</p>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Product Specifications</h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full border divide-y divide-gray-200">
-                  <tbody className="divide-y divide-gray-200">
-                    <tr><td className="py-2 font-medium">Weight</td><td className="py-2">{product.variants && Array.isArray(product.variants) && (product.variants[0] as {size?: string})?.size ? (product.variants[0] as {size?: string}).size : 'See variant options'}</td></tr>
-                    <tr><td className="py-2 font-medium">Ingredients</td><td className="py-2">{product.ingredients || 'Premium ingredients'}</td></tr>
-                    <tr><td className="py-2 font-medium">Shelf Life</td><td className="py-2">{product.shelfLife || '6-12 months'}</td></tr>
-                    <tr><td className="py-2 font-medium">Storage</td><td className="py-2">{product.storageInstructions || 'Cool, dry place'}</td></tr>
-                    <tr><td className="py-2 font-medium">Origin</td><td className="py-2">{product.origin || 'India'}</td></tr>
-                    <tr><td className="py-2 font-medium">Brand</td><td className="py-2">MANI DRY FRUITS & GHEE STORES</td></tr>
-                    <tr><td className="py-2 font-medium">Category</td><td className="py-2">{categoryName}</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Trust & Quality</h2>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-                <div className="p-3 bg-gray-50 rounded"><span className="block text-2xl mb-1">📦</span><span className="text-sm">Freshly Packed</span></div>
-                <div className="p-3 bg-gray-50 rounded"><span className="block text-2xl mb-1">💳</span><span className="text-sm">Secure Payment</span></div>
-                <div className="p-3 bg-gray-50 rounded"><span className="block text-2xl mb-1">🚚</span><span className="text-sm">Fast Delivery</span></div>
-                <div className="p-3 bg-gray-50 rounded"><span className="block text-2xl mb-1">✅</span><span className="text-sm">Quality Checked</span></div>
-                <div className="p-3 bg-gray-50 rounded"><span className="block text-2xl mb-1">🌿</span><span className="text-sm">Premium Ingredients</span></div>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
-              <div className="space-y-4">
-                {product.faqs && Array.isArray(product.faqs) && product.faqs.length > 0 ? (
-                  (product.faqs as {question: string, answer: string}[]).map((faq, idx: number) => (
-                    <div key={idx}>
-                      <p className="font-semibold">{faq.question}</p>
-                      <p className="text-gray-600 text-sm">{faq.answer}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-600">No FAQs available for this product.</p>
-                )}
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Customer Reviews ({reviews.length})</h2>
-              {reviews.length > 0 ? (
-                <div className="space-y-4">
-                  {reviews.map((review) => (
-                    <div key={review.id} className="border-b pb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{review.name}</span>
-                        <span className="text-yellow-500">{'★'.repeat(review.rating)}</span>
-                      </div>
-                      <p className="text-gray-700 mt-1">{review.comment}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-600">Be the first to review this product.</p>
-              )}
-            </section>
-
-            {relatedProducts.length > 0 && (
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Related Products</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {relatedProducts.map((p) => {
-                    const imgSrc = Array.isArray(p.images) && p.images[0] ? String(p.images[0]) : ''
-                    return (
-                      <Link key={p.id} href={`/products/${p.slug}`} className="bg-gray-50 rounded-lg p-3 text-center hover:shadow-md transition">
-                        {imgSrc && <img src={imgSrc} alt={p.name} className="w-full h-20 object-cover rounded mb-2" />}
-                        {!imgSrc && <div className="w-full h-20 bg-gray-200 rounded mb-2 flex items-center justify-center text-gray-500 text-xs">No Image</div>}
-                        <p className="text-sm font-medium line-clamp-2">{p.name}</p>
-                        <p className="text-yellow-600 font-bold text-sm">₹{p.discountPrice || p.price}</p>
-                      </Link>
-                    )
-                  })}
-                </div>
-              </section>
-            )}
-
-            {recentProducts.length > 0 && (
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Recently Viewed Products</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {recentProducts.map((p) => {
-                    const imgSrc = Array.isArray(p.images) && p.images[0] ? String(p.images[0]) : ''
-                    return (
-                      <Link key={p.id} href={`/products/${p.slug}`} className="bg-gray-50 rounded-lg p-3 text-center hover:shadow-md transition">
-                        {imgSrc && <img src={imgSrc} alt={p.name} className="w-full h-20 object-cover rounded mb-2" />}
-                        {!imgSrc && <div className="w-full h-20 bg-gray-200 rounded mb-2 flex items-center justify-center text-gray-500 text-xs">No Image</div>}
-                        <p className="text-sm font-medium line-clamp-2">{p.name}</p>
-                      </Link>
-                    )
-                  })}
-                </div>
-              </section>
-            )}
-          </div>
+          <ProductDetail product={product} settings={settings} relatedProducts={relatedProducts} />
         </main>
         <Footer settings={settings} />
         <WhatsAppButton phone={settings.whatsappNumber || '9515019393'} />

@@ -15,12 +15,17 @@ interface Product {
   discountPrice?: number | null
   stock: number
   images: string[] | any
-  category: { name: string }
+  category?: { name: string }
   categoryId?: string
   measurementType?: string
   variants?: any
   origin?: string | null
   benefits?: string | null
+  ingredients?: string | null
+  nutritionalInfo?: string | null
+  storageInstructions?: string | null
+  shelfLife?: string | null
+  brand?: string | null
 }
 
 interface Review {
@@ -35,9 +40,10 @@ interface Review {
 interface ProductDetailProps {
   product: Product
   settings: Record<string, string>
+  relatedProducts?: Product[]
 }
 
-export default function ProductDetail({ product, settings }: ProductDetailProps) {
+export default function ProductDetail({ product, settings, relatedProducts = [] }: ProductDetailProps) {
   let images = []
   try {
     images = JSON.parse(product.images as string)
@@ -60,7 +66,8 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
   const [submittingReview, setSubmittingReview] = useState(false)
   const [reviewMessage, setReviewMessage] = useState('')
   const [pincode, setPincode] = useState('')
-  const [deliveryInfo, setDeliveryInfo] = useState<{available: boolean, days: string, cod: boolean} | null>(null)
+  const [deliveryInfo, setDeliveryInfo] = useState<{available: boolean, days: string, cod: boolean, shipping: string} | null>(null)
+  const [activeTab, setActiveTab] = useState('description')
   const { addItem } = useCart()
 
   useEffect(() => {
@@ -90,7 +97,7 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
 
   const checkDelivery = async () => {
     if (!pincode || pincode.length !== 6) return
-    setDeliveryInfo({ available: true, days: '2-5', cod: true })
+    setDeliveryInfo({ available: true, days: '2-5', cod: true, shipping: 'Free' })
   }
 
   const submitReview = async (e: React.FormEvent) => {
@@ -167,20 +174,26 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
   const mrp = selectedVariant?.price || product.price
   const savings = mrp - price
   const savingsPercent = Math.round((savings / mrp) * 100)
+  const avgRating = reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) : 4.5
 
   const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=Hi, I'm interested in ${product.name}. Quantity: ${quantity}. Please share details.`
 
+  const ratingBreakdown = [5, 4, 3, 2, 1].map(rating => ({
+    rating,
+    count: reviews.filter(r => r.rating === rating).length
+  }))
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 mb-12">
           <div>
-            <div className="aspect-[1/1] relative mb-4 rounded-2xl overflow-hidden bg-gray-100">
+            <div className="aspect-[1/1] relative mb-4 rounded-2xl overflow-hidden bg-gray-100 shadow-lg">
               <Image
                 src={images[selectedImage] && images[selectedImage] !== '' ? images[selectedImage] : '/placeholder.svg'}
                 alt={`Buy ${product.name} Online India | MANI DRY FRUITS`}
                 fill
-                sizes="(max-width: 768px) 90vw, 50vw"
+                sizes="(max-width: 768px) 90vw, 40vw"
                 loading="eager"
                 className="object-cover"
               />
@@ -217,11 +230,11 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
 
             <div className="flex items-center gap-4 mb-6">
               <div className="flex items-center gap-1">
-                <span className="text-yellow-500 text-lg">★★★★★</span>
-                <span className="text-gray-600 text-sm">(4.5)</span>
+                <span className="text-yellow-500 text-lg">{'★'.repeat(5)}</span>
+                <span className="text-gray-600 text-sm font-medium">{avgRating.toFixed(1)}</span>
               </div>
               <span className="text-gray-400">|</span>
-              <span className="text-gray-600 text-sm">Reviews (0)</span>
+              <span className="text-gray-600 text-sm">{reviewCount} Reviews</span>
             </div>
 
             <div className="mb-6">
@@ -255,7 +268,7 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
               </div>
               <div className="bg-gray-50 rounded-lg p-3 text-center">
                 <span className="text-lg mb-1 block">💬</span>
-                <span className="text-xs">Whatsapp Support</span>
+                <span className="text-xs">Whatsapp</span>
               </div>
             </div>
 
@@ -287,13 +300,13 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
             )}
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Enter Pincode for Delivery</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Check Delivery</label>
               <div className="flex gap-3">
                 <input
                   type="text"
                   value={pincode}
                   onChange={(e) => setPincode(e.target.value)}
-                  placeholder="e.g. 500001"
+                  placeholder="Enter Pincode"
                   maxLength={6}
                   className="flex-1 border border-gray-300 rounded-lg px-4 py-3"
                 />
@@ -306,9 +319,16 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
               </div>
               {deliveryInfo && (
                 <div className="mt-3 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-green-700 font-medium">✓ Delivery Available</p>
-                  <p className="text-gray-600 text-sm">Estimated: {deliveryInfo.days} Days</p>
-                  <p className="text-gray-600 text-sm">COD: {deliveryInfo.cod ? 'Available' : 'Not Available'}</p>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-green-700 font-medium">✓ Delivery Available</p>
+                      <p className="text-gray-600 text-sm">Estimated: {deliveryInfo.days} Days</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-gray-600 text-sm">COD: {deliveryInfo.cod ? 'Yes' : 'No'}</p>
+                      <p className="text-gray-600 text-sm">Shipping: {deliveryInfo.shipping}</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -367,7 +387,269 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
             </div>
           </div>
         </div>
+
+        <div className="mb-8">
+          <div className="border-b border-gray-200 mb-6">
+            <nav className="flex space-x-6">
+              <button
+                onClick={() => setActiveTab('description')}
+                className={`pb-3 font-semibold transition ${
+                  activeTab === 'description'
+                    ? 'text-yellow-600 border-b-2 border-yellow-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Description
+              </button>
+              <button
+                onClick={() => setActiveTab('specifications')}
+                className={`pb-3 font-semibold transition ${
+                  activeTab === 'specifications'
+                    ? 'text-yellow-600 border-b-2 border-yellow-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Specifications
+              </button>
+              <button
+                onClick={() => setActiveTab('reviews')}
+                className={`pb-3 font-semibold transition ${
+                  activeTab === 'reviews'
+                    ? 'text-yellow-600 border-b-2 border-yellow-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Reviews ({reviewCount})
+              </button>
+            </nav>
+          </div>
+
+          <div className="min-h-[200px]">
+            {activeTab === 'description' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Product Description</h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {product.description || product.shortDescription || `${product.name} - Premium quality product.`}
+                  </p>
+                </div>
+
+                {product.ingredients && (
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-2">Ingredients</h4>
+                    <p className="text-gray-600">{product.ingredients}</p>
+                  </div>
+                )}
+
+                {product.benefits && (
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-2">Benefits</h4>
+                    <p className="text-gray-600">{product.benefits}</p>
+                  </div>
+                )}
+
+                {product.storageInstructions && (
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-2">Storage Instructions</h4>
+                    <p className="text-gray-600">{product.storageInstructions}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'specifications' && (
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Product Specifications</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-200">
+                      <tr><td className="py-3 font-medium text-gray-700">Category</td><td className="py-3">{product.category?.name || '-'}</td></tr>
+                      <tr><td className="py-3 font-medium text-gray-700">Brand</td><td className="py-3">{product.brand || 'MANI DRY FRUITS & GHEE STORES'}</td></tr>
+                      <tr><td className="py-3 font-medium text-gray-700">Origin</td><td className="py-3">{product.origin || '-'}</td></tr>
+                      <tr><td className="py-3 font-medium text-gray-700">Shelf Life</td><td className="py-3">{product.shelfLife || '-'}</td></tr>
+                      <tr><td className="py-3 font-medium text-gray-700">Storage</td><td className="py-3">{product.storageInstructions || '-'}</td></tr>
+                      <tr><td className="py-3 font-medium text-gray-700">Ingredients</td><td className="py-3">{product.ingredients || '-'}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'reviews' && (
+              <div className="space-y-6">
+                <div className="flex items-start gap-6">
+                  <div className="text-center">
+                    <p className="text-4xl font-bold text-gray-900">{avgRating.toFixed(1)}</p>
+                    <p className="text-yellow-500 text-lg">{'★'.repeat(5)}</p>
+                    <p className="text-gray-500 text-sm">{reviewCount} reviews</p>
+                  </div>
+                  <div className="flex-1">
+                    {ratingBreakdown.map(({rating, count}) => (
+                      <div key={rating} className="flex items-center gap-2 mb-1">
+                        <span className="text-sm w-8">{rating}★</span>
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-yellow-500 h-2 rounded-full"
+                            style={{ width: `${reviewCount > 0 ? (count / reviewCount) * 100 : 0}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-500 w-8">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t pt-6">
+                  <h4 className="font-semibold text-gray-800 mb-4">Write a Review</h4>
+                  <form onSubmit={submitReview} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <input
+                        type="text"
+                        placeholder="Your Name"
+                        value={reviewForm.name}
+                        onChange={(e) => setReviewForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="border border-gray-300 rounded-lg px-3 py-2"
+                        required
+                      />
+                      <input
+                        type="tel"
+                        placeholder="Phone Number"
+                        value={reviewForm.phone}
+                        onChange={(e) => setReviewForm(prev => ({ ...prev, phone: e.target.value }))}
+                        className="border border-gray-300 rounded-lg px-3 py-2"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Rating</label>
+                      <select
+                        value={reviewForm.rating}
+                        onChange={(e) => setReviewForm(prev => ({ ...prev, rating: parseInt(e.target.value) }))}
+                        className="border border-gray-300 rounded-lg px-3 py-2"
+                      >
+                        <option value={5}>⭐⭐⭐⭐⭐ Excellent</option>
+                        <option value={4}>⭐⭐⭐⭐ Very Good</option>
+                        <option value={3}>⭐⭐⭐ Good</option>
+                        <option value={2}>⭐⭐ Fair</option>
+                        <option value={1}>⭐ Poor</option>
+                      </select>
+                    </div>
+                    <textarea
+                      placeholder="Your review..."
+                      value={reviewForm.comment}
+                      onChange={(e) => setReviewForm(prev => ({ ...prev, comment: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                      rows={4}
+                      required
+                    />
+                    <button
+                      type="submit"
+                      disabled={submittingReview}
+                      className="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50"
+                    >
+                      {submittingReview ? 'Submitting...' : 'Submit Review'}
+                    </button>
+                    {reviewMessage && <p className="text-green-600 text-sm">{reviewMessage}</p>}
+                  </form>
+                </div>
+
+                <div className="space-y-4">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="border-b pb-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-gray-800">{maskName(review.name)}</span>
+                        <span className="text-yellow-500">{'★'.repeat(review.rating)}</span>
+                      </div>
+                      <p className="text-gray-700">{review.comment}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {relatedProducts.length > 0 && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">You May Also Like</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {relatedProducts.map((p) => {
+                const imgs = JSON.parse(p.images as string)
+                return (
+                  <div key={p.id} className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden">
+                    <Link href={`/products/${p.slug}`}>
+                      <div className="aspect-square relative bg-gray-100">
+                        <Image
+                          src={imgs[0] || '/placeholder.svg'}
+                          alt={p.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="p-3">
+                        <p className="font-medium text-gray-900 line-clamp-2 mb-1">{p.name}</p>
+                        <p className="text-yellow-600 font-bold">₹{p.discountPrice || p.price}</p>
+                      </div>
+                    </Link>
+                    <div className="p-3 pt-0">
+                      <button
+                        onClick={() => addItem({
+                          id: p.id,
+                          productId: p.id,
+                          name: p.name,
+                          slug: p.slug,
+                          price: p.price,
+                          discountPrice: p.discountPrice,
+                          images: imgs
+                        })}
+                        className="w-full py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 transition"
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
       </div>
-    </div>
+
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg lg:hidden">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <p className="text-lg font-bold text-gray-900">₹{price}</p>
+            {mrp > price && <p className="text-gray-400 text-sm line-through">₹{mrp}</p>}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => addItem({
+                id: product.id + (selectedVariant ? `-${selectedVariant.size}` : ''),
+                productId: product.id,
+                name: `${product.name}${selectedVariant ? ` (${selectedVariant.size})` : ''}`,
+                slug: product.slug,
+                price: selectedVariant?.price || product.price,
+                discountPrice: selectedVariant?.discountPrice || product.discountPrice,
+                images: images,
+                selectedVariant
+              })}
+              className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-medium"
+            >
+              Cart
+            </button>
+            <Link
+              href={whatsappUrl}
+              target="_blank"
+              className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium"
+            >
+              Buy
+            </Link>
+          </div>
+        </div>
+      </div>
+    </>
   )
 }
