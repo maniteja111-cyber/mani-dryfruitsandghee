@@ -166,6 +166,8 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
              src={images[selectedImage] && images[selectedImage] !== '' ? images[selectedImage] : '/placeholder.svg'}
              alt={`Buy ${product.name} Online India | MANI DRY FRUITS`}
              fill
+             sizes="(max-width: 768px) 100vw, 50vw"
+             loading="eager"
              className="object-cover rounded-lg"
            />
 
