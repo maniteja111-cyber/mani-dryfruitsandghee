@@ -9,25 +9,33 @@ import Link from 'next/link'
 
 async function getData(slug: string) {
   try {
-    const [settings, product, relatedProducts] = await Promise.all([
-      prisma.setting.findMany(),
-      prisma.product.findUnique({
-        where: { slug },
-        include: { category: true }
-      }),
-      prisma.product.findMany({
-        where: { 
-          categoryId: (await prisma.product.findUnique({where: { slug }, include: { category: true }}))?.categoryId,
-          NOT: { slug }
-        },
-        take: 4
-      })
-    ])
+    const product = await prisma.product.findUnique({
+      where: { slug },
+      include: { category: true }
+    })
 
     if (!product) {
       notFound()
     }
 
+    let relatedProducts = await prisma.product.findMany({
+      where: { 
+        categoryId: product.categoryId,
+        NOT: { slug }
+      },
+      take: 4
+    })
+
+    if (relatedProducts.length === 0) {
+      relatedProducts = await prisma.product.findMany({
+        where: { 
+          NOT: { slug }
+        },
+        take: 4
+      })
+    }
+
+    const settings = await prisma.setting.findMany()
     const settingsObj = settings.reduce((acc, setting) => {
       acc[setting.key] = setting.value
       return acc

@@ -299,6 +299,22 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
               </div>
             )}
 
+            {!variants || variants.length === 0 ? (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">Weight</label>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => setSelectedVariant(null)}
+                    className={`px-5 py-3 rounded-xl border-2 font-medium transition ${
+                      !selectedVariant ? 'border-yellow-500 bg-yellow-50 text-yellow-700' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    1 Pack
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">Check Delivery</label>
               <div className="flex gap-3">
