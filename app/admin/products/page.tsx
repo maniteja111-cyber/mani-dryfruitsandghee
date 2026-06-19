@@ -14,6 +14,14 @@ interface Product {
   isFeatured: boolean
   isTodayOffer: boolean
   isVisible: boolean
+  productOverview?: string
+  whyChoose?: string
+  ingredients?: string
+  storageInstructions?: string
+  healthBenefits?: string
+  shippingInfo?: string
+  faqs?: {question: string, answer: string}[]
+  seoKeywords?: string
 }
 
 interface Category {
@@ -31,6 +39,7 @@ export default function AdminProductsPage() {
     name: '',
     slug: '',
     description: '',
+    shortDescription: '',
     price: '',
     discountPrice: '',
     stock: '',
@@ -39,7 +48,18 @@ export default function AdminProductsPage() {
     measurementType: 'quantity' as 'quantity' | 'weight',
     isFeatured: false,
     isTodayOffer: false,
-    isVisible: true
+    isVisible: true,
+    productOverview: '',
+    whyChoose: '',
+    ingredients: '',
+    nutritionalInfo: '',
+    storageInstructions: '',
+    shelfLife: '',
+    origin: '',
+    benefits: '',
+    shippingInfo: '',
+    faqs: [] as {question: string, answer: string}[],
+    seoKeywords: ''
   })
 
   // User-friendly variants editor
@@ -97,7 +117,18 @@ export default function AdminProductsPage() {
         measurementType: formData.measurementType,
         isFeatured: formData.isFeatured,
         isTodayOffer: formData.isTodayOffer,
-        isVisible: formData.isVisible
+        isVisible: formData.isVisible,
+        productOverview: formData.productOverview,
+        whyChoose: formData.whyChoose,
+        ingredients: formData.ingredients,
+        nutritionalInfo: formData.nutritionalInfo,
+        storageInstructions: formData.storageInstructions,
+        shelfLife: formData.shelfLife,
+        origin: formData.origin,
+        benefits: formData.benefits,
+        shippingInfo: formData.shippingInfo,
+        faqs: formData.faqs,
+        seoKeywords: formData.seoKeywords
       }
 
       const url = editingProduct ? `/api/admin/products/${editingProduct.id}` : '/api/admin/products'
@@ -145,6 +176,7 @@ export default function AdminProductsPage() {
       name: product.name,
       slug: product.slug,
       description: product.description || '',
+      shortDescription: product.shortDescription || '',
       price: product.price.toString(),
       discountPrice: product.discountPrice?.toString() || '',
       stock: product.stock.toString(),
@@ -153,7 +185,20 @@ export default function AdminProductsPage() {
       measurementType: (product.measurementType as 'quantity' | 'weight') || 'quantity',
       isFeatured: product.isFeatured || false,
       isTodayOffer: product.isTodayOffer || false,
-      isVisible: product.isVisible !== false
+      isVisible: product.isVisible !== false,
+      productOverview: product.productOverview || '',
+      whyChoose: product.whyChoose || '',
+      ingredients: product.ingredients || '',
+      nutritionalInfo: product.nutritionalInfo || '',
+      storageInstructions: product.storageInstructions || '',
+      shelfLife: product.shelfLife || '',
+      origin: product.origin || '',
+      benefits: product.benefits || '',
+      shippingInfo: product.shippingInfo || '',
+      faqs: Array.isArray(product.faqs) 
+        ? product.faqs 
+        : (product.faqs && typeof product.faqs === 'string' ? JSON.parse(product.faqs) : []),
+      seoKeywords: product.seoKeywords || ''
     })
 
     // Load variants into nice editor
@@ -220,6 +265,7 @@ export default function AdminProductsPage() {
       name: '',
       slug: '',
       description: '',
+      shortDescription: '',
       price: '',
       discountPrice: '',
       stock: '',
@@ -228,7 +274,18 @@ export default function AdminProductsPage() {
       measurementType: 'quantity',
       isFeatured: false,
       isTodayOffer: false,
-      isVisible: true
+      isVisible: true,
+      productOverview: '',
+      whyChoose: '',
+      ingredients: '',
+      nutritionalInfo: '',
+      storageInstructions: '',
+      shelfLife: '',
+      origin: '',
+      benefits: '',
+      shippingInfo: '',
+      faqs: [],
+      seoKeywords: ''
     })
     setVariants([])
   }
@@ -571,6 +628,156 @@ export default function AdminProductsPage() {
                 >
                   Cancel
                 </button>
+              </div>
+
+              {/* SEO Content Sections */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">📝 SEO Content</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Overview</label>
+                    <textarea
+                      placeholder="Brief overview of the product..."
+                      value={formData.productOverview}
+                      onChange={(e) => setFormData(prev => ({ ...prev, productOverview: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Why Choose This Product</label>
+                    <textarea
+                      placeholder="Key reasons to choose this product..."
+                      value={formData.whyChoose}
+                      onChange={(e) => setFormData(prev => ({ ...prev, whyChoose: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Ingredients</label>
+                    <textarea
+                      placeholder="List of ingredients..."
+                      value={formData.ingredients}
+                      onChange={(e) => setFormData(prev => ({ ...prev, ingredients: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nutritional Information</label>
+                    <textarea
+                      placeholder="Nutritional details..."
+                      value={formData.nutritionalInfo}
+                      onChange={(e) => setFormData(prev => ({ ...prev, nutritionalInfo: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Shelf Life</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 12 months"
+                      value={formData.shelfLife}
+                      onChange={(e) => setFormData(prev => ({ ...prev, shelfLife: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Origin</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Andhra Pradesh, India"
+                      value={formData.origin}
+                      onChange={(e) => setFormData(prev => ({ ...prev, origin: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Benefits</label>
+                    <textarea
+                      placeholder="Health and taste benefits..."
+                      value={formData.benefits}
+                      onChange={(e) => setFormData(prev => ({ ...prev, benefits: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Storage Instructions</label>
+                    <textarea
+                      placeholder="How to store the product..."
+                      value={formData.storageInstructions}
+                      onChange={(e) => setFormData(prev => ({ ...prev, storageInstructions: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Info</label>
+                    <textarea
+                      placeholder="Shipping details..."
+                      value={formData.shippingInfo}
+                      onChange={(e) => setFormData(prev => ({ ...prev, shippingInfo: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* FAQ Section */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">❓ FAQ</h3>
+                <div className="space-y-3">
+                  {formData.faqs.map((faq, idx) => (
+                    <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        placeholder="Question"
+                        value={faq.question}
+                        onChange={(e) => {
+                          const newFaqs = [...formData.faqs]
+                          newFaqs[idx].question = e.target.value
+                          setFormData(prev => ({ ...prev, faqs: newFaqs }))
+                        }}
+                        className="border border-gray-300 rounded-lg px-3 py-2"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Answer"
+                        value={faq.answer}
+                        onChange={(e) => {
+                          const newFaqs = [...formData.faqs]
+                          newFaqs[idx].answer = e.target.value
+                          setFormData(prev => ({ ...prev, faqs: newFaqs }))
+                        }}
+                        className="border border-gray-300 rounded-lg px-3 py-2"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, faqs: [...prev.faqs, {question: '', answer: ''}] }))}
+                  className="mt-2 text-sm text-yellow-600 hover:text-yellow-700"
+                >
+                  + Add FAQ
+                </button>
+              </div>
+
+              {/* SEO Keywords */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">SEO Keywords</label>
+                <input
+                  type="text"
+                  placeholder="comma, separated, keywords"
+                  value={formData.seoKeywords}
+                  onChange={(e) => setFormData(prev => ({ ...prev, seoKeywords: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter keywords separated by commas</p>
               </div>
 
               {/* Display Options */}

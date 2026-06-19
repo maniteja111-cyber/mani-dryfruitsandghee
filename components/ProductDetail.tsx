@@ -161,13 +161,13 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {/* Product Images */}
       <div>
-        <div className="aspect-square relative mb-4">
-          <Image
-            src={images[selectedImage] && images[selectedImage] !== '' ? images[selectedImage] : '/placeholder.svg'}
-            alt={product.name}
-            fill
-            className="object-cover rounded-lg"
-          />
+<div className="aspect-square relative mb-4">
+           <Image
+             src={images[selectedImage] && images[selectedImage] !== '' ? images[selectedImage] : '/placeholder.svg'}
+             alt={`Buy ${product.name} Online India | MANI DRY FRUITS`}
+             fill
+             className="object-cover rounded-lg"
+           />
 
           <button
               onClick={toggleWishlist}
@@ -188,12 +188,12 @@ export default function ProductDetail({ product, settings }: ProductDetailProps)
                   selectedImage === index ? 'border-yellow-500' : 'border-gray-200'
                 }`}
               >
-                <Image
+<Image
                    src={image && image !== '' ? image : '/placeholder.svg'}
-                  alt={`${product.name} ${index + 1}`}
-                  fill
-                  className="object-cover rounded"
-                />
+                   alt={`Thumbnail: ${product.name}`}
+                   fill
+                   className="object-cover rounded"
+                 />
               </button>
             ))}
           </div>

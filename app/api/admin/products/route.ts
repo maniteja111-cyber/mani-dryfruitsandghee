@@ -16,7 +16,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, slug, description, price, discountPrice, stock, images, categoryId, variants, measurementType, isFeatured, isTodayOffer, isVisible } = await req.json()
+    const { name, slug, description, shortDescription, price, discountPrice, stock, images, categoryId, variants, measurementType, isFeatured, isTodayOffer, isVisible, productOverview, whyChoose, ingredients, nutritionalInfo, storageInstructions, shelfLife, origin, benefits, shippingInfo, faqs, seoKeywords } = await req.json()
 
     let cleanSlug = (slug || name || 'product')
       .toLowerCase()
@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
         name,
         slug: cleanSlug,
         description,
+        shortDescription,
         price: parseFloat(price),
         discountPrice: discountPrice ? parseFloat(discountPrice) : null,
         stock: parseInt(stock),
@@ -40,7 +41,18 @@ export async function POST(req: NextRequest) {
         categoryId,
         isFeatured: isFeatured || false,
         isTodayOffer: isTodayOffer || false,
-        isVisible: isVisible !== false
+        isVisible: isVisible !== false,
+        productOverview: productOverview || null,
+        whyChoose: whyChoose || null,
+        ingredients: ingredients || null,
+        nutritionalInfo: nutritionalInfo || null,
+        storageInstructions: storageInstructions || null,
+        shelfLife: shelfLife || null,
+        origin: origin || null,
+        benefits: benefits || null,
+        shippingInfo: shippingInfo || null,
+        faqs: faqs || null,
+        seoKeywords: seoKeywords || null
       },
       include: { category: true }
     })
