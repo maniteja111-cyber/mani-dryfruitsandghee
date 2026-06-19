@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import Razorpay from 'razorpay'
 import { generateOrderConfirmationMessage } from '@/lib/whatsapp'
+import { sendOrderConfirmationEmail, sendAdminOrderNotification } from '@/lib/email'
 
 const razorpay = (() => {
   try {
@@ -19,7 +20,7 @@ const razorpay = (() => {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { items, total, paymentMethod: originalPaymentMethod, name, phone, address, city, state, pincode, couponCode, discount, pointsRedeemed } = body
+    const { items, total, paymentMethod: originalPaymentMethod, name, phone, email, address, city, state, pincode, couponCode, discount, pointsRedeemed } = body
 
   // === Stock Validation (before creating order) ===
   for (const item of items) {
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
         razorpayOrderId,
         name,
         phone,
+        email: email || `${phone}@temp.null`,
         address,
         city,
         state,
@@ -225,6 +227,41 @@ export async function POST(req: NextRequest) {
         ]).catch(() => {})
       }
     }
+
+    // Send emails in background (don't block response)
+    const orderItemsForEmail = items.map((item: any) => ({
+      name: item.name || `Product ${item.productId}`,
+      quantity: item.quantity,
+      price: item.price
+    }))
+
+    Promise.allSettled([
+      sendOrderConfirmationEmail({
+        customerName: name,
+        customerEmail: email,
+        orderId: order.id,
+        items: orderItemsForEmail,
+        total,
+        address,
+        city,
+        state,
+        pincode,
+        paymentMethod
+      }),
+      sendAdminOrderNotification({
+        customerName: name,
+        customerEmail: email,
+        customerPhone: phone,
+        orderId: order.id,
+        items: orderItemsForEmail,
+        total,
+        address,
+        city,
+        state,
+        pincode,
+        paymentMethod
+      })
+    ]).catch(() => {})
 
     return NextResponse.json({
       ...order,

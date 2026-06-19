@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/app/contexts/CartContext'
+import { signOut } from 'next-auth/react'
 import RewardsPopup from '@/components/RewardsPopup'
 import RewardsPanel from '@/components/RewardsPanel'
 
@@ -84,10 +85,15 @@ export default function Header({ settings }: HeaderProps) {
   }
 
   const handleLogout = () => {
+    const token = localStorage.getItem('token')
     localStorage.removeItem('user')
     localStorage.removeItem('token')
     setUser(null)
-    window.location.href = '/'
+    if (token && token.startsWith('nextauth-')) {
+      signOut({ callbackUrl: '/' })
+    } else {
+      window.location.href = '/'
+    }
   }
 
   return (
@@ -100,7 +106,7 @@ export default function Header({ settings }: HeaderProps) {
               {settings.logo && settings.logo !== '' ? (
                 <Image src={settings.logo} alt={settings.siteName || 'Logo'} width={40} height={40} className="h-10 w-auto" />
               ) : (
-                <span className="text-lg font-bold truncate max-w-[200px]" style={{ color: settings.themeColor || '#374151' }}>
+                <span className="text-lg font-bold truncate max-w-[200px]" style={{ color: '#f59e0b' }}>
                   {settings.siteName || 'MANI DRY FRUITS'}
                 </span>
               )}
@@ -108,9 +114,9 @@ export default function Header({ settings }: HeaderProps) {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-6">
-              <Link href="/" style={{ color: settings.themeColor || '#374151' }} className="hover:underline text-sm">Home</Link>
-              <Link href="/products" style={{ color: settings.themeColor || '#374151' }} className="hover:underline text-sm">Products</Link>
-              <Link href="/categories" style={{ color: settings.themeColor || '#374151' }} className="hover:underline text-sm">Categories</Link>
+              <Link href="/" className="hover:underline text-sm" style={{ color: '#f59e0b' }}>Home</Link>
+              <Link href="/products" className="hover:underline text-sm" style={{ color: '#f59e0b' }}>Products</Link>
+              <Link href="/categories" className="hover:underline text-sm" style={{ color: '#f59e0b' }}>Categories</Link>
             </nav>
 
             {/* Right side */}
@@ -128,7 +134,7 @@ export default function Header({ settings }: HeaderProps) {
               </button>
 
               {/* Cart */}
-              <Link href="/cart" style={{ color: settings.themeColor || '#374151' }} className="relative p-2">
+              <Link href="/cart" className="relative p-2">
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H19M7 13l-1.1 5M7 13h10m0 0v8a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 002 2v6a2 2 0 002 2z" />
                 </svg>
@@ -142,12 +148,13 @@ export default function Header({ settings }: HeaderProps) {
               {/* User section */}
               {user ? (
                 <div className="hidden md:flex items-center space-x-3">
-                  <Link href="/my-orders" className="text-sm font-medium" style={{ color: settings.themeColor || '#374151' }}>My Orders</Link>
+                  <Link href="/account" className="text-sm font-medium" style={{ color: '#f59e0b' }}>Account</Link>
+                  <Link href="/my-orders" className="text-sm font-medium" style={{ color: '#f59e0b' }}>My Orders</Link>
                   <span className="text-sm text-gray-600">Hi, {user.name?.split(' ')[0] || 'User'}</span>
                   <button onClick={handleLogout} className="text-sm text-red-600 hover:underline">Logout</button>
                 </div>
               ) : (
-                <button onClick={() => setShowRewardsPopup(true)} className="hidden md:block text-sm font-medium px-3 py-1.5 rounded-lg" style={{ backgroundColor: settings.themeColor || '#f59e0b', color: '#fff' }}>
+                <button onClick={() => setShowRewardsPopup(true)} className="hidden md:block text-sm font-medium px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#f59e0b', color: '#fff' }}>
                   Login
                 </button>
               )}
@@ -165,13 +172,14 @@ export default function Header({ settings }: HeaderProps) {
           {isMenuOpen && (
             <div className="md:hidden border-t border-gray-200 py-3">
               <nav className="flex flex-col space-y-2">
-                <Link href="/" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1.5 hover:underline">Home</Link>
-                <Link href="/products" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1.5 hover:underline">Products</Link>
-                <Link href="/categories" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1.5 hover:underline">Categories</Link>
+                <Link href="/" className="px-2 py-1.5 hover:underline" style={{ color: '#f59e0b' }}>Home</Link>
+                <Link href="/products" className="px-2 py-1.5 hover:underline" style={{ color: '#f59e0b' }}>Products</Link>
+                <Link href="/categories" className="px-2 py-1.5 hover:underline" style={{ color: '#f59e0b' }}>Categories</Link>
                 <hr />
                 {user ? (
                   <>
-                    <Link href="/my-orders" style={{ color: settings.themeColor || '#374151' }} className="px-2 py-1.5 font-medium hover:underline">My Orders</Link>
+                    <Link href="/account" className="px-2 py-1.5 font-medium hover:underline" style={{ color: '#f59e0b' }}>Account</Link>
+                    <Link href="/my-orders" className="px-2 py-1.5 font-medium hover:underline" style={{ color: '#f59e0b' }}>My Orders</Link>
                     <button onClick={handleLogout} className="px-2 py-1.5 text-left text-red-600">Logout</button>
                   </>
                 ) : (

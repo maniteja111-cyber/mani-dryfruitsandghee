@@ -6,6 +6,19 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { useCart } from '@/app/contexts/CartContext'
 
+interface Address {
+  id: string
+  label: string
+  name: string
+  phone: string
+  address: string
+  address2?: string
+  city: string
+  state: string
+  pincode: string
+  isDefault: boolean
+}
+
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart()
   const router = useRouter()
@@ -20,9 +33,13 @@ export default function CheckoutPage() {
   const [loyaltyPoints, setLoyaltyPoints] = useState(0)
   const [pointsToRedeem, setPointsToRedeem] = useState(0)
   const [welcomeCoupon, setWelcomeCoupon] = useState('')
+  const [addresses, setAddresses] = useState<Address[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('')
+  const [useNewAddress, setUseNewAddress] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    email: '',
     address: '',
     city: '',
     state: '',
@@ -31,7 +48,6 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     fetchSettings()
-    // Check for welcome coupon from login
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search)
       const wc = urlParams.get('welcome')
@@ -40,17 +56,64 @@ export default function CheckoutPage() {
         setCouponCode(wc)
       }
       
-      // Load user and points
       const userStr = localStorage.getItem('user')
       if (userStr) {
         try {
           const parsed = JSON.parse(userStr)
           setUser(parsed)
           setLoyaltyPoints(parsed.loyaltyPoints || 0)
+          setFormData(prev => ({
+            ...prev,
+            name: parsed.name || '',
+            phone: parsed.phone || ''
+          }))
         } catch {}
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (user) {
+      fetchAddresses()
+    }
+  }, [user])
+
+  const fetchAddresses = async () => {
+    try {
+      const res = await fetch(`/api/user/addresses?userId=${user.id}`)
+      if (res.ok) {
+        const addrs = await res.json()
+        setAddresses(addrs)
+        const defaultAddr = addrs.find((a: Address) => a.isDefault)
+        if (defaultAddr) {
+          setSelectedAddressId(defaultAddr.id)
+          setFormData({
+            name: defaultAddr.name,
+            phone: defaultAddr.phone,
+            email: user?.email || '',
+            address: defaultAddr.address,
+            city: defaultAddr.city,
+            state: defaultAddr.state,
+            pincode: defaultAddr.pincode
+          })
+        }
+      }
+    } catch (e) { console.error(e) }
+  }
+
+  const handleAddressSelect = (addr: Address) => {
+    setSelectedAddressId(addr.id)
+    setFormData({
+      name: addr.name,
+      phone: addr.phone,
+      email: user?.email || '',
+      address: addr.address,
+      city: addr.city,
+      state: addr.state,
+      pincode: addr.pincode
+    })
+    setUseNewAddress(false)
+  }
   
   useEffect(() => {
     if (welcomeCoupon) {
@@ -293,59 +356,117 @@ export default function CheckoutPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  />
+                </div>
               </div>
             </div>
 
             <div>
               <h2 className="text-xl font-semibold mb-4">Delivery Address</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <input
-                    type="text"
-                    name="address"
-                    required
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                  />
+              
+              {addresses.length > 0 && !useNewAddress && (
+                <div className="mb-4 space-y-2">
+                  {addresses.map(addr => (
+                    <div 
+                      key={addr.id} 
+                      onClick={() => handleAddressSelect(addr)}
+                      className={`border rounded-lg p-3 cursor-pointer transition ${
+                        selectedAddressId === addr.id ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">{addr.name} ({addr.label})</p>
+                          {addr.isDefault && <span className="text-xs text-yellow-600">Default</span>}
+                          <p className="text-gray-700">{addr.address}{addr.address2 && `, ${addr.address2}`}</p>
+                          <p className="text-gray-700">{addr.city}, {addr.state} {addr.pincode}</p>
+                          <p className="text-sm text-gray-600">{addr.phone}</p>
+                        </div>
+                        <input
+                          type="radio"
+                          checked={selectedAddressId === addr.id}
+                          onChange={() => handleAddressSelect(addr)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setUseNewAddress(true)}
+                    className="text-sm text-yellow-600 hover:text-yellow-700"
+                  >
+                    + Use a different address
+                  </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              )}
+
+              {(useNewAddress || addresses.length === 0) && (
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
                     <input
                       type="text"
-                      name="city"
+                      name="address"
                       required
-                      value={formData.city}
+                      value={formData.address}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                    <input
-                      type="text"
-                      name="state"
-                      required
-                      value={formData.state}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                      <input
+                        type="text"
+                        name="city"
+                        required
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                      <input
+                        type="text"
+                        name="state"
+                        required
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
+                      <input
+                        type="text"
+                        name="pincode"
+                        required
+                        value={formData.pincode}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
-                    <input
-                      type="text"
-                      name="pincode"
-                      required
-                      value={formData.pincode}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                    />
-                  </div>
+                  {addresses.length > 0 && (
+                    <button
+                      onClick={() => setUseNewAddress(false)}
+                      className="text-sm text-gray-600 hover:text-gray-800"
+                    >
+                      ← Back to saved addresses
+                    </button>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
 
 {/* Coupon Section */}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { signOut } from 'next-auth/react'
 import RewardsPopup from '@/components/RewardsPopup'
 import RewardsPanel from '@/components/RewardsPanel'
 
@@ -56,10 +57,14 @@ export default function RewardsButton({ phone }: RewardsButtonProps) {
   }
 
   const handleLogout = () => {
+    const token = localStorage.getItem('token')
     localStorage.removeItem('user')
     localStorage.removeItem('token')
     setUser(null)
     setIsMenuOpen(false)
+    if (token && token.startsWith('nextauth-')) {
+      signOut({ callbackUrl: '/' })
+    }
   }
 
   return (

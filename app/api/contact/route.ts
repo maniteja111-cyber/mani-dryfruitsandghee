@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sendContactEmail, sendContactConfirmationEmail } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,9 +9,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'All fields required' }, { status: 400 })
     }
 
-    console.log('Contact form submission:', { name, email, phone, message })
+    // Send emails in background without blocking response
+    Promise.allSettled([
+      sendContactEmail({ name, email, phone, message }),
+      sendContactConfirmationEmail(email, name)
+    ]).catch(() => {})
 
-    return NextResponse.json({ success: true, message: 'Message sent successfully' })
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Message sent successfully' 
+    })
   } catch (error) {
     console.error('Contact error:', error)
     return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })

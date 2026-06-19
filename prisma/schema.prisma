@@ -27,6 +27,7 @@ model User {
   firstPurchase  Boolean  @default(false)
   securityQuestion String?
   securityAnswer String?
+  addresses      Json?    // Array of saved addresses
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -125,6 +126,7 @@ model Order {
   razorpayPaymentId String?
   name             String
   phone            String
+  email            String?
   address          String
   city             String
   state            String
