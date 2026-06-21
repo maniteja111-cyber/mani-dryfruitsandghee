@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Header from '@/components/Header'
+import Footer from '@/components/Footer'
+import RewardsPopup from '@/components/RewardsPopup'
+import RewardsPanel from '@/components/RewardsPanel'
+import WhatsAppButton from '@/components/WhatsAppButton'
+import RewardsButton from '@/components/RewardsButton'
 
 interface Address {
   id: string
@@ -81,83 +87,90 @@ export default function AccountPage() {
     }
   }
 
-  if (!user) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold mb-6">My Account</h1>
-        
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-xl font-bold mb-4">Profile</h2>
-          <div className="space-y-2">
-            <p className="text-gray-700"><span className="font-medium">Name:</span> {user?.name || '—'}</p>
-            <p className="text-gray-700"><span className="font-medium">Phone:</span> {user?.phone}</p>
-            <p className="text-gray-700"><span className="font-medium">Email:</span> {user?.email || '—'}</p>
-            <p className="text-gray-700"><span className="font-medium">Loyalty Points:</span> {user?.loyaltyPoints || 0}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Saved Addresses</h2>
-            <button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ label: '', name: user.name || '', phone: user.phone || '', address: '', address2: '', city: '', state: '', pincode: '', isDefault: addresses.length === 0 }) }} className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">
-              + Add Address
-            </button>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      <Header settings={{ themeColor: '#f59e0b' }} />
+      <main className="py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <h1 className="text-3xl font-bold mb-6">My Account</h1>
           
-          {showForm && (
-            <form onSubmit={handleSubmit} className="mb-6 p-4 border rounded-lg space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <select name="label" value={formData.label} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required>
-                  <option value="">Select Label</option>
-                  <option value="Home">Home</option>
-                  <option value="Work">Work</option>
-                  <option value="Other">Other</option>
-                </select>
-                <input type="text" name="name" placeholder="Name" value={formData.name} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
-                <input type="tel" name="phone" placeholder="Phone" value={formData.phone} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
-                <input type="text" name="address" placeholder="Address Line 1" value={formData.address} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
-                <input type="text" name="address2" placeholder="Address Line 2 (Optional)" value={formData.address2} onChange={handleInputChange} className="px-3 py-2 border rounded-md" />
-                <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
-                <input type="text" name="state" placeholder="State" value={formData.state} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
-                <input type="text" name="pincode" placeholder="Pincode" value={formData.pincode} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
-              </div>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" name="isDefault" checked={formData.isDefault} onChange={handleInputChange} />
-                Set as default address
-              </label>
-              <div className="flex gap-2">
-                <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Save</button>
-                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
-              </div>
-            </form>
-          )}
+          <div className="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 className="text-xl font-bold mb-4">Profile</h2>
+            <div className="space-y-2">
+              <p className="text-gray-700"><span className="font-medium">Name:</span> {user?.name || '—'}</p>
+              <p className="text-gray-700"><span className="font-medium">Phone:</span> {user?.phone}</p>
+              <p className="text-gray-700"><span className="font-medium">Email:</span> {user?.email || '—'}</p>
+              <p className="text-gray-700"><span className="font-medium">Loyalty Points:</span> {user?.loyaltyPoints || 0}</p>
+            </div>
+          </div>
 
-          {addresses.length === 0 ? (
-            <p className="text-gray-500">No saved addresses yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {addresses.map((addr, idx) => (
-                <div key={`${addr.id}-${idx}`} className="border p-4 rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{addr.name} <span className="text-gray-500">({addr.label})</span>{addr.isDefault && <span className="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Default</span>}</p>
-                      <p className="text-gray-700">{addr.address}{addr.address2 && ', ' + addr.address2}</p>
-                      <p className="text-gray-700">{addr.city}, {addr.state} {addr.pincode}</p>
-                      <p className="text-sm text-gray-600">{addr.phone}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleEdit(addr)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
-                      <button onClick={() => handleDelete(addr.id)} className="text-red-600 hover:text-red-800 text-sm">Delete</button>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Saved Addresses</h2>
+              <button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ label: '', name: user.name || '', phone: user.phone || '', address: '', address2: '', city: '', state: '', pincode: '', isDefault: addresses.length === 0 }) }} className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">
+                + Add Address
+              </button>
+            </div>
+            
+            {showForm && (
+              <form onSubmit={handleSubmit} className="mb-6 p-4 border rounded-lg space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <select name="label" value={formData.label} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required>
+                    <option value="">Select Label</option>
+                    <option value="Home">Home</option>
+                    <option value="Work">Work</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <input type="text" name="name" placeholder="Name" value={formData.name} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                  <input type="tel" name="phone" placeholder="Phone" value={formData.phone} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                  <input type="text" name="address" placeholder="Address Line 1" value={formData.address} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                  <input type="text" name="address2" placeholder="Address Line 2 (Optional)" value={formData.address2} onChange={handleInputChange} className="px-3 py-2 border rounded-md" />
+                  <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                  <input type="text" name="state" placeholder="State" value={formData.state} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                  <input type="text" name="pincode" placeholder="Pincode" value={formData.pincode} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                </div>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" name="isDefault" checked={formData.isDefault} onChange={handleInputChange} />
+                  Set as default address
+                </label>
+                <div className="flex gap-2">
+                  <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Save</button>
+                  <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+                </div>
+              </form>
+            )}
+
+            {addresses.length === 0 ? (
+              <p className="text-gray-500">No saved addresses yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {addresses.map((addr, idx) => (
+                  <div key={`${addr.id}-${idx}`} className="border p-4 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">{addr.name} <span className="text-gray-500">({addr.label})</span>{addr.isDefault && <span className="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Default</span>}</p>
+                        <p className="text-gray-700">{addr.address}{addr.address2 && ', ' + addr.address2}</p>
+                        <p className="text-gray-700">{addr.city}, {addr.state} {addr.pincode}</p>
+                        <p className="text-sm text-gray-600">{addr.phone}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleEdit(addr)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
+                        <button onClick={() => handleDelete(addr.id)} className="text-red-600 hover:text-red-800 text-sm">Delete</button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </main>
+      <Footer settings={{}} />
+      <WhatsAppButton phone="9515019393" />
+      <RewardsButton phone="9515019393" />
+      <RewardsPopup isOpen={false} onClose={() => {}} onLoginSuccess={() => {}} />
     </div>
   )
 }
