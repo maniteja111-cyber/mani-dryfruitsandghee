@@ -27,16 +27,7 @@ export const authOptions = {
               email: email,
               loyaltyPoints: 0,
               referralCode: 'MANI' + Math.random().toString(36).substring(2, 6).toUpperCase(),
-              lastLoginDate: new Date(),
               firstPurchase: false
-            }
-          })
-        } else {
-          await prisma.user.update({
-            where: { phone: email },
-            data: { 
-              lastLoginDate: new Date(),
-              email: email
             }
           })
         }
