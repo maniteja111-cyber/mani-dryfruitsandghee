@@ -36,6 +36,7 @@ export default function CheckoutPage() {
   const [addresses, setAddresses] = useState<Address[]>([])
   const [selectedAddressId, setSelectedAddressId] = useState<string>('')
   const [useNewAddress, setUseNewAddress] = useState(false)
+  const [redeemedPoints, setRedeemedPoints] = useState(0)
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -74,6 +75,11 @@ export default function CheckoutPage() {
       if (wc) {
         setWelcomeCoupon(wc)
         setCouponCode(wc)
+      }
+      
+      const savedPoints = localStorage.getItem('loyaltyPointsRedeemed')
+      if (savedPoints) {
+        setRedeemedPoints(parseInt(savedPoints))
       }
       
       const userStr = localStorage.getItem('user')
@@ -166,6 +172,7 @@ export default function CheckoutPage() {
           })
         })
         if (verifyRes.ok) {
+          localStorage.removeItem('loyaltyPointsRedeemed')
           clearCart()
           router.push(`/order-success?orderId=${order.id}`)
         } else {
@@ -183,15 +190,16 @@ export default function CheckoutPage() {
     e.preventDefault()
     setLoading(true)
     let finalTotal = appliedCoupon ? appliedCoupon.finalTotal : total
-    const pointsDiscount = (pointsToRedeem / 100) * 50
+    const pointsDiscount = (redeemedPoints / 100) * 50
     finalTotal = Math.max(0, finalTotal - pointsDiscount)
-    const orderData = { items, total: finalTotal, originalTotal: total, couponCode: appliedCoupon?.code || null, discount: (appliedCoupon?.discount || 0) + pointsDiscount, pointsRedeemed: pointsToRedeem, paymentMethod, ...formData }
+    const orderData = { items, total: finalTotal, originalTotal: total, couponCode: appliedCoupon?.code || null, discount: (appliedCoupon?.discount || 0) + pointsDiscount, pointsRedeemed: redeemedPoints, paymentMethod, ...formData }
     try {
       if (paymentMethod === 'razorpay') await handleRazorpayPayment(orderData)
       else {
         const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderData) })
         if (res.ok) {
           const order = await res.json()
+          localStorage.removeItem('loyaltyPointsRedeemed')
           clearCart()
           router.push(`/order-success?orderId=${order.id}`)
         } else alert((await res.json()).error || 'Failed to place order')
@@ -277,8 +285,8 @@ export default function CheckoutPage() {
                 <div className="p-3 bg-yellow-50 rounded-lg">
                   <h3 className="font-semibold text-sm mb-2">Redeem Loyalty Points</h3>
                   <p className="text-xs text-gray-600 mb-2">You have {loyaltyPoints} points (100 pts = ₹50 off) - Max 100 pts per order</p>
-                  <input type="number" min="0" max="100" step="100" value={pointsToRedeem} onChange={(e) => setPointsToRedeem(Math.min(100, Number(e.target.value)))} placeholder="Enter points" className="w-full px-2 py-1 border rounded text-sm" />
-                  <p className="text-xs text-green-600 mt-1">Discount: ₹{(pointsToRedeem / 100) * 50}</p>
+                  <input type="number" min="0" max="100" step="100" value={redeemedPoints} onChange={(e) => setRedeemedPoints(Math.min(100, Number(e.target.value)))} placeholder="Enter points" className="w-full px-2 py-1 border rounded text-sm" />
+                  <p className="text-xs text-green-600 mt-1">Discount: ₹{(redeemedPoints / 100) * 50}</p>
                 </div>
               )}
               <div>
@@ -295,7 +303,8 @@ export default function CheckoutPage() {
                 {items.map(item => <div key={item.id} className="flex justify-between"><span>{item.name} x {item.quantity}</span><span>₹{(item.discountPrice || item.price) * item.quantity}</span></div>)}
                 <hr />
                 {appliedCoupon && <div className="flex justify-between text-green-600"><span>Discount ({appliedCoupon.code})</span><span>-₹{appliedCoupon.discount}</span></div>}
-                <div className="flex justify-between text-lg font-semibold"><span>{appliedCoupon ? 'Final Total' : 'Total'}:</span><span>₹{appliedCoupon ? appliedCoupon.finalTotal : total}</span></div>
+                {redeemedPoints > 0 && <div className="flex justify-between text-green-600"><span>Loyalty Discount ({redeemedPoints} pts)</span><span>-₹{(redeemedPoints / 100) * 50}</span></div>}
+                <div className="flex justify-between text-lg font-semibold"><span>{appliedCoupon || redeemedPoints ? 'Final Total' : 'Total'}:</span><span>₹{appliedCoupon ? appliedCoupon.finalTotal : total}</span></div>
               </div>
               <button type="submit" disabled={loading || paymentProcessing} style={{ backgroundColor: settings.themeColor || '#f59e0b', color: '#fff' }} className="w-full py-3 rounded-lg hover:opacity-90 disabled:opacity-50 font-semibold">
                 {paymentProcessing ? 'Processing Payment...' : loading ? 'Creating Order...' : 'Place Order'}

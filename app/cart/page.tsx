@@ -49,8 +49,21 @@ export default function CartPage() {
   }
 
   const handleRedeemPoints = (points: number) => {
-    const maxRedeem = Math.min(100, loyaltyPoints, Math.floor(total / 50) * 100)
-    setRedeemedPoints(Math.min(points, maxRedeem, 100))
+    const maxAllowed = Math.min(100, loyaltyPoints, Math.floor(total / 50) * 100)
+    const finalPoints = Math.min(points, maxAllowed, 100)
+    if (points > 100) {
+      alert('Maximum 100 points can be redeemed per order!')
+      setRedeemedPoints(100)
+    } else {
+      setRedeemedPoints(finalPoints)
+    }
+  }
+
+  const handleProceedToCheckout = () => {
+    if (redeemedPoints > 0) {
+      localStorage.setItem('loyaltyPointsRedeemed', redeemedPoints.toString())
+    }
+    router.push('/checkout')
   }
 
   const discount = Math.floor(redeemedPoints / 100) * 50
@@ -166,8 +179,8 @@ export default function CartPage() {
                   <span>₹{total}</span>
                 </div>
                 {discount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Loyalty Discount:</span>
+                  <div className="flex justify-between text-green-600 animate-pulse">
+                    <span>Loyalty Discount 🎉:</span>
                     <span>-₹{discount}</span>
                   </div>
                 )}
@@ -177,7 +190,7 @@ export default function CartPage() {
                 </div>
               </div>
               <button
-                onClick={() => router.push('/checkout')}
+                onClick={handleProceedToCheckout}
                 className="w-full bg-yellow-600 text-white py-3 rounded-lg hover:bg-yellow-700 transition-colors"
               >
                 Proceed to Checkout
