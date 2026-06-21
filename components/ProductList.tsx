@@ -230,7 +230,7 @@ let images: string[] = []
 
       return (
         <div key={product.id} className="bg-white rounded-2xl shadow p-4 group">
-          <div className="relative">
+          <Link href={`/products/${product.slug}`} className="relative block">
             {images && images.length > 0 ? (
               <img
                 src={images[0]}
@@ -244,14 +244,14 @@ let images: string[] = []
             )}
 
             <button
-              onClick={() => toggleWishlist(product.id)}
+              onClick={(e) => { e.preventDefault(); toggleWishlist(product.id) }}
               className="absolute top-3 right-3 p-1.5 bg-white/90 rounded-full shadow hover:bg-white"
             >
               <span className="text-lg" style={{ color: wishlist.includes(product.id) ? (settings.themeColor || '#ef4444') : '#9ca3af' }}>
                 {wishlist.includes(product.id) ? '♥' : '♡'}
               </span>
             </button>
-          </div>
+          </Link>
           {!inStock && (
             <div className="mt-2 text-center">
               <span className="bg-red-500 text-white px-2 py-1 text-xs rounded">Out of Stock</span>
@@ -274,7 +274,9 @@ let images: string[] = []
               <option value="">Out of Stock</option>
             )}
           </select>
-          <h3 className="font-bold mt-3">{product.name}</h3>
+          <Link href={`/products/${product.slug}`} className="block mt-3">
+            <h3 className="font-bold hover:text-yellow-600 cursor-pointer">{product.name}</h3>
+          </Link>
           <div className="flex items-center space-x-2 mt-1">
             <p className="font-bold text-xl">₹{price}</p>
           </div>

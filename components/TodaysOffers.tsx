@@ -74,23 +74,27 @@ export default function TodaysOffers({ products }: TodaysOffersProps) {
 
 return (
                   <div key={product.id} className="bg-white rounded-2xl shadow p-4">
-                    {images.length > 0 && imageSrc ? (
-                      <img
-                        src={imageSrc}
-                        alt={product.name}
-                        className="h-40 w-full object-cover rounded-xl"
-                      />
-                    ) : (
-                      <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
-                        <span className="text-gray-500">No Image</span>
-                      </div>
-                    )}
+                    <Link href={`/products/${product.slug}`} className="block">
+                      {images.length > 0 && imageSrc ? (
+                        <img
+                          src={imageSrc}
+                          alt={product.name}
+                          className="h-40 w-full object-cover rounded-xl"
+                        />
+                      ) : (
+                        <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
+                          <span className="text-gray-500">No Image</span>
+                        </div>
+                      )}
+                    </Link>
                     {!inStock && (
                       <div className="mt-2 text-center">
                         <span className="bg-red-500 text-white px-2 py-1 text-xs rounded">Out of Stock</span>
                       </div>
                     )}
-                    <h3 className="font-bold mt-3">{product.name}</h3>
+                    <Link href={`/products/${product.slug}`} className="block mt-3">
+                      <h3 className="font-bold hover:text-red-600 cursor-pointer">{product.name}</h3>
+                    </Link>
 
                     <select
                       value={selectedVariant?.size || ''}

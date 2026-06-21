@@ -119,7 +119,7 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
 
               return (
                 <div key={product.id} className="bg-white rounded-2xl shadow hover:shadow-lg transition-all p-4 group">
-                  <div className="relative">
+                  <Link href={`/products/${product.slug}`} className="relative block">
                     {images && images.length > 0 ? (
                       <img
                         src={imageSrc}
@@ -133,20 +133,22 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
                     )}
 
                     <button
-                      onClick={() => toggleWishlist(product.id)}
+                      onClick={(e) => { e.preventDefault(); toggleWishlist(product.id) }}
                       className="absolute top-3 right-3 p-2 bg-white/90 rounded-full shadow hover:bg-white transition"
                     >
                       <span className="text-lg" style={{ color: wishlist.includes(product.id) ? (settings.themeColor || '#ef4444') : '#9ca3af' }}>
                         {wishlist.includes(product.id) ? '♥' : '♡'}
                       </span>
                     </button>
-                  </div>
+                  </Link>
                   {!inStock && (
                     <div className="mt-2 text-center">
                       <span className="bg-red-500 text-white px-2 py-1 text-xs rounded">Out of Stock</span>
                     </div>
                   )}
-                  <h3 className="font-bold mt-3">{product.name}</h3>
+                  <Link href={`/products/${product.slug}`} className="block mt-3">
+                    <h3 className="font-bold hover:text-yellow-600 cursor-pointer">{product.name}</h3>
+                  </Link>
 
                   <select
                     value={selectedVariant?.size || ''}
