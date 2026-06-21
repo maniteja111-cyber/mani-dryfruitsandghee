@@ -52,9 +52,9 @@ export default function RewardsButton({ phone }: RewardsButtonProps) {
 
   const handleRewardsClick = () => {
     if (user) {
-      setShowPopup(true)
+      window.dispatchEvent(new CustomEvent('openRewardsPanel'))
     } else {
-      setIsMenuOpen(true)
+      window.dispatchEvent(new CustomEvent('openRewardsPopup'))
     }
   }
 

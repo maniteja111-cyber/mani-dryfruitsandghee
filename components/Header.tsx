@@ -70,9 +70,16 @@ export default function Header({ settings }: HeaderProps) {
     // Listen for login updates from popups
     window.addEventListener('storage', loadUser)
     window.addEventListener('userLogin', loadUser)
+    
+    const handleOpenRewardsPanel = () => setShowRewardsPanel(true)
+    const handleOpenRewardsPopup = () => setShowRewardsPopup(true)
+    window.addEventListener('openRewardsPanel', handleOpenRewardsPanel)
+    window.addEventListener('openRewardsPopup', handleOpenRewardsPopup)
     return () => {
       window.removeEventListener('storage', loadUser)
       window.removeEventListener('userLogin', loadUser)
+      window.removeEventListener('openRewardsPanel', handleOpenRewardsPanel)
+      window.removeEventListener('openRewardsPopup', handleOpenRewardsPopup)
     }
   }, [])
 
