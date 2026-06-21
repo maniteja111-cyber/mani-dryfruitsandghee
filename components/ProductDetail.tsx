@@ -97,8 +97,8 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
   const [activeTab, setActiveTab] = useState('description')
   const { addItem } = useCart()
 
-  const stockKg = Math.round(product.stockGrams / 1000)
   const stockGramsRemaining = product.stockGrams
+  const stockKg = (stockGramsRemaining / 1000).toFixed(2)
 
   useEffect(() => {
     const saved = localStorage.getItem('wishlist')
@@ -200,7 +200,7 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
 
   const price = calculatePrice(product.pricePerKg, selectedVariant.grams)
   const maxQuantity = Math.floor(stockGramsRemaining / selectedVariant.grams)
-  const maxKg = (maxQuantity * selectedVariant.grams / 1000).toFixed(2)
+  const maxKg = (stockGramsRemaining / 1000).toFixed(2)
   const avgRating = reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) : 4.5
 
   const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=Hi, I'm interested in ${product.name} (${selectedVariant.size}). Quantity: ${quantity}. Please share details.`
@@ -269,7 +269,7 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                 <span className="text-3xl font-bold text-gray-900">₹{price}</span>
                 <span className="text-gray-500 text-sm">({selectedVariant.size})</span>
               </div>
-              <p className="text-gray-600">Stock: {stockKg.toFixed(2)} kg available</p>
+              <p className="text-gray-600">Stock: {stockKg} kg available</p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
