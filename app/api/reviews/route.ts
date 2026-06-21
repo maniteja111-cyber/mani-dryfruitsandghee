@@ -36,7 +36,8 @@ export async function POST(req: NextRequest) {
         name,
         phone,
         rating: Number(rating),
-        comment
+        comment,
+        product: { connect: { id: productId } }
       }
     })
 

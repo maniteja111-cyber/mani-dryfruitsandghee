@@ -37,3 +37,25 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - WhatsApp button for inquiries (green, below rewards button)
 - Points display in header dropdown
 - Escape key closes all popups
+
+## Google OAuth Implementation
+- Implemented Google OAuth login with NextAuth.js
+- Added "Continue with Google" button to login page and rewards popup
+- Created account page (`/account`) for profile management
+- Updated checkout to use simple address form (removed saved address feature due to prod DB constraints)
+- Added auth method column (Google/Phone) in admin users panel
+- Fixed header colors - now uses fixed yellow (#f59e0b) instead of settings.themeColor
+- Fixed daily bonus issue - Google OAuth no longer updates lastLoginDate
+- Pushed all changes to GitHub main branch
+
+## Constraints & Preferences
+- Keep existing OTP login working
+- Use existing database schema (no migrations possible on production)
+- Header colors visible on both light and dark mobile themes
+
+## Key Decisions
+- Google OAuth stores email as `phone` field (since Google doesn't provide phone)
+- Admin detects Google users by checking if `email` field is populated
+
+## Next Steps
+- Add Facebook OAuth login (similar to Google)

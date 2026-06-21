@@ -19,9 +19,9 @@ interface Address {
 export default function AccountPage() {
   const [user, setUser] = useState<any>(null)
   const [addresses, setAddresses] = useState<Address[]>([])
-  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [editAddress, setEditAddress] = useState<Address | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [formData, setFormData] = useState({ label: '', name: '', phone: '', address: '', address2: '', city: '', state: '', pincode: '', isDefault: false })
   const router = useRouter()
 
   useEffect(() => {
@@ -30,68 +30,46 @@ export default function AccountPage() {
     const parsed = JSON.parse(userStr)
     setUser(parsed)
     setAddresses(parsed.addressBook ? JSON.parse(parsed.addressBook) : [])
-    setLoading(false)
+    setFormData({ label: '', name: parsed.name || '', phone: parsed.phone || '', address: '', address2: '', city: '', state: '', pincode: '', isDefault: false })
   }, [router])
 
-  const handleSave = async (data: Partial<Address>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     const res = await fetch('/api/user/addresses', {
-      method: editAddress ? 'PUT' : 'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editAddress ? { ...data, id: editAddress.id, userId: user.id } : { ...data, userId: user.id })
+      body: JSON.stringify({ phone: user.phone, address: { ...formData, id: editingId || undefined } })
     })
     if (res.ok) {
-      const updated = await res.json()
-      setAddresses(Array.isArray(updated) ? updated : [updated])
+      const { addresses } = await res.json()
+      setAddresses(addresses)
+      setFormData({ label: '', name: user.name || '', phone: user.phone || '', address: '', address2: '', city: '', state: '', pincode: '', isDefault: false })
       setShowForm(false)
-      setEditAddress(null)
+      setEditingId(null)
     }
+  }
+
+  const handleEdit = (addr: Address) => {
+    setFormData({ label: addr.label, name: addr.name, phone: addr.phone, address: addr.address, address2: addr.address2 || '', city: addr.city, state: addr.state, pincode: addr.pincode, isDefault: addr.isDefault })
+    setEditingId(addr.id)
+    setShowForm(true)
   }
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this address?')) return
-    const res = await fetch(`/api/user/addresses?id=${id}&userId=${user.id}`, { method: 'DELETE' })
-    if (res.ok) setAddresses(addrs => addrs.filter(a => a.id !== id))
-  }
-
-  const AddressForm = () => {
-    const [formData, setFormData] = useState<Partial<Address>>(editAddress || { label: 'Home', isDefault: false })
-
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault()
-      handleSave(formData)
+    const res = await fetch(`/api/user/addresses?phone=${user.phone}&addressId=${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      const { addresses } = await res.json()
+      setAddresses(addresses)
     }
-
-    return (
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-xl font-bold mb-4">{editAddress ? 'Edit' : 'Add'} Address</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <select value={formData.label || ''} onChange={e => setFormData({...formData, label: e.target.value})} className="border p-2 rounded">
-            <option value="">Select Label</option>
-            <option value="Home">Home</option>
-            <option value="Work">Work</option>
-            <option value="Other">Other</option>
-          </select>
-          <input type="text" placeholder="Full Name" value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} className="border p-2 rounded" required />
-          <input type="tel" placeholder="Phone" value={formData.phone || ''} onChange={e => setFormData({...formData, phone: e.target.value})} className="border p-2 rounded" required />
-          <input type="text" placeholder="Address Line 1" value={formData.address || ''} onChange={e => setFormData({...formData, address: e.target.value})} className="border p-2 rounded" required />
-          <input type="text" placeholder="Address Line 2" value={formData.address2 || ''} onChange={e => setFormData({...formData, address2: e.target.value})} className="border p-2 rounded" />
-          <input type="text" placeholder="City" value={formData.city || ''} onChange={e => setFormData({...formData, city: e.target.value})} className="border p-2 rounded" required />
-          <input type="text" placeholder="State" value={formData.state || ''} onChange={e => setFormData({...formData, state: e.target.value})} className="border p-2 rounded" required />
-          <input type="text" placeholder="Pincode" value={formData.pincode || ''} onChange={e => setFormData({...formData, pincode: e.target.value})} className="border p-2 rounded" required />
-        </div>
-        <label className="flex items-center gap-2 mt-4">
-          <input type="checkbox" checked={formData.isDefault || false} onChange={e => setFormData({...formData, isDefault: e.target.checked})} />
-          Set as default address
-        </label>
-        <div className="flex gap-2 mt-6">
-          <button type="submit" className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Save</button>
-          <button type="button" onClick={() => { setShowForm(false); setEditAddress(null); }} className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
-        </div>
-      </form>
-    )
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  if (!user) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -111,36 +89,56 @@ export default function AccountPage() {
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Saved Addresses</h2>
-            <button onClick={() => setShowForm(true)} className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+            <button onClick={() => { setShowForm(true); setEditingId(null); setFormData({ label: '', name: user.name || '', phone: user.phone || '', address: '', address2: '', city: '', state: '', pincode: '', isDefault: addresses.length === 0 }) }} className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">
               + Add Address
             </button>
           </div>
-
-          {showForm && <AddressForm />}
-
-          {!showForm && addresses.length === 0 && (
-            <p className="text-gray-500">No saved addresses. Click "Add Address" to add one.</p>
+          
+          {showForm && (
+            <form onSubmit={handleSubmit} className="mb-6 p-4 border rounded-lg space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input type="text" name="label" placeholder="Label (Home/Work)" value={formData.label} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                <input type="text" name="name" placeholder="Name" value={formData.name} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                <input type="tel" name="phone" placeholder="Phone" value={formData.phone} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                <input type="text" name="address" placeholder="Address Line 1" value={formData.address} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                <input type="text" name="address2" placeholder="Address Line 2 (Optional)" value={formData.address2} onChange={handleInputChange} className="px-3 py-2 border rounded-md" />
+                <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                <input type="text" name="state" placeholder="State" value={formData.state} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                <input type="text" name="pincode" placeholder="Pincode" value={formData.pincode} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+              </div>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" name="isDefault" checked={formData.isDefault} onChange={handleInputChange} />
+                Set as default address
+              </label>
+              <div className="flex gap-2">
+                <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Save</button>
+                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+              </div>
+            </form>
           )}
 
-          <div className="space-y-4 mt-4">
-            {addresses.map(addr => (
-              <div key={addr.id} className="border p-4 rounded">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-bold">{addr.name} ({addr.label})</p>
-                    {addr.isDefault && <span className="text-xs text-yellow-600">Default</span>}
-                    <p className="text-gray-700">{addr.address}{addr.address2 && ', ' + addr.address2}</p>
-                    <p className="text-gray-700">{addr.city}, {addr.state} {addr.pincode}</p>
-                    <p className="text-sm text-gray-600">{addr.phone}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => { setEditAddress(addr); setShowForm(true) }} className="text-blue-600 hover:underline">Edit</button>
-                    <button onClick={() => handleDelete(addr.id)} className="text-red-600 hover:underline">Delete</button>
+          {addresses.length === 0 ? (
+            <p className="text-gray-500">No saved addresses yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {addresses.map(addr => (
+                <div key={addr.id} className="border p-4 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium">{addr.name} <span className="text-gray-500">({addr.label})</span>{addr.isDefault && <span className="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Default</span>}</p>
+                      <p className="text-gray-700">{addr.address}{addr.address2 && ', ' + addr.address2}</p>
+                      <p className="text-gray-700">{addr.city}, {addr.state} {addr.pincode}</p>
+                      <p className="text-sm text-gray-600">{addr.phone}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleEdit(addr)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
+                      <button onClick={() => handleDelete(addr.id)} className="text-red-600 hover:text-red-800 text-sm">Delete</button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

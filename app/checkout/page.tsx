@@ -47,6 +47,12 @@ export default function CheckoutPage() {
   })
 
   useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/settings')
+        if (res.ok) setSettings(await res.json())
+      } catch (e) {}
+    }
     fetchSettings()
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search)
@@ -69,7 +75,7 @@ export default function CheckoutPage() {
             phone: parsed.phone || '',
             email: parsed.email || ''
           }))
-          const defaultAddr = parsed.addressBook ? JSON.parse(parsed.addressBook).find((a: Address) => a.isDefault) : null
+          const defaultAddr = parsed.addressBook ? JSON.parse(parsed.addressBook).find((a: any) => a.isDefault) : null
           if (defaultAddr) {
             setFormData(prev => ({ ...prev, address: defaultAddr.address, city: defaultAddr.city, state: defaultAddr.state, pincode: defaultAddr.pincode }))
             setSelectedAddressId(defaultAddr.id)
@@ -78,13 +84,6 @@ export default function CheckoutPage() {
       }
     }
   }, [])
-
-  const fetchSettings = async () => {
-    try {
-      const res = await fetch('/api/settings')
-      if (res.ok) setSettings(await res.json())
-    } catch (e) {}
-  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
