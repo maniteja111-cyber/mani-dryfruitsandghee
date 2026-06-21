@@ -58,9 +58,13 @@ function calculatePrice(basePricePerKg: number | null, grams: number): number {
 }
 
 export default function ProductDetail({ product, settings, relatedProducts = [] }: ProductDetailProps) {
-  let images = []
+  let images: string[] = []
   try {
-    images = JSON.parse(product.images as string)
+    if (Array.isArray(product.images)) {
+      images = product.images
+    } else if (typeof product.images === 'string') {
+      images = JSON.parse(product.images)
+    }
   } catch (error) {
     images = product.images && typeof product.images === 'string' && product.images.trim() ? [product.images] : []
   }
