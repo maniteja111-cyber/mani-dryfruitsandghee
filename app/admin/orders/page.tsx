@@ -27,6 +27,7 @@ interface Order {
   discount?: number
   razorpayOrderId?: string
   razorpayPaymentId?: string
+  pointsRedeemed?: number
   orderItems: OrderItem[]
 }
 
@@ -403,6 +404,12 @@ export default function AdminOrdersPage() {
                   <span className="font-medium">Coupon Applied:</span>{' '}
                   <span className="font-mono font-semibold">{(selectedOrder as any).couponCode}</span>
                   {' '}- Saved ₹{(selectedOrder as any).discount || 0}
+                </div>
+              )}
+              {(selectedOrder as any).pointsRedeemed > 0 && (
+                <div className="bg-blue-50 p-3 rounded text-sm">
+                  <span className="font-medium">Loyalty Discount:</span>{' '}
+                  <span className="font-semibold">{selectedOrder.pointsRedeemed} pts = ₹{selectedOrder.pointsRedeemed === 100 ? 50 : selectedOrder.pointsRedeemed === 50 ? 25 : 0}</span>
                 </div>
               )}
             </div>

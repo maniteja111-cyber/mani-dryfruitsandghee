@@ -22,8 +22,10 @@ export function generateOrderConfirmationMessage(order: OrderForMessage, whatsap
       let variantText = ''
       if (item.variant?.size) {
         variantText = ` (${item.variant.size})`
-        if (item.variant.weightGrams) variantText += ` - ${item.variant.weightGrams}g`
-        if (item.variant.pieces) variantText += ` - ${item.variant.pieces} pc`
+      } else if (item.variant?.weightGrams) {
+        variantText = ` (${item.variant.weightGrams}g)`
+      } else if (item.variant?.pieces) {
+        variantText = ` (${item.variant.pieces} pc)`
       }
       return `• ${item.product?.name || 'Item'}${variantText} × ${item.quantity} = ₹${(item.price * item.quantity).toFixed(0)}`
     })
