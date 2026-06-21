@@ -103,7 +103,79 @@ export default function AdminSettingsPage() {
     try {
       const res = await fetch('/api/admin/settings')
       if (res.ok) {
-        setSettings(await res.json())
+        const data = await res.json()
+        const defaultSettings: Record<string, string> = {
+          aboutUsContent: `MANI DRY FRUITS & GHEE STORES is a premium retailer specializing in organic dry fruits, 
+artisanal pickles, and pure ghee. Established with a commitment to quality and 
+authenticity, we source our products directly from trusted farmers.
+
+Our Mission
+To provide customers with the highest quality natural foods that promote health 
+and wellness, while supporting sustainable farming practices.
+
+Why Choose Us
+• 100% Organic and Natural Products
+• Direct from Farm to Table
+• No Preservatives or Artificial Additives
+• Fast and Safe Delivery Across India
+• Hassle-free Returns and Exchanges`,
+          shippingPolicyContent: `We deliver premium dry fruits, pickles, and ghee across India with care and hygiene.
+
+Shipping Areas: We ship to all major cities and towns across India.
+
+Delivery Time: Typically 2-5 business days depending on location.
+
+Shipping Charges: Free shipping on orders above ₹999. Standard shipping charge of ₹50 applies for orders below ₹999.
+
+Packaging: All products are carefully packed in hygienic, tamper-proof packaging.
+
+Order Tracking: You will receive a tracking number via SMS and email once your order is dispatched.`,
+          refundPolicyContent: `We want you to be completely satisfied with your purchase. If you are not satisfied for any reason, we offer a 30-day money-back guarantee.
+
+Eligibility for Refund:
+• Products must be unused and in original packaging
+• Request must be made within 30 days of delivery
+• Products should not be expired or damaged
+
+How to Request a Refund: Contact us at +91 9515019393 with your order details.
+
+Refund Processing: Refunds will be processed within 5-7 business days.
+
+Return Shipping: We will provide a prepaid return shipping label for eligible returns.`,
+          privacyPolicyContent: `Last updated: June 2024
+
+Information We Collect: We collect information you provide directly to us, including name, phone number, email, address, and order details.
+
+How We Use Your Information:
+• Process and fulfill your orders
+• Send you order confirmations and updates
+• Provide customer support
+• Improve our products and services
+
+Data Security: We take reasonable measures to protect your personal information.
+
+Contact Us: If you have questions, please contact us at +91 9515019393.`,
+          termsAndConditionsContent: `Last updated: June 2024
+
+Acceptance of Terms: By accessing or using our website, you agree to be bound by these Terms and Conditions.
+
+Product Information: We strive to provide accurate product information.
+
+Orders: All orders are subject to our acceptance.
+
+Payment: All payments are processed securely.
+
+Limitation of Liability: Our liability is limited to the purchase price of the product.
+
+Governing Law: These terms are governed by the laws of India.`
+        }
+        const mergedData = [...data]
+        for (const key of Object.keys(defaultSettings)) {
+          if (!data.find((s: any) => s.key === key)) {
+            mergedData.push({ id: `new-${key}`, key, value: defaultSettings[key] })
+          }
+        }
+        setSettings(mergedData)
       }
     } catch (error) {
       console.error('Error fetching settings:', error)
@@ -170,16 +242,20 @@ export default function AdminSettingsPage() {
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-4">Current Settings</h2>
 <ul className="text-sm text-blue-700 space-y-1">
-               <li><strong>siteName:</strong> Main website title</li>
-               <li><strong>logo:</strong> Full URL to logo image</li>
-               <li><strong>themeColor:</strong> Hex color code (e.g., #ffd862)</li>
-               <li><strong>whatsappNumber:</strong> Business WhatsApp number (with country code)</li>
-               <li><strong>phone/email/address:</strong> Contact information</li>
-               <li><strong>banners:</strong> JSON array of banner objects with image, title, description</li>
-               <li><strong>heroTitle:</strong> Hero section main title</li>
-               <li><strong>heroSubtitle:</strong> Hero section subtitle (auto-saved on blur)</li>
-               <li><strong>seoTitle/seoDescription:</strong> Homepage SEO metadata</li>
-             </ul>
+                <li><strong>siteName:</strong> Main website title</li>
+                <li><strong>logo:</strong> Full URL to logo image</li>
+                <li><strong>themeColor:</strong> Hex color code (e.g., #ffd862)</li>
+                <li><strong>whatsappNumber:</strong> Business WhatsApp number (with country code)</li>
+                <li><strong>phone/email/address:</strong> Contact information</li>
+                <li><strong>banners:</strong> JSON array of banner objects with image, title, description</li>
+                <li><strong>heroTitle/heroSubtitle:</strong> Hero section titles</li>
+                <li><strong>aboutUsContent:</strong> About Us page content (multiline text)</li>
+                <li><strong>shippingPolicyContent:</strong> Shipping Policy page content</li>
+                <li><strong>refundPolicyContent:</strong> Refund Policy page content</li>
+                <li><strong>privacyPolicyContent:</strong> Privacy Policy page content</li>
+                <li><strong>termsAndConditionsContent:</strong> Terms & Conditions page content</li>
+                <li><strong>seoTitle/seoDescription:</strong> Homepage SEO metadata</li>
+              </ul>
           </div>
 
           <div className="border-t pt-6">
@@ -192,7 +268,16 @@ export default function AdminSettingsPage() {
                     <span className="text-xs text-gray-400">{setting.key === 'logo' || setting.key === 'themeColor' ? 'saved instantly' : 'auto-saved on blur'}</span>
                   </div>
 
-{setting.key === 'heroSubtitle' ? (
+{setting.key === 'aboutUsContent' ? (
+                    <textarea
+                      value={setting.value}
+                      onChange={(e) => handleInputChange(setting.key, e.target.value)}
+                      onBlur={(e) => handleSave(setting.key, e.target.value)}
+                      placeholder="Enter about us content..."
+                      rows={10}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  ) : setting.key === 'heroSubtitle' ? (
                     <textarea
                       value={setting.value}
                       onChange={(e) => handleInputChange(setting.key, e.target.value)}
@@ -248,14 +333,14 @@ export default function AdminSettingsPage() {
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm font-mono"
                       />
                     </div>
-                  ) : setting.key === 'banners' ? (
+                  ) : setting.key === 'banners' || setting.key === 'shippingPolicyContent' || setting.key === 'refundPolicyContent' || setting.key === 'privacyPolicyContent' || setting.key === 'termsAndConditionsContent' ? (
                     <textarea
                       value={setting.value}
                       onChange={(e) => handleInputChange(setting.key, e.target.value)}
                       onBlur={(e) => handleSave(setting.key, e.target.value)}
-                      placeholder='[{"image":"https://...","title":"...","description":"..."}]'
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-mono"
+                      placeholder={`Enter ${setting.key === 'banners' ? 'JSON array' : setting.key.replace(/Content/g, '')} content...`}
+                      rows={setting.key === 'banners' ? 4 : 8}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                     />
                   ) : (
                     <input

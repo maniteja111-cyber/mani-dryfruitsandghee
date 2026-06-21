@@ -5,6 +5,15 @@ import WhatsAppButton from '@/components/WhatsAppButton'
 import RewardsButton from '@/components/RewardsButton'
 import { prisma } from '@/lib/prisma'
 
+export const metadata = {
+  title: 'Products - Mani Dry Fruits & Ghee Store',
+  description: 'Browse our collection of premium dry fruits, pickles, and ghee. High quality products with fast delivery.',
+  keywords: 'buy dry fruits online, buy ghee online, buy pickles online, premium quality, organic products',
+  alternates: {
+    canonical: 'https://manidryfruitsandghee.in/products'
+  }
+}
+
 async function getData(searchParams: { [key: string]: string | string[] | undefined }) {
   try {
     const where: any = {}
@@ -42,11 +51,6 @@ async function getData(searchParams: { [key: string]: string | string[] | undefi
 
 interface ProductsPageProps {
   searchParams: { [key: string]: string | string[] | undefined }
-}
-
-export const metadata = {
-  title: 'Products - MANI DRY FRUITS, PICKLES AND GHEE STORES',
-  description: 'Browse our collection of premium dry fruits, pickles, and ghee. High quality products with fast delivery.',
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {

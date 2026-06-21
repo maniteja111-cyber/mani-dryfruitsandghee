@@ -10,11 +10,15 @@ import WhatsAppButton from '@/components/WhatsAppButton'
 import RewardsButton from '@/components/RewardsButton'
 import Footer from '@/components/Footer'
 import { prisma } from '@/lib/prisma'
+import { generateOrganizationSchema, generateWebsiteSchema } from '@/lib/schema'
 
 export const metadata = {
   title: 'MANI DRY FRUITS, PICKLES AND GHEE STORES - Premium Quality Products',
   description: 'Shop for premium dry fruits, authentic pickles, and pure ghee. Fast delivery across India. Buy almonds, cashews, dates, ghee online at best prices.',
   keywords: 'dry fruits, ghee, pickle, buy online, premium quality, organic, manidryfruitsandghee, Mani Dry Fruits Stores',
+  alternates: {
+    canonical: 'https://manidryfruitsandghee.in'
+  },
   openGraph: {
     title: 'MANI DRY FRUITS, PICKLES AND GHEE STORES',
     description: 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com',
@@ -54,8 +58,23 @@ export const revalidate = 0
 export default async function Home() {
   const { settings, categories, featuredProducts, todaysOffers, topReviews } = await getHomeData()
 
+  const organizationSchema = generateOrganizationSchema({
+    name: 'MANI DRY FRUITS, PICKLES AND GHEE STORES',
+    url: 'https://manidryfruitsandghee.in',
+    logo: settings.logo || 'https://manidryfruitsandghee.in/logo.png',
+    phone: settings.whatsappNumber,
+    address: settings.address
+  })
+
+  const websiteSchema = generateWebsiteSchema({
+    name: 'MANI DRY FRUITS, PICKLES AND GHEE STORES',
+    url: 'https://manidryfruitsandghee.in'
+  })
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
       <Header settings={settings} />
       <main>
         <Hero title={settings.heroTitle || 'MANI DRY FRUITS, PICKLES AND GHEE STORES ABROAD PICKLES PACKING'} subtitle={settings.heroSubtitle || 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com'} />

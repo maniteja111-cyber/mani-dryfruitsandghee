@@ -216,14 +216,14 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 mb-12">
           <div>
             <div className="aspect-[1/1] relative mb-4 rounded-2xl overflow-hidden bg-gray-100 shadow-lg">
-              <Image
-                src={images[selectedImage] && images[selectedImage] !== '' ? images[selectedImage] : '/placeholder.svg'}
-                alt={`Buy ${product.name} Online India | MANI DRY FRUITS`}
-                fill
-                sizes="(max-width: 768px) 90vw, 40vw"
-                loading="eager"
-                className="object-cover"
-              />
+<Image
+                    src={images[selectedImage] && images[selectedImage] !== '' ? images[selectedImage] : '/placeholder.svg'}
+                    alt={`${product.name} - Buy ${product.name} Online at Mani Dry Fruits & Ghee Store`}
+                    fill
+                    sizes="(max-width: 768px) 90vw, 40vw"
+                    loading="eager"
+                    className="object-cover"
+                  />
             </div>
             {images.length > 1 && Array.isArray(images) && (
               <div className="flex space-x-2 overflow-x-auto pb-2">
@@ -237,7 +237,7 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                   >
                     <Image
                       src={image && image !== '' ? image : '/placeholder.svg'}
-                      alt={`Thumbnail ${index + 1}`}
+                      alt={`${product.name} thumbnail ${index + 1}`}
                       width={80}
                       height={80}
                       className="object-cover w-full h-full"
