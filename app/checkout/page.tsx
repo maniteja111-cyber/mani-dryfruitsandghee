@@ -211,6 +211,12 @@ export default function CheckoutPage() {
   useEffect(() => { if (items.length === 0) router.push('/cart') }, [items.length, router])
   if (items.length === 0) return null
 
+  const getFinalTotal = () => {
+    let base = appliedCoupon ? appliedCoupon.finalTotal : total
+    const pointsDiscount = (redeemedPoints / 100) * 50
+    return Math.max(0, base - pointsDiscount)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header settings={settings} />
@@ -304,7 +310,7 @@ export default function CheckoutPage() {
                 <hr />
                 {appliedCoupon && <div className="flex justify-between text-green-600"><span>Discount ({appliedCoupon.code})</span><span>-₹{appliedCoupon.discount}</span></div>}
                 {redeemedPoints > 0 && <div className="flex justify-between text-green-600"><span>Loyalty Discount ({redeemedPoints} pts)</span><span>-₹{(redeemedPoints / 100) * 50}</span></div>}
-                <div className="flex justify-between text-lg font-semibold"><span>{appliedCoupon || redeemedPoints ? 'Final Total' : 'Total'}:</span><span>₹{appliedCoupon ? appliedCoupon.finalTotal : total}</span></div>
+                <div className="flex justify-between text-lg font-semibold"><span>{appliedCoupon || redeemedPoints ? 'Final Total' : 'Total'}:</span><span>₹{getFinalTotal()}</span></div>
               </div>
               <button type="submit" disabled={loading || paymentProcessing} style={{ backgroundColor: settings.themeColor || '#f59e0b', color: '#fff' }} className="w-full py-3 rounded-lg hover:opacity-90 disabled:opacity-50 font-semibold">
                 {paymentProcessing ? 'Processing Payment...' : loading ? 'Creating Order...' : 'Place Order'}
