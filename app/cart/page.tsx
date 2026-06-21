@@ -11,8 +11,17 @@ export default function CartPage() {
   const { items, removeItem, updateQuantity, total, itemCount } = useCart()
   const router = useRouter()
   const [settings, setSettings] = useState<Record<string, string>>({})
+  const [user, setUser] = useState<any>(null)
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0)
+  const [redeemedPoints, setRedeemedPoints] = useState(0)
 
   useEffect(() => {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      const userData = JSON.parse(userStr)
+      setUser(userData)
+      fetchLoyaltyPoints(userData.phone)
+    }
     fetchSettings()
   }, [])
 
@@ -26,6 +35,26 @@ export default function CartPage() {
       console.error('Error fetching settings:', error)
     }
   }
+
+  const fetchLoyaltyPoints = async (phone: string) => {
+    try {
+      const res = await fetch(`/api/users?phone=${phone}`)
+      if (res.ok) {
+        const data = await res.json()
+        setLoyaltyPoints(data.loyaltyPoints || 0)
+      }
+    } catch (error) {
+      console.error('Error fetching loyalty points:', error)
+    }
+  }
+
+  const handleRedeemPoints = (points: number) => {
+    const maxRedeem = Math.min(100, loyaltyPoints, Math.floor(total / 50) * 100)
+    setRedeemedPoints(Math.min(points, maxRedeem, 100))
+  }
+
+  const discount = Math.floor(redeemedPoints / 100) * 50
+  const finalTotal = total - discount
 
   if (items.length === 0) {
     return (
@@ -115,9 +144,36 @@ export default function CartPage() {
                   <span>Total Items:</span>
                   <span>{itemCount}</span>
                 </div>
-                <div className="flex justify-between text-lg font-semibold">
-                  <span>Total:</span>
+                {user && loyaltyPoints > 0 && (
+                  <div className="border-t pt-3">
+                    <p className="text-sm text-gray-600 mb-2">You have {loyaltyPoints} points</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">Redeem:</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={Math.min(100, loyaltyPoints, Math.floor(total / 50) * 100)}
+                        value={redeemedPoints}
+                        onChange={(e) => handleRedeemPoints(parseInt(e.target.value) || 0)}
+                        className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                      />
+                      <span className="text-sm">pts = ₹{Math.floor(redeemedPoints / 100) * 50} off</span>
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
                   <span>₹{total}</span>
+                </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Loyalty Discount:</span>
+                    <span>-₹{discount}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg font-semibold border-t pt-2">
+                  <span>Total:</span>
+                  <span>₹{finalTotal}</span>
                 </div>
               </div>
               <button

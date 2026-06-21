@@ -276,8 +276,8 @@ export default function CheckoutPage() {
               {loyaltyPoints > 0 && (
                 <div className="p-3 bg-yellow-50 rounded-lg">
                   <h3 className="font-semibold text-sm mb-2">Redeem Loyalty Points</h3>
-                  <p className="text-xs text-gray-600 mb-2">You have {loyaltyPoints} points (100 pts = ₹50 off)</p>
-                  <input type="number" min="0" max={Math.floor(loyaltyPoints / 100) * 100} step="100" value={pointsToRedeem} onChange={(e) => setPointsToRedeem(Number(e.target.value))} placeholder="Enter points" className="w-full px-2 py-1 border rounded text-sm" />
+                  <p className="text-xs text-gray-600 mb-2">You have {loyaltyPoints} points (100 pts = ₹50 off) - Max 100 pts per order</p>
+                  <input type="number" min="0" max="100" step="100" value={pointsToRedeem} onChange={(e) => setPointsToRedeem(Math.min(100, Number(e.target.value)))} placeholder="Enter points" className="w-full px-2 py-1 border rounded text-sm" />
                   <p className="text-xs text-green-600 mt-1">Discount: ₹{(pointsToRedeem / 100) * 50}</p>
                 </div>
               )}
