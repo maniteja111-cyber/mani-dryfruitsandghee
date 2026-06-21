@@ -124,6 +124,8 @@ export default function Header({ settings }: HeaderProps) {
               <Link href="/" className="hover:underline text-sm" style={{ color: '#f59e0b' }}>Home</Link>
               <Link href="/products" className="hover:underline text-sm" style={{ color: '#f59e0b' }}>Products</Link>
               <Link href="/categories" className="hover:underline text-sm" style={{ color: '#f59e0b' }}>Categories</Link>
+              <Link href="/about-us" className="hover:underline text-sm" style={{ color: '#f59e0b' }}>About Us</Link>
+              <Link href="/contact" className="hover:underline text-sm" style={{ color: '#f59e0b' }}>Contact</Link>
             </nav>
 
             {/* Right side */}
@@ -182,6 +184,8 @@ export default function Header({ settings }: HeaderProps) {
                 <Link href="/" className="px-2 py-1.5 hover:underline" style={{ color: '#f59e0b' }}>Home</Link>
                 <Link href="/products" className="px-2 py-1.5 hover:underline" style={{ color: '#f59e0b' }}>Products</Link>
                 <Link href="/categories" className="px-2 py-1.5 hover:underline" style={{ color: '#f59e0b' }}>Categories</Link>
+                <Link href="/about-us" className="px-2 py-1.5 hover:underline" style={{ color: '#f59e0b' }}>About Us</Link>
+                <Link href="/contact" className="px-2 py-1.5 hover:underline" style={{ color: '#f59e0b' }}>Contact</Link>
                 <hr />
                 {user ? (
                   <>
