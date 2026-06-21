@@ -159,8 +159,8 @@ export default function MyOrdersPage() {
                 <div className="p-6">
                   <div className="grid gap-3">
                     {order.orderItems.map((item, idx) => {
-                      const v = item.variant
-                      let variantText = ''
+                      const v = item.variant ? (typeof item.variant === 'string' ? JSON.parse(item.variant) : item.variant) : null
+                      let variantText = 'Standard'
                       if (v?.size) variantText = v.size
                       if (v?.weightGrams) variantText += ` (${v.weightGrams}g)`
                       if (v?.pieces) variantText += ` (${v.pieces} pc)`
@@ -169,7 +169,7 @@ export default function MyOrdersPage() {
                         <div key={idx} className="flex justify-between text-sm border-b pb-2 last:border-0">
                           <div>
                             <span className="font-medium">{item.name}</span>
-                            {variantText && <span className="text-gray-500 ml-1">• {variantText}</span>}
+                            <span className="text-gray-500 ml-1">• {variantText}</span>
                           </div>
                           <div className="text-right">
                             ×{item.quantity} • ₹{item.price * item.quantity}

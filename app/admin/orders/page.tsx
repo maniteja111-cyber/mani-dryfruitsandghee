@@ -345,18 +345,19 @@ export default function AdminOrdersPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedOrder.orderItems.map((item, idx) => {
-                      const v = item.variant
-                      const variantText = v ? (v.size || v.weightGrams ? `${v.size || ''}` : 'Standard') : 'Standard'
+{selectedOrder.orderItems.map((item, idx) => {
+                      const v = item.variant ? (typeof item.variant === 'string' ? JSON.parse(item.variant) : item.variant) : null
+                      let variantText = ''
+                      if (v?.size) variantText = v.size
+                      if (v?.weightGrams) variantText += ` (${v.weightGrams}g)`
+                      if (v?.pieces) variantText += ` (${v.pieces} pc)`
                       const lineTotal = item.price * item.quantity
 
                       return (
                         <tr key={idx} className="border-t">
                           <td className="p-3 font-medium">{item.product?.name || 'Unknown Product'}</td>
                           <td className="p-3 text-gray-600">
-                            {variantText}
-                            {v?.weightGrams && ` (${v.weightGrams}g)`}
-                            {v?.pieces && ` (${v.pieces} pc)`}
+                            {variantText || 'Standard'}
                           </td>
                           <td className="p-3 text-right">{item.quantity}</td>
                           <td className="p-3 text-right">₹{item.price}</td>

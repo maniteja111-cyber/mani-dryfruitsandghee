@@ -129,21 +129,19 @@ function OrderSuccessContent() {
             <div className="mt-6">
               <h3 className="font-semibold mb-3 text-lg border-b pb-2">Items Ordered</h3>
               <div className="space-y-3">
-                {order.orderItems?.map((item: any, index: number) => {
-                  const v = item.variant ? JSON.parse(item.variant) : null
-                  let variantLabel = ''
-                  if (v) {
-                    if (v.size) variantLabel = v.size
-                    if (v.weightGrams) variantLabel += ` (${v.weightGrams}g)`
-                    if (v.pieces) variantLabel += ` (${v.pieces} pc)`
-                  }
+{order.orderItems?.map((item: any, index: number) => {
+                  const v = item.variant ? (typeof item.variant === 'string' ? JSON.parse(item.variant) : item.variant) : null
+                  let variantText = ''
+                  if (v?.size) variantText = v.size
+                  if (v?.weightGrams) variantText += ` (${v.weightGrams}g)`
+                  if (v?.pieces) variantText += ` (${v.pieces} pc)`
 
                   return (
                     <div key={index} className="flex justify-between text-sm border-b pb-2 last:border-b-0">
                       <div>
-                        <div className="font-medium">{item.name}</div>
-                        {variantLabel && (
-                          <div className="text-xs text-orange-600 font-semibold">Variant: {variantLabel}</div>
+                        <div className="font-medium">{item.product?.name || 'Product'}</div>
+                        {variantText && (
+                          <div className="text-xs text-orange-600 font-semibold">Variant: {variantText}</div>
                         )}
                         <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
                       </div>

@@ -86,10 +86,14 @@ export async function sendContactEmail(data: ContactEmailData): Promise<boolean>
 export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<boolean> {
   try {
     const itemsList = data.items.map(item => {
-      const variantLabel = item.variant ? (item.variant.size || item.variant.weightGrams || item.variant.pieces) : ''
+      const v = item.variant ? (typeof item.variant === 'string' ? JSON.parse(item.variant) : item.variant) : null
+      let variantText = ''
+      if (v?.size) variantText = ` (${v.size})`
+      if (v?.weightGrams) variantText += ` - ${v.weightGrams}g`
+      if (v?.pieces) variantText += ` - ${v.pieces} pc`
       return `
         <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}<br/><span style="font-size: 12px; color: #666;">${variantLabel}</span></td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}${variantText}</td>
           <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.quantity}</td>
           <td style="padding: 8px; border-bottom: 1px solid #eee;">Rs.${item.price}</td>
         </tr>
@@ -156,10 +160,14 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
 export async function sendAdminOrderNotification(data: OrderEmailData & { customerPhone: string }): Promise<boolean> {
   try {
     const itemsList = data.items.map(item => {
-      const variantLabel = item.variant ? (item.variant.size || item.variant.weightGrams || item.variant.pieces) : ''
+      const v = item.variant ? (typeof item.variant === 'string' ? JSON.parse(item.variant) : item.variant) : null
+      let variantText = ''
+      if (v?.size) variantText = ` (${v.size})`
+      if (v?.weightGrams) variantText += ` - ${v.weightGrams}g`
+      if (v?.pieces) variantText += ` - ${v.pieces} pc`
       return `
         <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}<br/><span style="font-size: 12px; color: #666;">${variantLabel}</span></td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}${variantText}</td>
           <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.quantity}</td>
           <td style="padding: 8px; border-bottom: 1px solid #eee;">Rs.${item.price}</td>
         </tr>
