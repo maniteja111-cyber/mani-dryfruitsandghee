@@ -18,6 +18,10 @@ export async function POST(req: NextRequest) {
   try {
     const { name, slug, description, shortDescription, pricePerKg, stockGrams, images, categoryId, isFeatured, isTodayOffer, isVisible, productOverview, whyChoose, ingredients, nutritionalInfo, storageInstructions, shelfLife, origin, benefits, shippingInfo, faqs, seoKeywords } = await req.json()
 
+    if (!categoryId) {
+      return NextResponse.json({ error: 'Category is required' }, { status: 400 })
+    }
+
     let cleanSlug = (slug || name || 'product')
       .toLowerCase()
       .trim()
@@ -26,6 +30,8 @@ export async function POST(req: NextRequest) {
 
     if (!cleanSlug) cleanSlug = `product-${Date.now()}`
 
+    const cleanImages = (images || []).filter((img: string) => img && img.trim() !== '')
+
     const product = await prisma.product.create({
       data: {
         name,
@@ -33,8 +39,8 @@ export async function POST(req: NextRequest) {
         description,
         shortDescription,
         stockGrams: Math.round(parseFloat(stockGrams) * 1000),
-        pricePerKg: parseFloat(pricePerKg),
-        images: JSON.stringify(images || []),
+        pricePerKg: parseFloat(pricePerKg) || 0,
+        images: JSON.stringify(cleanImages),
         categoryId,
         isFeatured: isFeatured || false,
         isTodayOffer: isTodayOffer || false,
@@ -55,8 +61,8 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json(product)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create product error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }
