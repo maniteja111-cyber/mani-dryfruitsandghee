@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
             productId: item.productId || item.id.split('-')[0],
             quantity: item.quantity,
             price: item.discountPrice || item.price,
-            variant: item.selectedVariant || null   // Save which size/variant was chosen
+            variant: item.selectedVariant ? JSON.stringify(item.selectedVariant) : null
           }))
         }
       },
