@@ -167,7 +167,8 @@ Payment: All payments are processed securely.
 
 Limitation of Liability: Our liability is limited to the purchase price of the product.
 
-Governing Law: These terms are governed by the laws of India.`
+Governing Law: These terms are governed by the laws of India.`,
+          sendOrderEmails: 'true'
         }
         const mergedData = [...data]
         for (const key of Object.keys(defaultSettings)) {
