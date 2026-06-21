@@ -184,22 +184,28 @@ export default function ProductList({ initialProducts, categories, searchParams,
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {products.map((product) => {
-              let images: string[] = []
+let images: string[] = []
               if (Array.isArray(product.images)) {
                 images = product.images.filter(Boolean)
               } else if (typeof product.images === 'string' && product.images.trim()) {
                 try {
-                  const parsed = JSON.parse(product.images)
+                  let parsed = JSON.parse(product.images)
+                  if (typeof parsed === 'string') {
+                    parsed = JSON.parse(parsed)
+                  }
                   if (Array.isArray(parsed)) {
                     images = parsed.filter(Boolean)
-                  } else {
-                    images = [product.images]
+                  } else if (typeof parsed === 'string') {
+                    images = [parsed]
                   }
-                } catch {
-                  images = [product.images]
-                }
+                } catch {}
               }
-
+              images = images.map(img => {
+                if (typeof img === 'string' && img.trim().startsWith('"')) {
+                  try { return JSON.parse(img) } catch { return img }
+                }
+                return img
+              })
               const imageSrc = images[0] || '/placeholder.svg'
 
               const VARIANTS = [

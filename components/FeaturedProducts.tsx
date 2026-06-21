@@ -96,11 +96,20 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
                 images = product.images.filter(Boolean)
               } else if (typeof product.images === 'string' && product.images.trim()) {
                 try {
-                  const parsed = JSON.parse(product.images)
+                  let parsed = JSON.parse(product.images)
+                  if (typeof parsed === 'string') {
+                    parsed = JSON.parse(parsed)
+                  }
                   images = Array.isArray(parsed) ? parsed.filter(Boolean) : []
                 } catch {}
               }
-              const imageSrc = images[0] || ''
+              images = images.map(img => {
+                if (typeof img === 'string' && img.trim().startsWith('"')) {
+                  try { return JSON.parse(img) } catch { return img }
+                }
+                return img
+              })
+              const imageSrc = images[0] || '/placeholder.svg'
 
               const availableVariants = VARIANTS.filter(v => product.stockGrams >= v.grams)
               const selectedVariant = selectedVariants[product.id] || availableVariants[0] || VARIANTS[3]

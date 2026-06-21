@@ -63,16 +63,25 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
     images = product.images.filter(Boolean)
   } else if (typeof product.images === 'string' && product.images.trim()) {
     try {
-      const parsed = JSON.parse(product.images)
+      let parsed = JSON.parse(product.images)
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed)
+      }
       if (Array.isArray(parsed)) {
         images = parsed.filter(Boolean)
-      } else {
-        images = [product.images]
+      } else if (typeof parsed === 'string') {
+        images = [parsed]
       }
     } catch {
       images = [product.images]
     }
   }
+  images = images.map(img => {
+    if (typeof img === 'string' && img.trim().startsWith('"')) {
+      try { return JSON.parse(img) } catch { return img }
+    }
+    return img
+  })
 
   const [selectedVariant, setSelectedVariant] = useState(VARIANTS[3])
   const [selectedImage, setSelectedImage] = useState(0)
