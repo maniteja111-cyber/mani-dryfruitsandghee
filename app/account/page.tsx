@@ -138,8 +138,8 @@ export default function AccountPage() {
             <p className="text-gray-500">No saved addresses yet.</p>
           ) : (
             <div className="space-y-3">
-              {addresses.map(addr => (
-                <div key={`${addr.id}-${addr.address.replace(/\s+/g, '')}`} className="border p-4 rounded-lg">
+              {addresses.map((addr, idx) => (
+                <div key={`${addr.id}-${idx}`} className="border p-4 rounded-lg">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-medium">{addr.name} <span className="text-gray-500">({addr.label})</span>{addr.isDefault && <span className="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Default</span>}</p>

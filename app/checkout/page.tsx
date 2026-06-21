@@ -224,9 +224,9 @@ export default function CheckoutPage() {
                 
                 {addresses.length > 0 && !useNewAddress && (
                   <div className="mb-4 space-y-2">
-                    {addresses.map(addr => (
+                    {addresses.map((addr, idx) => (
                       <div 
-                        key={`${addr.id}-${addr.address.replace(/\s+/g, '')}`} 
+                        key={`${addr.id}-${idx}`} 
                         onClick={() => { setSelectedAddressId(addr.id); setFormData({ name: addr.name, phone: addr.phone, email: formData.email, address: addr.address, city: addr.city, state: addr.state, pincode: addr.pincode }) }}
                         className={`border rounded-lg p-3 cursor-pointer transition ${selectedAddressId === addr.id ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200 hover:bg-gray-50'}`}
                       >
