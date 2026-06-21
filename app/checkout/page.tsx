@@ -182,7 +182,7 @@ export default function CheckoutPage() {
         if (verifyRes.ok) {
           localStorage.removeItem('loyaltyPointsRedeemed')
           clearCart()
-          router.push(`/order-success?orderId=${order.id}`)
+          router.replace(`/order-success?orderId=${order.id}`)
         } else {
           alert('Payment was successful but verification failed.')
         }
@@ -209,14 +209,14 @@ export default function CheckoutPage() {
           const order = await res.json()
           localStorage.removeItem('loyaltyPointsRedeemed')
           clearCart()
-          router.push(`/order-success?orderId=${order.id}`)
+          router.replace(`/order-success?orderId=${order.id}`)
         } else alert((await res.json()).error || 'Failed to place order')
       }
     } catch { alert('An error occurred during checkout') }
     finally { setLoading(false) }
   }
 
-  useEffect(() => { if (items.length === 0) router.push('/cart') }, [items.length, router])
+  useEffect(() => { if (items.length === 0) router.replace('/cart') }, [items.length, router])
   if (items.length === 0) return null
 
   const getFinalTotal = () => {
