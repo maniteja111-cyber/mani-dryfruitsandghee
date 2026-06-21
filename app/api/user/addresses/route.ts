@@ -35,13 +35,20 @@ export async function GET(request: NextRequest) {
   const rawAddresses: Address[] = (user as UserWithAddressBook).addressBook ? JSON.parse((user as UserWithAddressBook).addressBook as string) : []
   const uniqueAddresses: Address[] = []
   const seenIds = new Set<string>()
+  const seenCombinations = new Set<string>()
   rawAddresses.forEach(addr => {
-    const id = addr.id || generateId()
-    if (!seenIds.has(id)) {
-      seenIds.add(id)
-      uniqueAddresses.push({ ...addr, id })
+    let id = addr.id
+    const combo = `${addr.address}-${addr.city}-${addr.pincode}`
+    if (seenIds.has(id) || seenCombinations.has(combo)) {
+      id = generateId()
     }
+    seenIds.add(id)
+    seenCombinations.add(combo)
+    uniqueAddresses.push({ ...addr, id })
   })
+  if (uniqueAddresses.length !== rawAddresses.length) {
+    await prisma.user.update({ where: { phone }, data: { addressBook: JSON.stringify(uniqueAddresses) } })
+  }
   return NextResponse.json({ addresses: uniqueAddresses })
 }
 
