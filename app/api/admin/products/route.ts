@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         origin: origin || null,
         benefits: benefits || null,
         shippingInfo: shippingInfo || null,
-        faqs: faqs || null,
+        faqs: faqs && faqs.length > 0 ? JSON.stringify(faqs) : null,
         seoKeywords: seoKeywords || null
       },
       include: { category: true }
