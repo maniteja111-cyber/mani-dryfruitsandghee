@@ -226,7 +226,7 @@ export default function CheckoutPage() {
                   <div className="mb-4 space-y-2">
                     {addresses.map(addr => (
                       <div 
-                        key={addr.id} 
+                        key={`${addr.id}-${addr.address.replace(/\s+/g, '')}`} 
                         onClick={() => { setSelectedAddressId(addr.id); setFormData({ name: addr.name, phone: addr.phone, email: formData.email, address: addr.address, city: addr.city, state: addr.state, pincode: addr.pincode }) }}
                         className={`border rounded-lg p-3 cursor-pointer transition ${selectedAddressId === addr.id ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200 hover:bg-gray-50'}`}
                       >

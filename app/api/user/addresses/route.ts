@@ -20,6 +20,10 @@ type UserWithAddressBook = {
   addressBook: string | null
 }
 
+function generateId(): string {
+  return Date.now().toString() + Math.random().toString(36).substring(2, 9)
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const phone = searchParams.get('phone')
@@ -40,7 +44,10 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
   const addresses: Address[] = (user as UserWithAddressBook).addressBook ? JSON.parse((user as UserWithAddressBook).addressBook as string) : []
-  const newAddress: Address = { id: Date.now().toString(), ...address, isDefault: addresses.length === 0 }
+  const newAddress: Address = { id: address.id || generateId(), ...address, isDefault: addresses.length === 0 }
+  if (newAddress.isDefault) {
+    addresses.forEach(a => { a.isDefault = false })
+  }
   addresses.push(newAddress)
 
   await prisma.user.update({ where: { phone }, data: { addressBook: JSON.stringify(addresses) } })
@@ -58,6 +65,9 @@ export async function PUT(request: NextRequest) {
   const idx = addresses.findIndex(a => a.id === addressId)
   if (idx === -1) return NextResponse.json({ error: 'Address not found' }, { status: 404 })
 
+  if (updates.isDefault) {
+    addresses.forEach(a => { a.isDefault = false })
+  }
   addresses[idx] = { ...addresses[idx], ...updates }
   await prisma.user.update({ where: { phone }, data: { addressBook: JSON.stringify(addresses) } })
   return NextResponse.json({ addresses })

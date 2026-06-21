@@ -37,12 +37,17 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - WhatsApp button for inquiries (green, below rewards button)
 - Points display in header dropdown
 - Escape key closes all popups
+- Added Google OAuth login with NextAuth.js
+- Added address management (saved addresses in DB)
+- Added `/account` page for profile/addresses
+- Updated checkout with address selection
 
 ## Google OAuth Implementation
 - Implemented Google OAuth login with NextAuth.js
 - Added "Continue with Google" button to login page and rewards popup
 - Created account page (`/account`) for profile management
-- Updated checkout to use simple address form (removed saved address feature due to prod DB constraints)
+- Added address management API (`/api/user/addresses`)
+- Updated checkout with saved address selection
 - Added auth method column (Google/Phone) in admin users panel
 - Fixed header colors - now uses fixed yellow (#f59e0b) instead of settings.themeColor
 - Fixed daily bonus issue - Google OAuth no longer updates lastLoginDate
@@ -56,6 +61,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## Key Decisions
 - Google OAuth stores email as `phone` field (since Google doesn't provide phone)
 - Admin detects Google users by checking if `email` field is populated
+- Addresses stored as JSON in `addressBook` column
 
 ## Next Steps
 - Add Facebook OAuth login (similar to Google)

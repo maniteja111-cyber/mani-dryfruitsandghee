@@ -44,8 +44,9 @@ export default function AccountPage() {
     fetchAddresses(parsed.phone)
   }, [router])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const target = e.target as HTMLInputElement
+    const { name, value, type, checked } = target
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
   }
 
@@ -108,7 +109,12 @@ export default function AccountPage() {
           {showForm && (
             <form onSubmit={handleSubmit} className="mb-6 p-4 border rounded-lg space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <input type="text" name="label" placeholder="Label (Home/Work)" value={formData.label} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
+                <select name="label" value={formData.label} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required>
+                  <option value="">Select Label</option>
+                  <option value="Home">Home</option>
+                  <option value="Work">Work</option>
+                  <option value="Other">Other</option>
+                </select>
                 <input type="text" name="name" placeholder="Name" value={formData.name} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
                 <input type="tel" name="phone" placeholder="Phone" value={formData.phone} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
                 <input type="text" name="address" placeholder="Address Line 1" value={formData.address} onChange={handleInputChange} className="px-3 py-2 border rounded-md" required />
@@ -133,7 +139,7 @@ export default function AccountPage() {
           ) : (
             <div className="space-y-3">
               {addresses.map(addr => (
-                <div key={addr.id} className="border p-4 rounded-lg">
+                <div key={`${addr.id}-${addr.address.replace(/\s+/g, '')}`} className="border p-4 rounded-lg">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-medium">{addr.name} <span className="text-gray-500">({addr.label})</span>{addr.isDefault && <span className="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Default</span>}</p>
