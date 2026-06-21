@@ -91,18 +91,16 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
         <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">{title}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {products.map((product) => {
-              let images = []
-              if (product.images) {
-                if (typeof product.images === 'string') {
-                  try {
-                    const parsed = JSON.parse(product.images)
-                    images = Array.isArray(parsed) ? parsed : []
-                  } catch {}
-                } else if (Array.isArray(product.images)) {
-                  images = product.images
-                }
+              let images: string[] = []
+              if (Array.isArray(product.images)) {
+                images = product.images.filter(Boolean)
+              } else if (typeof product.images === 'string' && product.images.trim()) {
+                try {
+                  const parsed = JSON.parse(product.images)
+                  images = Array.isArray(parsed) ? parsed.filter(Boolean) : []
+                } catch {}
               }
-              const imageSrc = images[0]?.url || images[0] || ''
+              const imageSrc = images[0] || ''
 
               const availableVariants = VARIANTS.filter(v => product.stockGrams >= v.grams)
               const selectedVariant = selectedVariants[product.id] || availableVariants[0] || VARIANTS[3]
