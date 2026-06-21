@@ -13,6 +13,7 @@ interface OrderForMessage {
   total: number
   couponCode?: string | null
   discount?: number | null
+  pointsRedeemed?: number | null
   orderItems: OrderItem[]
 }
 
@@ -36,8 +37,15 @@ export function generateOrderConfirmationMessage(order: OrderForMessage, whatsap
   message += `Order ID: #${order.id.slice(0, 8)}\n`
   message += `Total: ₹${order.total}\n`
 
+  const discountParts: string[] = []
   if (order.couponCode) {
-    message += `Coupon Applied: ${order.couponCode} (You saved ₹${order.discount || 0})\n`
+    message += `Coupon (${order.couponCode}): -₹${order.discount || 0}\n`
+    discountParts.push(`Coupon: ₹${order.discount || 0}`)
+  }
+  if (order.pointsRedeemed && order.pointsRedeemed > 0) {
+    const loyaltyDiscount = order.pointsRedeemed === 100 ? 50 : order.pointsRedeemed === 50 ? 25 : 0
+    message += `Loyalty (${order.pointsRedeemed} pts): -₹${loyaltyDiscount}\n`
+    discountParts.push(`Loyalty: ₹${loyaltyDiscount}`)
   }
 
   message += `\nItems:\n${itemsText}\n\n`
