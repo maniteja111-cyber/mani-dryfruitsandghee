@@ -21,14 +21,22 @@ export default function RewardsButton({ phone }: RewardsButtonProps) {
         setUser(JSON.parse(userStr))
       } catch {}
     }
-    window.addEventListener('userLogin', () => {
+    const handleUserChange = () => {
       const userStr = localStorage.getItem('user')
       if (userStr) {
         try {
           setUser(JSON.parse(userStr))
         } catch {}
+      } else {
+        setUser(null)
       }
-    })
+    }
+    window.addEventListener('userLogin', handleUserChange)
+    window.addEventListener('storage', handleUserChange)
+    return () => {
+      window.removeEventListener('userLogin', handleUserChange)
+      window.removeEventListener('storage', handleUserChange)
+    }
   }, [])
 
   useEffect(() => {
