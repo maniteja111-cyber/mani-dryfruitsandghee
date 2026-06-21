@@ -27,7 +27,7 @@ export default function AdminPage() {
 
       const revenue = orders.reduce((sum: number, order: any) => sum + order.total, 0)
       const pending = orders.filter((o: any) => o.status === 'pending').length
-      const lowStockItems = products.filter((p: any) => p.stock > 0 && p.stock <= 10)
+      const lowStockItems = products.filter((p: any) => p.stockGrams > 0 && p.stockGrams <= 10000)
       const totalPoints = users.reduce((sum: number, u: any) => sum + (u.loyaltyPoints || 0), 0)
 
       setStats({
@@ -128,7 +128,7 @@ export default function AdminPage() {
                     <div key={p.id} className="flex justify-between items-center border-b pb-1.5 last:border-0">
                       <div>
                         <span className="font-medium">{p.name}</span>
-                        <span className="ml-2 text-red-600 font-semibold">({p.stock} left)</span>
+                        <span className="ml-2 text-red-600 font-semibold">({(p.stockGrams / 1000).toFixed(2)} kg left)</span>
                       </div>
                       <a
                         href={`/admin/products`}
