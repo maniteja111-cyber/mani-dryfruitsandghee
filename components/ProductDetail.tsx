@@ -59,14 +59,19 @@ function calculatePrice(basePricePerKg: number | null, grams: number): number {
 
 export default function ProductDetail({ product, settings, relatedProducts = [] }: ProductDetailProps) {
   let images: string[] = []
-  try {
-    if (Array.isArray(product.images)) {
-      images = product.images
-    } else if (typeof product.images === 'string') {
-      images = JSON.parse(product.images)
+  if (Array.isArray(product.images)) {
+    images = product.images.filter(Boolean)
+  } else if (typeof product.images === 'string' && product.images.trim()) {
+    try {
+      const parsed = JSON.parse(product.images)
+      if (Array.isArray(parsed)) {
+        images = parsed.filter(Boolean)
+      } else {
+        images = [product.images]
+      }
+    } catch {
+      images = [product.images]
     }
-  } catch (error) {
-    images = product.images && typeof product.images === 'string' && product.images.trim() ? [product.images] : []
   }
 
   const [selectedVariant, setSelectedVariant] = useState(VARIANTS[3])
@@ -211,7 +216,7 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                 className="object-cover"
               />
             </div>
-            {images.length > 1 && (
+            {images.length > 1 && Array.isArray(images) && (
               <div className="flex space-x-2 overflow-x-auto pb-2">
                 {images.map((image: string, index: number) => (
                   <button
