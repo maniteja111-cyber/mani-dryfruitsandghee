@@ -385,7 +385,8 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                     price: price,
                     images: images,
                     stock: maxQuantity,
-                    selectedVariant
+                    selectedVariant,
+                    quantity
                   })}
                   disabled={maxQuantity === 0}
                   className="w-full py-4 bg-yellow-600 text-white rounded-xl font-semibold text-lg hover:bg-yellow-700 transition disabled:opacity-50"
@@ -611,7 +612,8 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                 price: price,
                 images: images,
                 stock: maxQuantity,
-                selectedVariant
+                selectedVariant,
+                quantity
               })}
               disabled={maxQuantity === 0}
               className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-medium disabled:opacity-50"

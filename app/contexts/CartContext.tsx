@@ -19,7 +19,7 @@ interface CartItem {
 
 interface CartContextType {
   items: CartItem[]
-  addItem: (item: Omit<CartItem, 'quantity'>) => void
+  addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number, maxStock?: number) => void
   clearCart: () => void
@@ -47,17 +47,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('cart', JSON.stringify(items))
   }, [items])
 
-  const addItem = (item: Omit<CartItem, 'quantity'>) => {
+  const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setItems(prev => {
       const existing = prev.find(i => i.id === item.id)
       if (existing) {
         const maxStock = item.stock ?? 999
-        const newQty = Math.min(maxStock, existing.quantity + 1)
+        const newQty = Math.min(maxStock, existing.quantity + (item.quantity || 1))
         return prev.map(i => 
           i.id === item.id ? { ...i, quantity: newQty, stock: item.stock } : i
         )
       }
-      return [...prev, { ...item, quantity: 1, stock: item.stock }]
+      return [...prev, { ...item, quantity: item.quantity || 1, stock: item.stock }]
     })
   }
 
