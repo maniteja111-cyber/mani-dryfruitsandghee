@@ -153,7 +153,7 @@ export default function AdminProductsPage() {
       description: product.description || '',
       shortDescription: product.shortDescription || '',
       pricePerKg: product.pricePerKg?.toString() || '',
-      stockKg: Math.round(product.stockGrams / 1000).toString(),
+      stockKg: (product.stockGrams / 1000).toFixed(2),
       images: loadedImages,
       categoryId: product.categoryId,
       isFeatured: product.isFeatured || false,
@@ -660,7 +660,7 @@ export default function AdminProductsPage() {
                   Rs.{product.pricePerKg || '-'}/kg
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {Math.round(product.stockGrams / 1000)} kg
+                  {(product.stockGrams / 1000).toFixed(2)} kg
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <div className="flex flex-col gap-1">
