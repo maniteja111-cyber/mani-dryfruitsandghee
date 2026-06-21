@@ -15,23 +15,21 @@ function OrderSuccessContent() {
   const [settings, setSettings] = useState<Record<string, string>>({})
 
   useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/settings')
+        if (res.ok) {
+          const data = await res.json()
+          setSettings(data)
+        }
+      } catch (e) {}
+    }
     fetchSettings()
+    
     if (orderId) {
       fetchOrder()
     }
   }, [orderId])
-
-  const fetchSettings = async () => {
-    try {
-      const res = await fetch('/api/settings')
-      if (res.ok) {
-        const data = await res.json()
-        setSettings(data)
-      }
-    } catch (e) {
-      console.error('Error fetching settings:', e)
-    }
-  }
 
   const fetchOrder = async () => {
     try {
@@ -76,25 +74,25 @@ function OrderSuccessContent() {
       <main>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-8">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
-              <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-4 animate-pulse">
+              <svg className="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Order Placed Successfully!</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Order Placed Successfully! 🎉</h1>
             <p className="text-gray-600 mt-2">Thank you for your order. We'll process it shortly.</p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Order Details</h2>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="font-medium">Order ID:</span>
-                <span>{order.id}</span>
+                <span className="font-mono text-yellow-700">{order.id}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Status:</span>
-                <span className="capitalize">{order.status}</span>
+                <span className="capitalize bg-yellow-100 px-2 py-1 rounded">{order.status}</span>
               </div>
               <div className="flex justify-between">
                 <span className="font-medium">Payment:</span>
@@ -110,6 +108,12 @@ function OrderSuccessContent() {
                   <span>-₹{order.discount || 0}</span>
                 </div>
               )}
+              {order.pointsRedeemed > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Loyalty Discount ({order.pointsRedeemed} pts)</span>
+                  <span>-₹{order.pointsRedeemed === 100 ? 50 : order.pointsRedeemed === 50 ? 25 : 0}</span>
+                </div>
+              )}
             </div>
 
             <div className="mt-6">
@@ -122,11 +126,11 @@ function OrderSuccessContent() {
               </p>
             </div>
 
-             <div className="mt-6">
+            <div className="mt-6">
               <h3 className="font-semibold mb-3 text-lg border-b pb-2">Items Ordered</h3>
               <div className="space-y-3">
                 {order.orderItems?.map((item: any, index: number) => {
-                  const v = item.variant
+                  const v = item.variant ? JSON.parse(item.variant) : null
                   let variantLabel = ''
                   if (v) {
                     if (v.size) variantLabel = v.size
@@ -139,11 +143,11 @@ function OrderSuccessContent() {
                       <div>
                         <div className="font-medium">{item.name}</div>
                         {variantLabel && (
-                          <div className="text-xs text-gray-500">{variantLabel}</div>
+                          <div className="text-xs text-orange-600 font-semibold">Variant: {variantLabel}</div>
                         )}
+                        <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
                       </div>
                       <div className="text-right">
-                        <div>× {item.quantity}</div>
                         <div className="font-medium">₹{item.price * item.quantity}</div>
                       </div>
                     </div>
@@ -155,25 +159,35 @@ function OrderSuccessContent() {
                 <span>₹{order.total}</span>
               </div>
             </div>
+          </div>
 
-           <div className="mt-8 flex space-x-4">
-              <Link
-                href={`https://wa.me/919876543210?text=${encodeURIComponent(whatsappMessage)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ backgroundColor: settings.themeColor || '#10b981', color: '#fff' }}
-                className="flex-1 py-3 rounded-lg text-center transition-colors hover:opacity-90"
-              >
-                Confirm on WhatsApp
-              </Link>
-              <Link
-                href="/"
-                style={{ backgroundColor: settings.themeColor || '#374151', color: '#fff' }}
-                className="flex-1 py-3 rounded-lg text-center transition-colors hover:opacity-90"
-              >
-                Continue Shopping
-              </Link>
-            </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-blue-800 mb-2">📱 How to Track Your Order</h3>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li>• Visit <Link href="/my-orders" className="underline">/my-orders</Link> and enter your phone number</li>
+              <li>• Save your order ID: <span className="font-mono bg-blue-100 px-1 rounded">{order.id}</span></li>
+              <li>• Check your email/SMS for order updates</li>
+              <li>• Contact us on WhatsApp for any questions</li>
+            </ul>
+          </div>
+
+          <div className="flex space-x-4">
+            <Link
+              href={`https://wa.me/919515019393?text=${encodeURIComponent(whatsappMessage)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ backgroundColor: settings.whatsappNumber ? '#25D366' : '#10b981', color: '#fff' }}
+              className="flex-1 py-3 rounded-lg text-center transition-colors hover:opacity-90"
+            >
+              Confirm on WhatsApp
+            </Link>
+            <Link
+              href="/"
+              style={{ backgroundColor: settings.themeColor || '#374151', color: '#fff' }}
+              className="flex-1 py-3 rounded-lg text-center transition-colors hover:opacity-90"
+            >
+              Continue Shopping
+            </Link>
           </div>
         </div>
       </main>

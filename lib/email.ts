@@ -21,7 +21,7 @@ interface OrderEmailData {
   customerName: string
   customerEmail: string
   orderId: string
-  items: Array<{ name: string; quantity: number; price: number }>
+  items: Array<{ name: string; quantity: number; price: number; variant?: any }>
   total: number
   address: string
   city: string
@@ -85,13 +85,16 @@ export async function sendContactEmail(data: ContactEmailData): Promise<boolean>
 
 export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<boolean> {
   try {
-    const itemsList = data.items.map(item => `
-      <tr>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.quantity}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">Rs.${item.price}</td>
-      </tr>
-    `).join('')
+    const itemsList = data.items.map(item => {
+      const variantLabel = item.variant ? (item.variant.size || item.variant.weightGrams || item.variant.pieces) : ''
+      return `
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}<br/><span style="font-size: 12px; color: #666;">${variantLabel}</span></td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.quantity}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">Rs.${item.price}</td>
+        </tr>
+      `
+    }).join('')
 
     await transporter.sendMail({
       from: '"MANI Store" <manidgs9393@gmail.com>',
@@ -99,7 +102,7 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
       subject: `Order Confirmation - ${data.orderId}`,
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-          <h1 style="color: #d97706;">Thank you for your order!</h1>
+          <h1 style="color: #d97706;">Thank you for your order! 🎉</h1>
           <p>Dear ${data.customerName},</p>
           <p>Your order has been confirmed. Here are your order details:</p>
 
@@ -107,7 +110,7 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
           <table style="width: 100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #f3f4f6;">
-                <th style="padding: 8px; text-align: left;">Item</th>
+                <th style="padding: 8px; text-align: left;">Item (Variant)</th>
                 <th style="padding: 8px; text-align: left;">Qty</th>
                 <th style="padding: 8px; text-align: left;">Price</th>
               </tr>
@@ -124,10 +127,16 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
           <h2 style="color: #333;">Delivery Address</h2>
           <p>${data.address}, ${data.city}, ${data.state} - ${data.pincode}</p>
 
+          <div style="background: #fef3c7; padding: 12px; border-radius: 8px; margin: 16px 0;">
+            <h3 style="color: #92400e; margin-top: 0;">📱 How to Track Your Order</h3>
+            <p style="margin: 8px 0;">1. Save this Order ID: <strong>${data.orderId}</strong></p>
+            <p style="margin: 8px 0;">2. Visit <a href="https://manidryfruitsandghee.in/my-orders">/my-orders</a> and enter your phone number</p>
+            <p style="margin: 8px 0;">3. We'll update you via SMS and email</p>
+          </div>
+
           <p style="color: #666; margin-top: 24px;">
             Payment Method: <strong>${data.paymentMethod}</strong>
           </p>
-          <p style="color: #666;">Order ID: <strong>${data.orderId}</strong></p>
 
           <hr style="margin: 24px 0; border: none; border-top: 1px solid #eee;">
           <p style="color: #666; font-size: 14px;">
@@ -146,13 +155,16 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
 
 export async function sendAdminOrderNotification(data: OrderEmailData & { customerPhone: string }): Promise<boolean> {
   try {
-    const itemsList = data.items.map(item => `
-      <tr>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.quantity}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">Rs.${item.price}</td>
-      </tr>
-    `).join('')
+    const itemsList = data.items.map(item => {
+      const variantLabel = item.variant ? (item.variant.size || item.variant.weightGrams || item.variant.pieces) : ''
+      return `
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}<br/><span style="font-size: 12px; color: #666;">${variantLabel}</span></td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.quantity}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">Rs.${item.price}</td>
+        </tr>
+      `
+    }).join('')
 
     await transporter.sendMail({
       from: '"MANI Store" <manidgs9393@gmail.com>',
@@ -160,7 +172,7 @@ export async function sendAdminOrderNotification(data: OrderEmailData & { custom
       subject: `New Order Placed - ${data.orderId}`,
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-          <h1 style="color: #d97706;">New Order Received</h1>
+          <h1 style="color: #d97706;">New Order Received 🎉</h1>
           <p><strong>Order ID:</strong> ${data.orderId}</p>
           <p><strong>Customer:</strong> ${data.customerName}</p>
           <p><strong>Email:</strong> ${data.customerEmail}</p>
@@ -170,7 +182,7 @@ export async function sendAdminOrderNotification(data: OrderEmailData & { custom
           <table style="width: 100%; border-collapse: collapse;">
             <thead>
               <tr style="background: #f3f4f6;">
-                <th style="padding: 8px; text-align: left;">Item</th>
+                <th style="padding: 8px; text-align: left;">Item (Variant)</th>
                 <th style="padding: 8px; text-align: left;">Qty</th>
                 <th style="padding: 8px; text-align: left;">Price</th>
               </tr>
