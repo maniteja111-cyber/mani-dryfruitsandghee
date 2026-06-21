@@ -90,7 +90,7 @@ export default function AdminProductsPage() {
         ...formData,
         pricePerKg: formData.pricePerKg ? parseFloat(formData.pricePerKg) : null,
         stockGrams: formData.stockKg ? parseFloat(formData.stockKg) * 1000 : 0,
-        images: formData.images.filter(Boolean),
+        images: Array.isArray(formData.images) ? formData.images.filter(Boolean) : [],
         categoryId: formData.categoryId,
         isFeatured: formData.isFeatured,
         isTodayOffer: formData.isTodayOffer,
