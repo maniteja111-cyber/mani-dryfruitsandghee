@@ -27,6 +27,7 @@ model User {
   firstPurchase  Boolean  @default(false)
   securityQuestion String?
   securityAnswer String?
+  addressBook    Json?    // Array of saved addresses
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
