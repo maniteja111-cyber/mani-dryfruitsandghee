@@ -70,8 +70,8 @@ export default function RewardsButton({ phone }: RewardsButtonProps) {
   return (
     <>
       <button
-        onClick={handleRewardsClick}
-        className="fixed bottom-6 right-6 bg-yellow-500 hover:bg-yellow-600 text-white p-3.5 rounded-full shadow-lg transition-colors z-50 flex items-center justify-center"
+        onClick={(e) => { e.stopPropagation(); handleRewardsClick() }}
+        className="fixed bottom-6 right-6 bg-yellow-500 hover:bg-yellow-600 text-white p-3.5 rounded-full shadow-lg transition-colors z-50 flex items-center justify-center pointer-events-auto"
         aria-label="Loyalty Rewards"
       >
         <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
