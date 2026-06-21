@@ -32,8 +32,17 @@ export async function GET(request: NextRequest) {
   const user = await prisma.user.findUnique({ where: { phone }, select: { id: true, phone: true, addressBook: true } })
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  const addresses: Address[] = (user as UserWithAddressBook).addressBook ? JSON.parse((user as UserWithAddressBook).addressBook as string) : []
-  return NextResponse.json({ addresses })
+  const rawAddresses: Address[] = (user as UserWithAddressBook).addressBook ? JSON.parse((user as UserWithAddressBook).addressBook as string) : []
+  const uniqueAddresses: Address[] = []
+  const seenIds = new Set<string>()
+  rawAddresses.forEach(addr => {
+    const id = addr.id || generateId()
+    if (!seenIds.has(id)) {
+      seenIds.add(id)
+      uniqueAddresses.push({ ...addr, id })
+    }
+  })
+  return NextResponse.json({ addresses: uniqueAddresses })
 }
 
 export async function POST(request: NextRequest) {
