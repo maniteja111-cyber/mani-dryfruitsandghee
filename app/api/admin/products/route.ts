@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
         slug: cleanSlug,
         description,
         shortDescription,
-        stockGrams: parseInt(stockGrams),
+        stockGrams: Math.round(parseFloat(stockGrams) * 1000),
         pricePerKg: parseFloat(pricePerKg),
         images: JSON.stringify(images || []),
         categoryId,

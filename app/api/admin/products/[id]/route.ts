@@ -22,7 +22,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
         slug: cleanSlug,
         description,
         shortDescription,
-        stockGrams: parseInt(stockGrams),
+        stockGrams: Math.round(parseFloat(stockGrams) * 1000),
         pricePerKg: parseFloat(pricePerKg),
         images: JSON.stringify(images || []),
         categoryId,
