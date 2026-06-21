@@ -54,6 +54,20 @@ export default function CheckoutPage() {
       } catch (e) {}
     }
     fetchSettings()
+    const fetchAddresses = async (phone: string) => {
+      try {
+        const res = await fetch(`/api/user/addresses?phone=${phone}`)
+        if (res.ok) {
+          const { addresses } = await res.json()
+          setAddresses(addresses)
+          const defaultAddr = addresses.find((a: Address) => a.isDefault)
+          if (defaultAddr) {
+            setFormData(prev => ({ ...prev, address: defaultAddr.address, city: defaultAddr.city, state: defaultAddr.state, pincode: defaultAddr.pincode }))
+            setSelectedAddressId(defaultAddr.id)
+          }
+        }
+      } catch {}
+    }
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search)
       const wc = urlParams.get('welcome')
@@ -68,18 +82,13 @@ export default function CheckoutPage() {
           const parsed = JSON.parse(userStr)
           setUser(parsed)
           setLoyaltyPoints(parsed.loyaltyPoints || 0)
-          setAddresses(parsed.addressBook ? JSON.parse(parsed.addressBook) : [])
           setFormData(prev => ({
             ...prev,
             name: parsed.name || '',
             phone: parsed.phone || '',
             email: parsed.email || ''
           }))
-          const defaultAddr = parsed.addressBook ? JSON.parse(parsed.addressBook).find((a: any) => a.isDefault) : null
-          if (defaultAddr) {
-            setFormData(prev => ({ ...prev, address: defaultAddr.address, city: defaultAddr.city, state: defaultAddr.state, pincode: defaultAddr.pincode }))
-            setSelectedAddressId(defaultAddr.id)
-          }
+          fetchAddresses(parsed.phone)
         } catch {}
       }
     }

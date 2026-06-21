@@ -18,19 +18,30 @@ interface Address {
 
 export default function AccountPage() {
   const [user, setUser] = useState<any>(null)
-  const [addresses, setAddresses] = useState<Address[]>([])
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [addresses, setAddresses] = useState<Address[]>([])
   const [formData, setFormData] = useState({ label: '', name: '', phone: '', address: '', address2: '', city: '', state: '', pincode: '', isDefault: false })
   const router = useRouter()
+
+  const fetchAddresses = async (phone: string) => {
+    try {
+      const res = await fetch(`/api/user/addresses?phone=${phone}`)
+      if (res.ok) {
+        const { addresses } = await res.json()
+        setAddresses(addresses)
+      }
+    } catch (e) { console.error(e) }
+  }
 
   useEffect(() => {
     const userStr = localStorage.getItem('user')
     if (!userStr) { router.push('/login'); return }
     const parsed = JSON.parse(userStr)
     setUser(parsed)
-    setAddresses(parsed.addressBook ? JSON.parse(parsed.addressBook) : [])
-    setFormData({ label: '', name: parsed.name || '', phone: parsed.phone || '', address: '', address2: '', city: '', state: '', pincode: '', isDefault: false })
+    setLoyaltyPoints(parsed.loyaltyPoints || 0)
+    fetchAddresses(parsed.phone)
   }, [router])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
