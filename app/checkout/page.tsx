@@ -198,7 +198,7 @@ export default function CheckoutPage() {
     e.preventDefault()
     setLoading(true)
     let finalTotal = appliedCoupon ? appliedCoupon.finalTotal : total
-    const pointsDiscount = (redeemedPoints / 100) * 50
+    const pointsDiscount = redeemedPoints === 100 ? 50 : redeemedPoints === 50 ? 25 : 0
     finalTotal = Math.max(0, finalTotal - pointsDiscount)
     const orderData = { items, total: finalTotal, originalTotal: total, couponCode: appliedCoupon?.code || null, discount: (appliedCoupon?.discount || 0) + pointsDiscount, pointsRedeemed: redeemedPoints, paymentMethod, ...formData }
     try {
@@ -221,7 +221,7 @@ export default function CheckoutPage() {
 
   const getFinalTotal = () => {
     let base = appliedCoupon ? appliedCoupon.finalTotal : total
-    const pointsDiscount = (redeemedPoints / 100) * 50
+    const pointsDiscount = redeemedPoints === 100 ? 50 : redeemedPoints === 50 ? 25 : 0
     return Math.max(0, base - pointsDiscount)
   }
 
@@ -298,9 +298,17 @@ export default function CheckoutPage() {
               {loyaltyPoints > 0 && (
                 <div className="p-3 bg-yellow-50 rounded-lg">
                   <h3 className="font-semibold text-sm mb-2">Redeem Loyalty Points</h3>
-                  <p className="text-xs text-gray-600 mb-2">You have {loyaltyPoints} points (100 pts = ₹50 off) - Max 100 pts per order</p>
-                  <input type="number" min="0" max="100" step="100" value={redeemedPoints} onChange={(e) => setRedeemedPoints(Math.min(100, Number(e.target.value)))} placeholder="Enter points" className="w-full px-2 py-1 border rounded text-sm" />
-                  <p className="text-xs text-green-600 mt-1">Discount: ₹{(redeemedPoints / 100) * 50}</p>
+                  <p className="text-xs text-gray-600 mb-2">You have {loyaltyPoints} points (50 pts = ₹25 off, 100 pts = ₹50 off)</p>
+                  <select
+                    value={redeemedPoints}
+                    onChange={(e) => setRedeemedPoints(parseInt(e.target.value))}
+                    className="w-full px-2 py-1 border rounded text-sm"
+                  >
+                    <option value={0}>0 pts (No discount)</option>
+                    {loyaltyPoints >= 50 && <option value={50}>50 pts = ₹25 off</option>}
+                    {loyaltyPoints >= 100 && <option value={100}>100 pts = ₹50 off</option>}
+                  </select>
+                  <p className="text-xs text-green-600 mt-1">Discount: ₹{redeemedPoints === 100 ? 50 : redeemedPoints === 50 ? 25 : 0}</p>
                 </div>
               )}
               <div>
@@ -317,7 +325,7 @@ export default function CheckoutPage() {
                 {items.map(item => <div key={item.id} className="flex justify-between"><span>{item.name} x {item.quantity}</span><span>₹{(item.discountPrice || item.price) * item.quantity}</span></div>)}
                 <hr />
                 {appliedCoupon && <div className="flex justify-between text-green-600"><span>Discount ({appliedCoupon.code})</span><span>-₹{appliedCoupon.discount}</span></div>}
-                {redeemedPoints > 0 && <div className="flex justify-between text-green-600"><span>Loyalty Discount ({redeemedPoints} pts)</span><span>-₹{(redeemedPoints / 100) * 50}</span></div>}
+                {redeemedPoints > 0 && <div className="flex justify-between text-green-600"><span>Loyalty Discount ({redeemedPoints} pts)</span><span>-₹{redeemedPoints === 100 ? 50 : redeemedPoints === 50 ? 25 : 0}</span></div>}
                 <div className="flex justify-between text-lg font-semibold"><span>{appliedCoupon || redeemedPoints ? 'Final Total' : 'Total'}:</span><span>₹{getFinalTotal()}</span></div>
               </div>
               <button type="submit" disabled={loading || paymentProcessing} style={{ backgroundColor: settings.themeColor || '#f59e0b', color: '#fff' }} className="w-full py-3 rounded-lg hover:opacity-90 disabled:opacity-50 font-semibold">

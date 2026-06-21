@@ -5,8 +5,8 @@ import Image from 'next/image'
 import { useCart } from '@/app/contexts/CartContext'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { useState, useEffect } from 'react'
 import Confetti from '@/components/Confetti'
+import { useState, useEffect } from 'react'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, total, itemCount } = useCart()
@@ -52,14 +52,10 @@ export default function CartPage() {
 
   const handleRedeemPoints = (points: number) => {
     const maxAllowed = Math.min(100, loyaltyPoints, Math.floor(total / 50) * 100)
-    const finalPoints = Math.min(points, maxAllowed, 100)
-    if (points > 100) {
-      alert('Maximum 100 points can be redeemed per order!')
-      setRedeemedPoints(100)
-    } else {
-      setRedeemedPoints(finalPoints)
-      if (finalPoints > 0) setShowConfetti(true)
-    }
+    const validPoints = points <= 50 ? 50 : 100
+    const finalPoints = Math.min(validPoints, maxAllowed)
+    setRedeemedPoints(finalPoints)
+    if (finalPoints > 0) setShowConfetti(true)
   }
 
   const handleProceedToCheckout = () => {
@@ -69,7 +65,7 @@ export default function CartPage() {
     router.push('/checkout')
   }
 
-  const discount = Math.floor(redeemedPoints / 100) * 50
+  const discount = redeemedPoints === 100 ? 50 : redeemedPoints === 50 ? 25 : 0
   const finalTotal = total - discount
 
   if (items.length === 0) {
@@ -106,7 +102,6 @@ export default function CartPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
               {items.map((item) => (
                 <div key={item.id} className="bg-white rounded-lg shadow-sm p-6">
@@ -152,7 +147,6 @@ export default function CartPage() {
               ))}
             </div>
 
-            {/* Order Summary */}
             <div className="bg-white rounded-lg shadow-sm p-6 h-fit">
               <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
               <div className="space-y-2 mb-4">
@@ -165,15 +159,15 @@ export default function CartPage() {
                     <p className="text-sm text-gray-600 mb-2">You have {loyaltyPoints} points</p>
                     <div className="flex items-center gap-2">
                       <span className="text-sm">Redeem:</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max={Math.min(100, loyaltyPoints, Math.floor(total / 50) * 100)}
+                      <select
                         value={redeemedPoints}
-                        onChange={(e) => handleRedeemPoints(parseInt(e.target.value) || 0)}
-                        className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                      />
-                      <span className="text-sm">pts = ₹{Math.floor(redeemedPoints / 100) * 50} off</span>
+                        onChange={(e) => handleRedeemPoints(parseInt(e.target.value))}
+                        className="px-2 py-1 border border-gray-300 rounded text-sm"
+                      >
+                        <option value={0}>0 pts (No discount)</option>
+                        {loyaltyPoints >= 50 && <option value={50}>50 pts = ₹25 off</option>}
+                        {loyaltyPoints >= 100 && <option value={100}>100 pts = ₹50 off</option>}
+                      </select>
                     </div>
                   </div>
                 )}
