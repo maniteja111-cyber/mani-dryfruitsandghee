@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import Confetti from '@/components/Confetti'
 
 function OrderSuccessContent() {
   const searchParams = useSearchParams()
@@ -177,6 +178,7 @@ function OrderSuccessContent() {
         </div>
       </main>
       <Footer settings={settings} />
+      <Confetti show={true} duration={4000} />
     </div>
   )
 }

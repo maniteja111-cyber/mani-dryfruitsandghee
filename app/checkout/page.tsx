@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import Confetti from '@/components/Confetti'
 import { useCart } from '@/app/contexts/CartContext'
 
 interface Address {
@@ -37,6 +38,8 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('')
   const [useNewAddress, setUseNewAddress] = useState(false)
   const [redeemedPoints, setRedeemedPoints] = useState(0)
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [couponApplied, setCouponApplied] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -115,7 +118,12 @@ export default function CheckoutPage() {
         body: JSON.stringify({ code: couponCode.trim(), orderTotal: total, userId: user?.id || null })
       })
       const data = await res.json()
-      if (res.ok && data.valid) setAppliedCoupon(data)
+      if (res.ok && data.valid) {
+        setAppliedCoupon(data)
+        setCouponApplied(true)
+        setShowConfetti(true)
+        setTimeout(() => setShowConfetti(false), 3000)
+      }
       else setCouponError(data.error || 'Invalid coupon')
     } catch { setCouponError('Failed to validate coupon') }
   }
@@ -320,6 +328,7 @@ export default function CheckoutPage() {
         </div>
       </main>
       <Footer settings={settings} />
+      <Confetti show={showConfetti} duration={3000} />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { useCart } from '@/app/contexts/CartContext'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { useState, useEffect } from 'react'
+import Confetti from '@/components/Confetti'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, total, itemCount } = useCart()
@@ -14,6 +15,7 @@ export default function CartPage() {
   const [user, setUser] = useState<any>(null)
   const [loyaltyPoints, setLoyaltyPoints] = useState(0)
   const [redeemedPoints, setRedeemedPoints] = useState(0)
+  const [showConfetti, setShowConfetti] = useState(false)
 
   useEffect(() => {
     const userStr = localStorage.getItem('user')
@@ -56,6 +58,7 @@ export default function CartPage() {
       setRedeemedPoints(100)
     } else {
       setRedeemedPoints(finalPoints)
+      if (finalPoints > 0) setShowConfetti(true)
     }
   }
 
@@ -179,14 +182,14 @@ export default function CartPage() {
                   <span>₹{total}</span>
                 </div>
                 {discount > 0 && (
-                  <div className="flex justify-between text-green-600 animate-pulse">
+                  <div className="flex justify-between text-green-600 animate-bounce">
                     <span>Loyalty Discount 🎉:</span>
                     <span>-₹{discount}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-lg font-semibold border-t pt-2">
                   <span>Total:</span>
-                  <span>₹{finalTotal}</span>
+                  <span className={discount > 0 ? 'text-green-600' : ''}>₹{finalTotal}</span>
                 </div>
               </div>
               <button
@@ -200,6 +203,7 @@ export default function CartPage() {
         </div>
       </main>
       <Footer settings={settings} />
+      <Confetti show={showConfetti} duration={3000} />
     </div>
   )
 }
