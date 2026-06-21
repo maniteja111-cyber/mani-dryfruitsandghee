@@ -228,40 +228,44 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Send emails in background (don't block response)
-    const orderItemsForEmail = items.map((item: any) => ({
-      name: item.name || `Product ${item.productId}`,
-      quantity: item.quantity,
-      price: item.price
-    }))
+// Send emails in background (don't block response)
+     const orderItemsForEmail = items.map((item: any) => ({
+       name: item.name || `Product ${item.productId}`,
+       quantity: item.quantity,
+       price: item.price
+     }))
 
-    Promise.allSettled([
-      sendOrderConfirmationEmail({
-        customerName: name,
-        customerEmail: email,
-        orderId: order.id,
-        items: orderItemsForEmail,
-        total,
-        address,
-        city,
-        state,
-        pincode,
-        paymentMethod
-      }),
-      sendAdminOrderNotification({
-        customerName: name,
-        customerEmail: email,
-        customerPhone: phone,
-        orderId: order.id,
-        items: orderItemsForEmail,
-        total,
-        address,
-        city,
-        state,
-        pincode,
-        paymentMethod
-      })
-    ]).catch(() => {})
+     const sendEmails = settingsObj.sendOrderEmails !== 'false'
+
+     if (sendEmails) {
+       Promise.allSettled([
+         sendOrderConfirmationEmail({
+           customerName: name,
+           customerEmail: email,
+           orderId: order.id,
+           items: orderItemsForEmail,
+           total,
+           address,
+           city,
+           state,
+           pincode,
+           paymentMethod
+         }),
+         sendAdminOrderNotification({
+           customerName: name,
+           customerEmail: email,
+           customerPhone: phone,
+           orderId: order.id,
+           items: orderItemsForEmail,
+           total,
+           address,
+           city,
+           state,
+           pincode,
+           paymentMethod
+         })
+       ]).catch(() => {})
+     }
 
     return NextResponse.json({
       ...order,

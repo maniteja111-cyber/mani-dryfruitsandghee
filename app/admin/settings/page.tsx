@@ -254,6 +254,7 @@ Governing Law: These terms are governed by the laws of India.`
                 <li><strong>refundPolicyContent:</strong> Refund Policy page content</li>
                 <li><strong>privacyPolicyContent:</strong> Privacy Policy page content</li>
                 <li><strong>termsAndConditionsContent:</strong> Terms & Conditions page content</li>
+                <li><strong>sendOrderEmails:</strong> Send order confirmation emails (true/false)</li>
                 <li><strong>seoTitle/seoDescription:</strong> Homepage SEO metadata</li>
               </ul>
           </div>
@@ -333,6 +334,15 @@ Governing Law: These terms are governed by the laws of India.`
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm font-mono"
                       />
                     </div>
+                  ) : setting.key === 'sendOrderEmails' ? (
+                    <select
+                      value={setting.value}
+                      onChange={(e) => handleSave(setting.key, e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="true">Yes (Send Emails)</option>
+                      <option value="false">No (Disable Emails)</option>
+                    </select>
                   ) : setting.key === 'banners' || setting.key === 'shippingPolicyContent' || setting.key === 'refundPolicyContent' || setting.key === 'privacyPolicyContent' || setting.key === 'termsAndConditionsContent' ? (
                     <textarea
                       value={setting.value}
