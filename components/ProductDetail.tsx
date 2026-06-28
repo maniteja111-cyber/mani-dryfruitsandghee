@@ -105,14 +105,21 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
   const [toasts, setToasts] = useState<Toast[]>([])
 
 const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    console.log('showToast called:', message)
     const id = Date.now()
-    setToasts(prev => [...prev, { id, message, type }])
+    setToasts(prev => {
+      console.log('toasts state before:', prev)
+      const newToasts = [...prev, { id, message, type }]
+      console.log('toasts state after:', newToasts)
+      return newToasts
+    })
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
     }, 3000)
   }
 
   const handleAddToCart = (item: any) => {
+    console.log('handleAddToCart called with item:', item)
     addItem(item)
     showToast(`${item.name} added to cart!`, 'success')
   }
@@ -616,12 +623,12 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
         </div>
       </div>
 
-      {/* Toast Notifications */}
+      {/* Toast Notifications - DEBUG: visible red border */}
       <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] space-y-2">
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className="px-6 py-3 rounded-lg shadow-xl text-white font-medium bg-green-600 flex items-center gap-2 min-w-[200px] justify-center animate-toast"
+            className="px-6 py-3 rounded-lg shadow-xl text-white font-medium bg-green-600 flex items-center gap-2 min-w-[200px] justify-center animate-toast border-2 border-red-500"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
