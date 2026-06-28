@@ -104,8 +104,7 @@ export default function Header({ settings }: HeaderProps) {
   }
 
 return (
-    <>
-      <header suppressHydrationWarning className="bg-white shadow-sm sticky top-0 z-50">
+    <header suppressHydrationWarning className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -131,7 +130,7 @@ return (
             {/* Right side */}
             <div className="flex items-center space-x-3">
               {/* Rewards Button */}
-              <button onClick={handleRewardsClick} formNoValidate className="relative p-2 rounded-full hover:bg-yellow-500/10 transition" title="Loyalty Rewards">
+              <button onClick={handleRewardsClick} formNoValidate autoComplete="off" className="relative p-2 rounded-full hover:bg-yellow-500/10 transition" title="Loyalty Rewards">
                 <svg className="h-6 w-6 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
                 </svg>
@@ -163,13 +162,13 @@ return (
                   <button onClick={handleLogout} className="text-sm text-red-600 hover:underline">Logout</button>
                 </div>
               ) : (
-<button onClick={() => setShowRewardsPopup(true)} formNoValidate className="hidden md:block text-sm font-medium px-3 py-1.5 rounded-lg bg-yellow-600 text-white">
+<button onClick={() => setShowRewardsPopup(true)} formNoValidate autoComplete="off" className="hidden md:block text-sm font-medium px-3 py-1.5 rounded-lg bg-yellow-600 text-white">
                    Login
                  </button>
               )}
 
               {/* Mobile menu */}
-              <button onClick={() => setIsMenuOpen(!isMenuOpen)} formNoValidate className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100">
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} formNoValidate autoComplete="off" className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100">
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
