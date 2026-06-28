@@ -6,6 +6,12 @@ import { useCart } from '@/app/contexts/CartContext'
 import Link from 'next/link'
 import Image from 'next/image'
 
+interface Toast {
+  id: number
+  message: string
+  type: 'success' | 'error'
+}
+
 interface Product {
   id: string
   name: string
@@ -29,7 +35,7 @@ interface ProductListProps {
   settings: Record<string, string>
 }
 
-export default function ProductList({ initialProducts, categories, searchParams, settings }: ProductListProps) {
+export function ProductList({ initialProducts, categories, searchParams, settings }: ProductListProps) {
   const [selectedVariants, setSelectedVariants] = useState<Record<string, any>>({})
   const [wishlist, setWishlist] = useState<string[]>([])
   const { addItem } = useCart()
@@ -76,6 +82,20 @@ export default function ProductList({ initialProducts, categories, searchParams,
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const params = useSearchParams()
+  const [toasts, setToasts] = useState<Toast[]>([])
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    const id = Date.now()
+    setToasts(prev => [...prev, { id, message, type }])
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id))
+    }, 3000)
+  }
+
+  const handleAddToCart = (item: any) => {
+    addItem(item)
+    showToast(`${item.name} added to cart!`, 'success')
+  }
 
   const updateFilters = (newParams: Record<string, string>) => {
     const url = new URL(window.location.href)
@@ -282,7 +302,7 @@ let images: string[] = []
       </div>
       <div className="flex space-x-2 mt-3">
         <button
-          onClick={() => addItem({
+          onClick={() => handleAddToCart({
             id: product.id + `-${selectedVariant.size}`,
             productId: product.id,
             name: `${product.name} (${selectedVariant.size})`,
@@ -311,6 +331,24 @@ let images: string[] = []
           </div>
         )}
       </div>
+
+      {/* Toast Notifications */}
+      {toasts.length > 0 && (
+        <div className="fixed top-16 right-4 z-50 space-y-2">
+          {toasts.map(toast => (
+            <div
+              key={toast.id}
+              className={`px-4 py-3 rounded-lg shadow-lg text-white font-medium ${
+                toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+              } animate-slide-in`}
+            >
+              {toast.message}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
+
+export default ProductList

@@ -104,8 +104,8 @@ export default function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
               {items.map((item) => (
-                <div key={item.id} className="bg-white rounded-lg shadow-sm p-6">
-                  <div className="flex items-center space-x-4">
+                <div key={item.id} className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                     <div className="flex-shrink-0 w-20 h-20 relative">
                       <Image
                         src={item.images && item.images.length > 0 && item.images[0] ? item.images[0] : '/placeholder.svg'}
@@ -114,7 +114,7 @@ export default function CartPage() {
                         className="object-cover rounded"
                       />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 w-full">
                       <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
                       <p className="text-gray-600">₹{item.discountPrice || item.price}</p>
                     </div>
