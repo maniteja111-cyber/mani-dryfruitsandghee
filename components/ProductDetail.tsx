@@ -121,7 +121,9 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
   const handleAddToCart = (item: any) => {
     console.log('handleAddToCart called with item:', item)
     addItem(item)
+    console.log('item added to cart, calling showToast')
     showToast(`${item.name} added to cart!`, 'success')
+    console.log('showToast called')
   }
 
   const stockGramsRemaining = product.stockGrams
@@ -623,17 +625,21 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
         </div>
       </div>
 
-      {/* Toast Notifications - DEBUG: visible red border */}
+      // Toast with forced visibility
       <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] space-y-2">
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className="px-6 py-3 rounded-lg shadow-xl text-white font-medium bg-green-600 flex items-center gap-2 min-w-[200px] justify-center animate-toast border-2 border-red-500"
+            className="px-6 py-4 rounded-xl shadow-2xl text-white font-bold bg-green-600 flex items-center gap-3 min-w-[240px] justify-center border-4 border-yellow-300"
+            style={{
+              animation: 'toastAnimation 3s ease-in-out forwards',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
             </svg>
-            {toast.message}
+            <span className="text-lg">{toast.message}</span>
           </div>
         ))}
       </div>
