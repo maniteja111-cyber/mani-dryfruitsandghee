@@ -39,6 +39,11 @@ export function ProductList({ initialProducts, categories, searchParams, setting
   const [selectedVariants, setSelectedVariants] = useState<Record<string, any>>({})
   const [wishlist, setWishlist] = useState<string[]>([])
   const { addItem } = useCart()
+  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const params = useSearchParams()
+  const [toasts, setToasts] = useState<Toast[]>([])
 
   useEffect(() => {
     const saved = localStorage.getItem('wishlist')
@@ -78,11 +83,6 @@ export function ProductList({ initialProducts, categories, searchParams, setting
     setWishlist(newWishlist)
     localStorage.setItem('wishlist', JSON.stringify(newWishlist))
   }
-  const [products, setProducts] = useState<Product[]>(initialProducts)
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const params = useSearchParams()
-  const [toasts, setToasts] = useState<Toast[]>([])
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     const id = Date.now()
@@ -129,14 +129,13 @@ export function ProductList({ initialProducts, categories, searchParams, setting
     fetchProducts()
   }, [searchParams])
 
-return (
+  return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
       {/* Filters Sidebar */}
       <div className="lg:col-span-1">
         <div className="bg-white p-6 rounded-lg shadow-sm sticky top-20">
           <h3 className="text-lg font-semibold mb-4">Filters</h3>
 
-          {/* Category Filter */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
             <select
@@ -153,7 +152,6 @@ return (
             </select>
           </div>
 
-          {/* Sort */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
             <select
@@ -173,7 +171,6 @@ return (
             </select>
           </div>
 
-          {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
             <input
@@ -204,7 +201,7 @@ return (
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {products.map((product) => {
-let images: string[] = []
+              let images: string[] = []
               if (Array.isArray(product.images)) {
                 images = product.images.filter(Boolean)
               } else if (typeof product.images === 'string' && product.images.trim()) {
@@ -220,113 +217,106 @@ let images: string[] = []
                   }
                 } catch {}
               }
-              images = images.map(img => {
-                if (typeof img === 'string' && img.trim().startsWith('"')) {
-                  try { return JSON.parse(img) } catch { return img }
-                }
-                return img
-              })
-              const imageSrc = images[0] || '/placeholder.svg'
 
               const VARIANTS = [
-  { size: '125g', grams: 125 },
-  { size: '250g', grams: 250 },
-  { size: '500g', grams: 500 },
-  { size: '1kg', grams: 1000 }
-]
+                { size: '125g', grams: 125 },
+                { size: '250g', grams: 250 },
+                { size: '500g', grams: 500 },
+                { size: '1kg', grams: 1000 }
+              ]
 
-  function calculatePrice(basePricePerKg: number | null, grams: number): number {
-    if (!basePricePerKg) return 0
-    if (grams === 500) return Math.round(basePricePerKg * 0.56)
-    if (grams === 250) return Math.round(basePricePerKg * 0.31)
-    if (grams === 125) return Math.round(basePricePerKg * 0.19)
-    return Math.round(basePricePerKg)
-  }
+              function calculatePrice(basePricePerKg: number | null, grams: number): number {
+                if (!basePricePerKg) return 0
+                if (grams === 500) return Math.round(basePricePerKg * 0.56)
+                if (grams === 250) return Math.round(basePricePerKg * 0.31)
+                if (grams === 125) return Math.round(basePricePerKg * 0.19)
+                return Math.round(basePricePerKg)
+              }
 
-  const availableVariants = VARIANTS.filter(v => product.stockGrams >= v.grams)
-  const selectedVariant = selectedVariants[product.id] || availableVariants[0] || VARIANTS[3]
-  const price = calculatePrice(product.pricePerKg, selectedVariant.grams)
-  const inStock = product.stockGrams > 0
+              const availableVariants = VARIANTS.filter(v => product.stockGrams >= v.grams)
+              const selectedVariant = selectedVariants[product.id] || availableVariants[0] || VARIANTS[3]
+              const price = calculatePrice(product.pricePerKg, selectedVariant.grams)
+              const inStock = product.stockGrams > 0
 
-  return (
-    <div key={product.id} className="bg-white rounded-lg shadow-sm p-3">
-      <Link href={`/products/${product.slug}`} className="relative block">
-        {images && images.length > 0 ? (
-          <img
-            src={images[0]}
-            alt={product.name}
-            className="h-32 w-full object-cover rounded-md group-hover:scale-[1.02] transition"
-          />
-        ) : (
-          <div className="h-32 w-full bg-gray-200 flex items-center justify-center rounded-md">
-            <span className="text-gray-500 text-xs">No Image</span>
-          </div>
-        )}
+              return (
+                <div key={product.id} className="bg-white rounded-lg shadow-sm p-3">
+                  <Link href={`/products/${product.slug}`} className="relative block">
+                    {images && images.length > 0 ? (
+                      <img
+                        src={images[0]}
+                        alt={product.name}
+                        className="h-32 w-full object-cover rounded-md"
+                      />
+                    ) : (
+                      <div className="h-32 w-full bg-gray-200 flex items-center justify-center rounded-md">
+                        <span className="text-gray-500 text-xs">No Image</span>
+                      </div>
+                    )}
 
-        <button
-          onClick={(e) => { e.preventDefault(); toggleWishlist(product.id) }}
-          className="absolute top-2 right-2 p-1 bg-white/90 rounded-full shadow hover:bg-white"
-        >
-          <span className="text-sm" style={{ color: wishlist.includes(product.id) ? (settings.themeColor || '#ef4444') : '#9ca3af' }}>
-            {wishlist.includes(product.id) ? '♥' : '♡'}
-          </span>
-        </button>
-      </Link>
-      {!inStock && (
-        <div className="mt-1 text-center">
-          <span className="bg-red-500 text-white px-1 py-0.5 text-xs rounded">Out of Stock</span>
-        </div>
-      )}
-      <select
-        value={selectedVariant.size}
-        onChange={(e) => {
-          const variant = availableVariants.find((v) => v.size === e.target.value) || availableVariants[0]
-          setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
-        }}
-        className="w-full mt-1 border border-gray-300 rounded px-1 py-1 text-xs"
-      >
-        {availableVariants.map((variant) => (
-          <option key={variant.size} value={variant.size}>
-            {variant.size} - ₹{calculatePrice(product.pricePerKg, variant.grams)}
-          </option>
-        ))}
-        {availableVariants.length === 0 && (
-          <option value="">Out of Stock</option>
-        )}
-      </select>
-      <Link href={`/products/${product.slug}`} className="block mt-1">
-        <h3 className="font-medium hover:text-yellow-600 cursor-pointer text-sm line-clamp-2">{product.name}</h3>
-      </Link>
-      <div className="flex items-center justify-between mt-1">
-        <p className="font-bold text-sm">₹{price}</p>
-        <div className="flex space-x-1">
-          <button
-            onClick={() => handleAddToCart({
-              id: product.id + `-${selectedVariant.size}`,
-              productId: product.id,
-              name: `${product.name} (${selectedVariant.size})`,
-              slug: product.slug,
-              price,
-              images: images,
-              selectedVariant
-            })}
-            style={{ backgroundColor: settings.themeColor || '#3b82f6' }}
-            className={`flex-1 text-white px-2 py-1 rounded text-xs font-bold hover:opacity-90 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={!inStock}
-          >
-            Cart
-          </button>
-          <a
-            style={{ backgroundColor: settings.themeColor || '#FFD60A' }}
-            className="flex-1 text-black px-2 py-1 rounded text-xs font-bold text-center hover:opacity-90"
-            href={`/products/${product.slug}`}
-          >
-            View
-          </a>
-        </div>
-      </div>
-    </div>
-  )
+                    <button
+                      onClick={(e) => { e.preventDefault(); toggleWishlist(product.id) }}
+                      className="absolute top-2 right-2 p-1 bg-white/90 rounded-full shadow hover:bg-white"
+                    >
+                      <span className="text-sm" style={{ color: wishlist.includes(product.id) ? (settings.themeColor || '#ef4444') : '#9ca3af' }}>
+                        {wishlist.includes(product.id) ? '♥' : '♡'}
+                      </span>
+                    </button>
+                  </Link>
+                  {!inStock && (
+                    <div className="mt-1 text-center">
+                      <span className="bg-red-500 text-white px-1 py-0.5 text-xs rounded">Out of Stock</span>
+                    </div>
+                  )}
+                  <select
+                    value={selectedVariant.size}
+                    onChange={(e) => {
+                      const variant = availableVariants.find((v) => v.size === e.target.value) || availableVariants[0]
+                      setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
+                    }}
+                    className="w-full mt-1 border border-gray-300 rounded px-1 py-1 text-xs"
+                  >
+                    {availableVariants.map((variant) => (
+                      <option key={variant.size} value={variant.size}>
+                        {variant.size} - ₹{calculatePrice(product.pricePerKg, variant.grams)}
+                      </option>
+                    ))}
+                    {availableVariants.length === 0 && (
+                      <option value="">Out of Stock</option>
+                    )}
+                  </select>
+                  <Link href={`/products/${product.slug}`} className="block mt-1">
+                    <h3 className="font-medium hover:text-yellow-600 cursor-pointer text-sm line-clamp-2">{product.name}</h3>
+                  </Link>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="font-bold text-sm">₹{price}</p>
+                    <div className="flex space-x-1">
+                      <button
+                        onClick={() => handleAddToCart({
+                          id: product.id + `-${selectedVariant.size}`,
+                          productId: product.id,
+                          name: `${product.name} (${selectedVariant.size})`,
+                          slug: product.slug,
+                          price,
+                          images: images,
+                          selectedVariant
+                        })}
+                        style={{ backgroundColor: settings.themeColor || '#3b82f6' }}
+                        className={`flex-1 text-white px-2 py-1 rounded text-xs font-bold hover:opacity-90 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={!inStock}
+                      >
+                        Cart
+                      </button>
+                      <a
+                        style={{ backgroundColor: settings.themeColor || '#FFD60A' }}
+                        className="flex-1 text-black px-2 py-1 rounded text-xs font-bold text-center hover:opacity-90"
+                        href={`/products/${product.slug}`}
+                      >
+                        View
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )
             })}
           </div>
         )}
