@@ -21,10 +21,11 @@ interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void
   removeItem: (id: string) => void
-  updateQuantity: (id: string, quantity: number, maxStock?: number) => void
+  updateQuantity: (id: string, quantity: number, maxStock?: number, productId?: string) => void
   clearCart: () => void
   total: number
   itemCount: number
+  getProductStockInfo: (productId: string) => { totalInCart: number, maxAvailable: number, variantStock: Record<string, number> }
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -65,7 +66,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems(prev => prev.filter(i => i.id !== id))
   }
 
-  const updateQuantity = (id: string, quantity: number, maxStock?: number) => {
+  const updateQuantity = (id: string, quantity: number, maxStock?: number, productId?: string) => {
     if (quantity <= 0) {
       removeItem(id)
       return
@@ -75,6 +76,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems(prev => prev.map(i => 
       i.id === id ? { ...i, quantity: finalQty } : i
     ))
+  }
+
+  const canAddToCart = (productId: string, variantGrams: number, availableStockGrams: number) => {
+    const gramsToAdd = variantGrams
+    const itemsForProduct = items.filter(i => i.productId === productId)
+    const totalGramsInCart = itemsForProduct.reduce((sum, i) => {
+      return sum + (i.selectedVariant?.grams || 1000) * i.quantity
+    }, 0)
+    return (totalGramsInCart + gramsToAdd) <= availableStockGrams
+  }
+
+  const getProductStockInfo = (productId: string) => {
+    const itemsForProduct = items.filter(i => i.productId === productId)
+    const totalInCart = itemsForProduct.reduce((sum, i) => {
+      return sum + (i.selectedVariant?.grams || 1000) * i.quantity
+    }, 0)
+    const maxAvailable = Math.max(...itemsForProduct.map(i => i.stock || 0))
+    const variantStock: Record<string, number> = {}
+    itemsForProduct.forEach(i => {
+      if (i.selectedVariant?.size) {
+        variantStock[i.selectedVariant.size] = i.quantity
+      }
+    })
+    return { totalInCart, maxAvailable, variantStock }
   }
 
   const clearCart = () => {
@@ -95,7 +120,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       updateQuantity,
       clearCart,
       total,
-      itemCount
+      itemCount,
+      getProductStockInfo
     }}>
       {children}
     </CartContext.Provider>

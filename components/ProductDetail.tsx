@@ -101,7 +101,7 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
   const [pincode, setPincode] = useState('')
   const [deliveryInfo, setDeliveryInfo] = useState<{available: boolean, days: string, cod: boolean, shipping: string} | null>(null)
   const [activeTab, setActiveTab] = useState('description')
-  const { addItem } = useCart()
+  const { addItem, items } = useCart()
   const [toasts, setToasts] = useState<Toast[]>([])
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -122,9 +122,6 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
     addItem(item)
     showToast(`${item.name} added to cart!`, 'success')
   }
-
-  const stockGramsRemaining = product.stockGrams
-  const stockKg = (stockGramsRemaining / 1000).toFixed(2)
 
   useEffect(() => {
     const saved = localStorage.getItem('wishlist')
@@ -224,9 +221,13 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
     setInWishlist(newState)
   }
 
+  const stockGramsRemaining = product.stockGrams
+
   const price = calculatePrice(product.pricePerKg, selectedVariant.grams)
-  const maxQuantity = Math.floor(stockGramsRemaining / selectedVariant.grams)
-  const maxKg = (stockGramsRemaining / 1000).toFixed(2)
+  const otherVariantsInCart = items.filter(i => i.productId === product.id).reduce((sum, i) => sum + (i.selectedVariant?.grams || 1000) * i.quantity, 0)
+  const availableGrams = Math.max(0, stockGramsRemaining - otherVariantsInCart)
+  const maxQuantity = Math.max(0, Math.floor(availableGrams / selectedVariant.grams))
+  const maxKg = (availableGrams / 1000).toFixed(2)
   const avgRating = reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) : 4.5
 
   const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=Hi, I'm interested in ${product.name} (${selectedVariant.size}). Quantity: ${quantity}. Please share details.`
@@ -398,7 +399,7 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                     +
                   </button>
                 </div>
-                <span className="text-gray-500 text-sm">Max: {maxKg} kg</span>
+                <span className="text-gray-500 text-sm">Max: {maxKg} kg available</span>
               </div>
 
               <div className="space-y-2">
