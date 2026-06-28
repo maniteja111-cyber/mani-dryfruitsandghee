@@ -104,7 +104,7 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
   const { addItem } = useCart()
   const [toasts, setToasts] = useState<Toast[]>([])
 
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     const id = Date.now()
     setToasts(prev => [...prev, { id, message, type }])
     setTimeout(() => {
@@ -617,13 +617,15 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
       </div>
 
       {/* Toast Notifications */}
-      <div className="fixed top-16 right-4 z-[9999] space-y-2">
+      <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] space-y-2">
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className="px-4 py-3 rounded-lg shadow-lg text-white font-medium bg-green-600 toast-notification"
-            style={{ animation: 'toast-fade 3s ease-in-out forwards' }}
+            className="px-6 py-3 rounded-lg shadow-xl text-white font-medium bg-green-600 toast-notification flex items-center gap-2 min-w-[200px] justify-center"
           >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
             {toast.message}
           </div>
         ))}
