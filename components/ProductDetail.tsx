@@ -239,7 +239,7 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
 
   return (
     <>
-<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div suppressHydrationWarning className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_2fr] gap-8 mb-8">
           <div>
             <div className="aspect-[1/1] relative mb-3 rounded-lg overflow-hidden bg-gray-100 shadow-md">
@@ -325,15 +325,16 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Select Weight</label>
               <div className="flex flex-wrap gap-2">
-                {VARIANTS.map((variant) => (
-                  <button
-                    key={variant.size}
-                    onClick={() => {
-                      setSelectedVariant(variant)
-                      setQuantity(1)
-                    }}
-                    disabled={Math.floor(stockGramsRemaining / variant.grams) === 0}
-                    className={`px-3 py-2 rounded-md border-2 font-medium transition text-sm ${
+{VARIANTS.map((variant) => (
+                   <button
+                     key={variant.size}
+                     onClick={() => {
+                       setSelectedVariant(variant)
+                       setQuantity(1)
+                     }}
+                     disabled={Math.floor(stockGramsRemaining / variant.grams) === 0}
+                     formNoValidate
+                     className={`px-3 py-2 rounded-md border-2 font-medium transition text-sm ${
                       selectedVariant.size === variant.size
                         ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
                         : Math.floor(stockGramsRemaining / variant.grams) === 0
