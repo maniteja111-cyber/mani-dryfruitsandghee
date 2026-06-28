@@ -39,7 +39,7 @@ body {
     90% { opacity: 1; transform: translateX(0); }
     100% { opacity: 0; transform: translateX(0); }
   }
-  .animate-toast {
+  .toast-notification {
     animation: toast-fade 3s ease-in-out forwards;
   }
 }
