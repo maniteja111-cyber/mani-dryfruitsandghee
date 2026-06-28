@@ -28,7 +28,7 @@ interface TodaysOffersProps {
 export default function TodaysOffers({ products }: TodaysOffersProps) {
   const [selectedVariants, setSelectedVariants] = useState<Record<string, any>>({})
   const [toasts, setToasts] = useState<Toast[]>([])
-  const { addItem } = useCart()
+  const { addItem, items } = useCart()
   const VARIANTS = [
     { size: '125g', grams: 125 },
     { size: '250g', grams: 250 },
@@ -135,6 +135,15 @@ return (
                 <div className="flex space-x-2 mt-3">
                   <button
                     onClick={() => {
+                      const otherVariantsInCart = items.filter(i => i.productId === product.id).reduce((sum, i) => sum + (i.selectedVariant?.grams || 1000) * i.quantity, 0)
+                      const availableGrams = Math.max(0, product.stockGrams - otherVariantsInCart)
+                      const maxQuantity = Math.max(0, Math.floor(availableGrams / selectedVariant.grams))
+                      
+                      if (maxQuantity <= 0) {
+                        showToast(`${product.name} - Not enough stock!`, 'error')
+                        return
+                      }
+                      
                       addItem({
                         id: product.id + `-${selectedVariant.size}`,
                         productId: product.id,
@@ -179,10 +188,10 @@ return (
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className="px-4 py-3 rounded-lg shadow-lg text-white font-medium bg-green-600 flex items-center gap-2 min-w-[200px] justify-center"
+            className={`px-4 py-3 rounded-lg shadow-lg text-white font-medium flex items-center gap-2 min-w-[200px] justify-center ${toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'}`}
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={toast.type === 'error' ? 'M6 18L18 6M6 6l12 12' : 'M5 13l4 4L19 7'} />
             </svg>
             {toast.message}
           </div>

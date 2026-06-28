@@ -38,7 +38,7 @@ interface ProductListProps {
 export function ProductList({ initialProducts, categories, searchParams, settings }: ProductListProps) {
   const [selectedVariants, setSelectedVariants] = useState<Record<string, any>>({})
   const [wishlist, setWishlist] = useState<string[]>([])
-  const { addItem } = useCart()
+  const { addItem, items } = useCart()
   const [products, setProducts] = useState<Product[]>(initialProducts)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -93,7 +93,17 @@ export function ProductList({ initialProducts, categories, searchParams, setting
 
   const handleAddToCart = (item: any) => {
     console.log('PRODUCT_LIST ADD_TO_CART - clicked')
-    addItem(item)
+    
+    const otherVariantsInCart = items.filter(i => i.productId === item.productId).reduce((sum, i) => sum + (i.selectedVariant?.grams || 1000) * i.quantity, 0)
+    const availableGrams = Math.max(0, item.stock - otherVariantsInCart)
+    const maxQuantity = Math.max(0, Math.floor(availableGrams / item.selectedVariant.grams))
+    
+    if (maxQuantity <= 0) {
+      showToast(`${item.name} - Not enough stock!`, 'error')
+      return
+    }
+    
+    addItem({ ...item, quantity: 1 })
     showToast(`${item.name} added to cart!`, 'success')
   }
 
@@ -291,15 +301,16 @@ export function ProductList({ initialProducts, categories, searchParams, setting
                     <p className="font-bold text-sm">₹{price}</p>
                     <div className="flex space-x-1">
                       <button
-                        onClick={() => handleAddToCart({
-                          id: product.id + `-${selectedVariant.size}`,
-                          productId: product.id,
-                          name: `${product.name} (${selectedVariant.size})`,
-                          slug: product.slug,
-                          price,
-                          images: images,
-                          selectedVariant
-                        })}
+onClick={() => handleAddToCart({
+                           id: product.id + `-${selectedVariant.size}`,
+                           productId: product.id,
+                           name: `${product.name} (${selectedVariant.size})`,
+                           slug: product.slug,
+                           price,
+                           images: images,
+                           selectedVariant,
+                           stock: product.stockGrams
+                         })}
                         style={{ backgroundColor: settings.themeColor || '#3b82f6' }}
                         className={`flex-1 text-white px-2 py-1 rounded text-xs font-bold hover:opacity-90 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
                         disabled={!inStock}
@@ -331,10 +342,10 @@ export function ProductList({ initialProducts, categories, searchParams, setting
           {toasts.map(toast => (
             <div
               key={toast.id}
-              className="px-4 py-3 rounded-lg shadow-lg text-white font-medium bg-green-600 flex items-center gap-2 min-w-[200px] justify-center"
+              className={`px-4 py-3 rounded-lg shadow-lg text-white font-medium flex items-center gap-2 min-w-[200px] justify-center ${toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'}`}
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={toast.type === 'error' ? 'M6 18L18 6M6 6l12 12' : 'M5 13l4 4L19 7'} />
               </svg>
               {toast.message}
             </div>
