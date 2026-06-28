@@ -153,7 +153,7 @@ export default function CartPage() {
                           </span>
                           <button
                             onClick={() => removeItem(item.id)}
-                            className="text-gray-400 hover:text-red-600 transition"
+                            className="text-red-500 hover:text-red-700 transition"
                             aria-label="Remove item"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,7 +194,7 @@ export default function CartPage() {
                         </p>
                         <button
                           onClick={() => removeItem(item.id)}
-                          className="text-gray-400 hover:text-red-600 transition"
+                          className="text-red-500 hover:text-red-700 transition"
                           aria-label="Remove item"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
