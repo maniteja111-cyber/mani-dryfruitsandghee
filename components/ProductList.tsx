@@ -85,15 +85,22 @@ export function ProductList({ initialProducts, categories, searchParams, setting
   }
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    console.log('PRODUCT_LIST TOAST: showToast called with:', message, type)
     const id = Date.now()
-    setToasts(prev => [...prev, { id, message, type }])
+    setToasts(prev => {
+      console.log('PRODUCT_LIST TOAST: previous state:', prev.length)
+      return [...prev, { id, message, type }]
+    })
     setTimeout(() => {
+      console.log('PRODUCT_LIST TOAST: removing toast')
       setToasts(prev => prev.filter(t => t.id !== id))
     }, 3000)
   }
 
   const handleAddToCart = (item: any) => {
+    console.log('PRODUCT_LIST ADD_TO_CART: button clicked, item:', item)
     addItem(item)
+    console.log('PRODUCT_LIST ADD_TO_CART: calling showToast')
     showToast(`${item.name} added to cart!`, 'success')
   }
 
@@ -328,9 +335,11 @@ export function ProductList({ initialProducts, categories, searchParams, setting
           {toasts.map(toast => (
             <div
               key={toast.id}
-              className={`px-6 py-3 rounded-lg shadow-xl text-white font-medium flex items-center gap-2 min-w-[200px] justify-center animate-toast ${
-                toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
-              }`}
+              className="px-6 py-3 rounded-lg shadow-xl text-white font-medium flex items-center gap-2 min-w-[200px] justify-center bg-green-600"
+              style={{
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                animation: 'fadeInOut 3s ease-in-out forwards'
+              }}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -342,6 +351,24 @@ export function ProductList({ initialProducts, categories, searchParams, setting
       )}
     </div>
   )
+}
+
+// Inject toast animation CSS if not present
+if (typeof document !== 'undefined') {
+  const styleId = 'toast-animation-style'
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style')
+    style.id = styleId
+    style.innerHTML = `
+      @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateY(-20px); }
+        15% { opacity: 1; transform: translateY(0); }
+        85% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(0); }
+      }
+    `
+    document.head.appendChild(style)
+  }
 }
 
 export default ProductList
