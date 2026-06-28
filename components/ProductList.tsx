@@ -133,7 +133,7 @@ return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
       {/* Filters Sidebar */}
       <div className="lg:col-span-1">
-        <div className="bg-white p-6 rounded-lg shadow-sm">
+        <div className="bg-white p-6 rounded-lg shadow-sm sticky top-20">
           <h3 className="text-lg font-semibold mb-4">Filters</h3>
 
           {/* Category Filter */}
@@ -202,7 +202,7 @@ return (
             <p className="text-gray-500 text-lg">No products found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {products.map((product) => {
 let images: string[] = []
               if (Array.isArray(product.images)) {
@@ -249,32 +249,32 @@ let images: string[] = []
   const inStock = product.stockGrams > 0
 
   return (
-    <div key={product.id} className="bg-white rounded-2xl shadow p-4 group">
+    <div key={product.id} className="bg-white rounded-lg shadow-sm p-3">
       <Link href={`/products/${product.slug}`} className="relative block">
         {images && images.length > 0 ? (
           <img
             src={images[0]}
             alt={product.name}
-            className="h-40 w-full object-cover rounded-xl group-hover:scale-[1.02] transition"
+            className="h-32 w-full object-cover rounded-md group-hover:scale-[1.02] transition"
           />
         ) : (
-          <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
-            <span className="text-gray-500">No Image</span>
+          <div className="h-32 w-full bg-gray-200 flex items-center justify-center rounded-md">
+            <span className="text-gray-500 text-xs">No Image</span>
           </div>
         )}
 
         <button
           onClick={(e) => { e.preventDefault(); toggleWishlist(product.id) }}
-          className="absolute top-3 right-3 p-1.5 bg-white/90 rounded-full shadow hover:bg-white"
+          className="absolute top-2 right-2 p-1 bg-white/90 rounded-full shadow hover:bg-white"
         >
-          <span className="text-lg" style={{ color: wishlist.includes(product.id) ? (settings.themeColor || '#ef4444') : '#9ca3af' }}>
+          <span className="text-sm" style={{ color: wishlist.includes(product.id) ? (settings.themeColor || '#ef4444') : '#9ca3af' }}>
             {wishlist.includes(product.id) ? '♥' : '♡'}
           </span>
         </button>
       </Link>
       {!inStock && (
-        <div className="mt-2 text-center">
-          <span className="bg-red-500 text-white px-2 py-1 text-xs rounded">Out of Stock</span>
+        <div className="mt-1 text-center">
+          <span className="bg-red-500 text-white px-1 py-0.5 text-xs rounded">Out of Stock</span>
         </div>
       )}
       <select
@@ -283,7 +283,7 @@ let images: string[] = []
           const variant = availableVariants.find((v) => v.size === e.target.value) || availableVariants[0]
           setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
         }}
-        className="w-full mt-2 border border-gray-300 rounded px-2 py-1 text-sm"
+        className="w-full mt-1 border border-gray-300 rounded px-1 py-1 text-xs"
       >
         {availableVariants.map((variant) => (
           <option key={variant.size} value={variant.size}>
@@ -294,36 +294,36 @@ let images: string[] = []
           <option value="">Out of Stock</option>
         )}
       </select>
-      <Link href={`/products/${product.slug}`} className="block mt-3">
-        <h3 className="font-bold hover:text-yellow-600 cursor-pointer">{product.name}</h3>
+      <Link href={`/products/${product.slug}`} className="block mt-1">
+        <h3 className="font-medium hover:text-yellow-600 cursor-pointer text-sm line-clamp-2">{product.name}</h3>
       </Link>
-      <div className="flex items-center space-x-2 mt-1">
-        <p className="font-bold text-xl">₹{price}</p>
-      </div>
-      <div className="flex space-x-2 mt-3">
-        <button
-          onClick={() => handleAddToCart({
-            id: product.id + `-${selectedVariant.size}`,
-            productId: product.id,
-            name: `${product.name} (${selectedVariant.size})`,
-            slug: product.slug,
-            price,
-            images: images,
-            selectedVariant
-          })}
-          style={{ backgroundColor: settings.themeColor || '#3b82f6' }}
-          className={`flex-1 text-white px-3 py-2 rounded-lg font-bold text-sm hover:opacity-90 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
-          disabled={!inStock}
-        >
-          Add to Cart
-        </button>
-        <a
-          style={{ backgroundColor: settings.themeColor || '#FFD60A' }}
-          className="flex-1 text-black px-3 py-2 rounded-lg font-bold text-sm text-center hover:opacity-90"
-          href={`/products/${product.slug}`}
-        >
-          View
-        </a>
+      <div className="flex items-center justify-between mt-1">
+        <p className="font-bold text-sm">₹{price}</p>
+        <div className="flex space-x-1">
+          <button
+            onClick={() => handleAddToCart({
+              id: product.id + `-${selectedVariant.size}`,
+              productId: product.id,
+              name: `${product.name} (${selectedVariant.size})`,
+              slug: product.slug,
+              price,
+              images: images,
+              selectedVariant
+            })}
+            style={{ backgroundColor: settings.themeColor || '#3b82f6' }}
+            className={`flex-1 text-white px-2 py-1 rounded text-xs font-bold hover:opacity-90 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={!inStock}
+          >
+            Cart
+          </button>
+          <a
+            style={{ backgroundColor: settings.themeColor || '#FFD60A' }}
+            className="flex-1 text-black px-2 py-1 rounded text-xs font-bold text-center hover:opacity-90"
+            href={`/products/${product.slug}`}
+          >
+            View
+          </a>
+        </div>
       </div>
     </div>
   )
