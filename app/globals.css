@@ -32,4 +32,14 @@ body {
   .animate-slide-in {
     animation: slide-in 0.3s ease-out;
   }
+
+  @keyframes toast-fade {
+    0% { opacity: 0; transform: translateX(100%); }
+    10% { opacity: 1; transform: translateX(0); }
+    90% { opacity: 1; transform: translateX(0); }
+    100% { opacity: 0; transform: translateX(0); }
+  }
+  .animate-toast {
+    animation: toast-fade 3s ease-in-out forwards;
+  }
 }

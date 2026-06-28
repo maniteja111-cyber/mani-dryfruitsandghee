@@ -617,13 +617,12 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
       </div>
 
       {/* Toast Notifications */}
-      <div className="fixed top-16 right-4 z-50 space-y-2">
+      <div className="fixed top-20 right-4 z-[100] space-y-2 pointer-events-none">
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className={`px-4 py-3 rounded-lg shadow-lg text-white font-medium ${
-              toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
-            } animate-slide-in`}
+            className={`px-4 py-3 rounded-lg shadow-lg text-white font-medium bg-green-600`}
+            style={{ animation: 'toast-fade 3s ease-in-out forwards' }}
           >
             {toast.message}
           </div>

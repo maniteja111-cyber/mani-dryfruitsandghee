@@ -324,13 +324,14 @@ export function ProductList({ initialProducts, categories, searchParams, setting
 
       {/* Toast Notifications */}
       {toasts.length > 0 && (
-        <div className="fixed top-16 right-4 z-50 space-y-2">
+        <div className="fixed top-16 right-4 z-50 space-y-2 pointer-events-none">
           {toasts.map(toast => (
             <div
               key={toast.id}
-              className={`px-4 py-3 rounded-lg shadow-lg text-white font-medium ${
+              className={`px-4 py-3 rounded-lg shadow-lg text-white font-medium animate-toast ${
                 toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
-              } animate-slide-in`}
+              }`}
+              style={{ animation: 'toast-fade 3s ease-in-out forwards' }}
             >
               {toast.message}
             </div>
