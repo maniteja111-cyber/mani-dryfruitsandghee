@@ -54,7 +54,8 @@ export default function TodaysOffers({ products }: TodaysOffersProps) {
     return null
   }
 
-  return (
+return (
+    <>
     <section className="py-12 bg-red-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">🔥 Today's Offers</h2>
@@ -85,81 +86,81 @@ export default function TodaysOffers({ products }: TodaysOffersProps) {
             const price = calculatePrice(product.pricePerKg, selectedVariant.grams)
             const inStock = product.stockGrams > 0
 
-return (
-                  <div key={product.id} className="bg-white rounded-2xl shadow p-4">
-                    <Link href={`/products/${product.slug}`} className="block">
-                      {images.length > 0 && imageSrc ? (
-                        <img
-                          src={imageSrc}
-                          alt={product.name}
-                          className="h-40 w-full object-cover rounded-xl"
-                        />
-                      ) : (
-                        <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
-                          <span className="text-gray-500">No Image</span>
-                        </div>
-                      )}
-                    </Link>
-                    {!inStock && (
-                      <div className="mt-2 text-center">
-                        <span className="bg-red-500 text-white px-2 py-1 text-xs rounded">Out of Stock</span>
-                      </div>
-                    )}
-                    <Link href={`/products/${product.slug}`} className="block mt-3">
-                      <h3 className="font-bold hover:text-red-600 cursor-pointer">{product.name}</h3>
-                    </Link>
-
-                    <select
-                      value={selectedVariant?.size || ''}
-                      onChange={(e) => {
-                        const variant = availableVariants.find((v) => v.size === e.target.value) || availableVariants[0]
-                        setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
-                      }}
-                      className="w-full mt-2 border border-gray-300 rounded px-2 py-1 text-sm"
-                    >
-                      {availableVariants.map((variant) => (
-                        <option key={variant.size} value={variant.size}>
-                          {variant.size} - ₹{calculatePrice(product.pricePerKg, variant.grams)}
-                        </option>
-                      ))}
-                      {availableVariants.length === 0 && (
-                        <option value="">Out of Stock</option>
-                      )}
-                    </select>
-
-                    <div className="flex items-center space-x-2 mt-1">
-                      <p className="font-bold text-xl">₹{price}</p>
+            return (
+              <div key={product.id} className="bg-white rounded-2xl shadow p-4">
+                <Link href={`/products/${product.slug}`} className="block">
+                  {images.length > 0 && imageSrc ? (
+                    <img
+                      src={imageSrc}
+                      alt={product.name}
+                      className="h-40 w-full object-cover rounded-xl"
+                    />
+                  ) : (
+                    <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
+                      <span className="text-gray-500">No Image</span>
                     </div>
-
-<div className="flex space-x-2 mt-3">
-                      <button
-                        onClick={() => {
-                          addItem({
-                            id: product.id + `-${selectedVariant.size}`,
-                            productId: product.id,
-                            name: `${product.name} (${selectedVariant.size})`,
-                            slug: product.slug,
-                            price,
-                            images: images,
-                            selectedVariant
-                          })
-                          showToast(`${product.name} added to cart!`, 'success')
-                        }}
-                        className={`flex-1 bg-red-600 text-white px-3 py-2 rounded-lg font-bold text-sm hover:bg-red-700 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        disabled={!inStock}
-                      >
-                        Add to Cart
-                      </button>
-                      <a
-                        className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg font-bold text-sm text-center hover:bg-red-600"
-                        href={`/products/${product.slug}`}
-                      >
-                        View
-                      </a>
-                    </div>
+                  )}
+                </Link>
+                {!inStock && (
+                  <div className="mt-2 text-center">
+                    <span className="bg-red-500 text-white px-2 py-1 text-xs rounded">Out of Stock</span>
                   </div>
-                )
-              })}
+                )}
+                <Link href={`/products/${product.slug}`} className="block mt-3">
+                  <h3 className="font-bold hover:text-red-600 cursor-pointer">{product.name}</h3>
+                </Link>
+
+                <select
+                  value={selectedVariant?.size || ''}
+                  onChange={(e) => {
+                    const variant = availableVariants.find((v) => v.size === e.target.value) || availableVariants[0]
+                    setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
+                  }}
+                  className="w-full mt-2 border border-gray-300 rounded px-2 py-1 text-sm"
+                >
+                  {availableVariants.map((variant) => (
+                    <option key={variant.size} value={variant.size}>
+                      {variant.size} - ₹{calculatePrice(product.pricePerKg, variant.grams)}
+                    </option>
+                  ))}
+                  {availableVariants.length === 0 && (
+                    <option value="">Out of Stock</option>
+                  )}
+                </select>
+
+                <div className="flex items-center space-x-2 mt-1">
+                  <p className="font-bold text-xl">₹{price}</p>
+                </div>
+
+                <div className="flex space-x-2 mt-3">
+                  <button
+                    onClick={() => {
+                      addItem({
+                        id: product.id + `-${selectedVariant.size}`,
+                        productId: product.id,
+                        name: `${product.name} (${selectedVariant.size})`,
+                        slug: product.slug,
+                        price,
+                        images: images,
+                        selectedVariant
+                      })
+                      showToast(`${product.name} added to cart!`, 'success')
+                    }}
+                    className={`flex-1 bg-red-600 text-white px-3 py-2 rounded-lg font-bold text-sm hover:bg-red-700 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={!inStock}
+                  >
+                    Add to Cart
+                  </button>
+                  <a
+                    className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg font-bold text-sm text-center hover:bg-red-600"
+                    href={`/products/${product.slug}`}
+                  >
+                    View
+                  </a>
+                </div>
+              </div>
+            )
+          })}
         </div>
         <div className="text-center mt-8">
           <Link
@@ -188,5 +189,6 @@ return (
         ))}
       </div>
     )}
+    </>
   )
 }
