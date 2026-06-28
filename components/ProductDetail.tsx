@@ -105,14 +105,20 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
   const [toasts, setToasts] = useState<Toast[]>([])
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    console.log('TOAST DEBUG - showToast called with:', message, type)
     const id = Date.now()
-    setToasts(prev => [...prev, { id, message, type }])
+    setToasts(prev => {
+      console.log('TOAST DEBUG - previous toasts:', prev.length)
+      return [...prev, { id, message, type }]
+    })
     setTimeout(() => {
+      console.log('TOAST DEBUG - removing toast id:', id)
       setToasts(prev => prev.filter(t => t.id !== id))
     }, 3000)
   }
 
   const handleAddToCart = (item: any) => {
+    console.log('TOAST DEBUG - handleAddToCart clicked')
     addItem(item)
     showToast(`${item.name} added to cart!`, 'success')
   }
@@ -617,12 +623,14 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
       </div>
 
       {/* Toast Notifications */}
-      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] space-y-2 pointer-events-none">
+      <div 
+        className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] space-y-2"
+        style={{ display: toasts.length > 0 ? 'block' : 'none' }}
+      >
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className="px-4 py-3 rounded-lg shadow-lg text-white font-medium bg-green-600 flex items-center gap-2"
-            style={{ animation: 'toast-fade 3s ease-in-out forwards' }}
+            className="px-4 py-3 rounded-lg shadow-lg text-white font-medium bg-green-600 flex items-center gap-2 min-w-[200px] justify-center"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
