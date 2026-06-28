@@ -633,10 +633,10 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className="px-6 py-4 rounded-xl shadow-2xl text-white font-bold bg-green-600 flex items-center gap-3 min-w-[240px] justify-center border-4 border-yellow-300"
+            className="px-6 py-4 rounded-xl shadow-2xl text-white font-bold bg-green-600 flex items-center gap-3 min-w-[240px] justify-center"
             style={{
-              animation: 'toastAnimation 3s ease-in-out forwards',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              animation: 'fadeInOut 3s ease-in-out forwards'
             }}
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -648,4 +648,22 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
       </div>
     </>
   )
+}
+
+// Inject toast animation CSS if not present
+if (typeof document !== 'undefined') {
+  const styleId = 'toast-animation-style'
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style')
+    style.id = styleId
+    style.innerHTML = `
+      @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateY(-20px); }
+        15% { opacity: 1; transform: translateY(0); }
+        85% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(0); }
+      }
+    `
+    document.head.appendChild(style)
+  }
 }
