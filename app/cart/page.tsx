@@ -65,8 +65,11 @@ export default function CartPage() {
     router.push('/checkout')
   }
 
+  const minOrderForFreeDelivery = parseInt(settings.freeDeliveryMinOrder || '1500')
+  const defaultDeliveryCharge = parseInt(settings.defaultDeliveryCharge || '100')
+  const deliveryCharge = total >= minOrderForFreeDelivery ? 0 : defaultDeliveryCharge
   const discount = redeemedPoints === 100 ? 50 : redeemedPoints === 50 ? 25 : 0
-  const finalTotal = total - discount
+  const finalTotal = total + deliveryCharge - discount
 
   if (items.length === 0) {
     return (
@@ -142,24 +145,23 @@ export default function CartPage() {
                         )}
                       </div>
 
-                      {/* Mobile: Item Total and Remove */}
+                      {/* Mobile: Item Total with Remove Icon on same line */}
                       <div className="flex sm:hidden items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                        <span className="text-gray-500 text-sm">Total</span>
-                        <span className="font-bold text-gray-900 text-lg">
-                          ₹{(item.discountPrice || item.price) * item.quantity}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-900 text-lg">
+                            ₹{(item.discountPrice || item.price) * item.quantity}
+                          </span>
+                          <button
+                            onClick={() => removeItem(item.id)}
+                            className="text-gray-400 hover:text-red-600 transition"
+                            aria-label="Remove item"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.8 15.1A2 2 0 0116.2 21H7.8a2 2 0 01-1.99-1.9L5 7m5 4v-5a2 2 0 014 0v5m-6 0h6" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-
-                      {/* Mobile: Remove */}
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="sm:hidden mt-3 text-gray-400 hover:text-red-600 transition self-start"
-                        aria-label="Remove item"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.8 15.1A2 2 0 0116.2 21H7.8a2 2 0 01-1.99-1.9L5 7m5 4v-5a2 2 0 014 0v5m-6 0h6" />
-                        </svg>
-                      </button>
                     </div>
 
                     {/* Desktop: Quantity and Price */}
@@ -185,23 +187,21 @@ export default function CartPage() {
                         </button>
                       </div>
 
-                      {/* Item Total */}
-                      <div className="text-right mt-4">
+                      {/* Item Total with Remove Icon on same line */}
+                      <div className="flex items-center justify-end gap-3 mt-4">
                         <p className="text-lg font-bold text-gray-900">
                           ₹{(item.discountPrice || item.price) * item.quantity}
                         </p>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="text-gray-400 hover:text-red-600 transition"
+                          aria-label="Remove item"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.8 15.1A2 2 0 0116.2 21H7.8a2 2 0 01-1.99-1.9L5 7m5 4v-5a2 2 0 014 0v5m-6 0h6" />
+                          </svg>
+                        </button>
                       </div>
-
-                      {/* Remove Button */}
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="mt-3 text-gray-400 hover:text-red-600 transition"
-                        aria-label="Remove item"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.8 15.1A2 2 0 0116.2 21H7.8a2 2 0 01-1.99-1.9L5 7m5 4v-5a2 2 0 014 0v5m-6 0h6" />
-                        </svg>
-                      </button>
                     </div>
 
                     {/* Mobile: Quantity Selector */}
@@ -242,10 +242,18 @@ export default function CartPage() {
                     <span className="font-medium text-gray-900">₹{total}</span>
                   </div>
                   
-                  <div className="flex justify-between text-gray-600">
-                    <span>Delivery</span>
-                    <span className="font-medium text-green-600">Free</span>
-                  </div>
+<div className="flex justify-between text-gray-600">
+                        <span>Delivery</span>
+                        <span className={deliveryCharge === 0 ? 'font-medium text-green-600' : 'font-medium text-gray-900'}>
+                          {deliveryCharge === 0 ? 'Free' : `₹${deliveryCharge}`}
+                        </span>
+                      </div>
+                      
+                      {total < minOrderForFreeDelivery && (
+                        <p className="text-xs text-orange-600">
+                          Add ₹{minOrderForFreeDelivery - total} more for free delivery
+                        </p>
+                      )}
 
                   {user && loyaltyPoints > 0 && (
                     <div className="pt-3 border-t border-gray-100">
