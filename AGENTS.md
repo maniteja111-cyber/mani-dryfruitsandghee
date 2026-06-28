@@ -64,4 +64,4 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Addresses stored as JSON in `addressBook` column
 
 ## Next Steps
-- Add Facebook OAuth login (similar to Google)
+- (none)
