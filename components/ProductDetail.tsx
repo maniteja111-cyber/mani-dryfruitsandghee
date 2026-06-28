@@ -296,7 +296,7 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                 <span className="text-2xl font-bold text-gray-900">₹{price}</span>
                 <span className="text-gray-500 text-sm">({selectedVariant.size})</span>
               </div>
-              <p className="text-gray-600 text-sm">Stock: {stockKg} kg available</p>
+              <p className="text-gray-600 text-sm">Stock: {(stockGramsRemaining / 1000).toFixed(2)} kg available</p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
