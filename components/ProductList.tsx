@@ -113,16 +113,16 @@ return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
       {/* Filters Sidebar */}
       <div className="lg:col-span-1">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 dark:text-gray-200">Filters</h3>
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <h3 className="text-lg font-semibold mb-4">Filters</h3>
 
           {/* Category Filter */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
             <select
               value={params.get('category') || ''}
               onChange={(e) => updateFilters({ category: e.target.value })}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option value="">All Categories</option>
               {categories.map((category) => (
@@ -135,14 +135,14 @@ return (
 
           {/* Sort */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sort By</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
             <select
               value={`${params.get('sort') || 'createdAt'}-${params.get('order') || 'desc'}`}
               onChange={(e) => {
                 const [sort, order] = e.target.value.split('-')
                 updateFilters({ sort, order })
               }}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option value="createdAt-desc">Newest First</option>
               <option value="createdAt-asc">Oldest First</option>
@@ -155,7 +155,7 @@ return (
 
           {/* Search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
             <input
               type="text"
               placeholder="Search products..."
@@ -165,7 +165,7 @@ return (
                   updateFilters({ search: (e.target as HTMLInputElement).value })
                 }
               }}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
             />
           </div>
         </div>
@@ -179,7 +179,7 @@ return (
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400 text-lg">No products found</p>
+            <p className="text-gray-500 text-lg">No products found</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -229,7 +229,7 @@ let images: string[] = []
   const inStock = product.stockGrams > 0
 
   return (
-    <div key={product.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4 group">
+    <div key={product.id} className="bg-white rounded-2xl shadow p-4 group">
       <Link href={`/products/${product.slug}`} className="relative block">
         {images && images.length > 0 ? (
           <img
@@ -238,14 +238,14 @@ let images: string[] = []
             className="h-40 w-full object-cover rounded-xl group-hover:scale-[1.02] transition"
           />
         ) : (
-          <div className="h-40 w-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-xl">
-            <span className="text-gray-500 dark:text-gray-400">No Image</span>
+          <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
+            <span className="text-gray-500">No Image</span>
           </div>
         )}
 
         <button
           onClick={(e) => { e.preventDefault(); toggleWishlist(product.id) }}
-          className="absolute top-3 right-3 p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-full shadow hover:bg-white dark:hover:bg-gray-700"
+          className="absolute top-3 right-3 p-1.5 bg-white/90 rounded-full shadow hover:bg-white"
         >
           <span className="text-lg" style={{ color: wishlist.includes(product.id) ? (settings.themeColor || '#ef4444') : '#9ca3af' }}>
             {wishlist.includes(product.id) ? '♥' : '♡'}
@@ -263,7 +263,7 @@ let images: string[] = []
           const variant = availableVariants.find((v) => v.size === e.target.value) || availableVariants[0]
           setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
         }}
-        className="w-full mt-2 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+        className="w-full mt-2 border border-gray-300 rounded px-2 py-1 text-sm"
       >
         {availableVariants.map((variant) => (
           <option key={variant.size} value={variant.size}>
@@ -275,10 +275,10 @@ let images: string[] = []
         )}
       </select>
       <Link href={`/products/${product.slug}`} className="block mt-3">
-        <h3 className="font-bold hover:text-yellow-600 cursor-pointer dark:text-gray-200 dark:hover:text-yellow-400">{product.name}</h3>
+        <h3 className="font-bold hover:text-yellow-600 cursor-pointer">{product.name}</h3>
       </Link>
       <div className="flex items-center space-x-2 mt-1">
-        <p className="font-bold text-xl dark:text-gray-100">₹{price}</p>
+        <p className="font-bold text-xl">₹{price}</p>
       </div>
       <div className="flex space-x-2 mt-3">
         <button

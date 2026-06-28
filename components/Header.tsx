@@ -103,9 +103,9 @@ export default function Header({ settings }: HeaderProps) {
     }
   }
 
-  return (
+return (
     <>
-      <header className="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-50">
+      <header className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -121,11 +121,11 @@ export default function Header({ settings }: HeaderProps) {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-6">
-              <Link href="/" className="hover:underline text-sm text-yellow-600 dark:text-yellow-500">Home</Link>
-              <Link href="/products" className="hover:underline text-sm text-yellow-600 dark:text-yellow-500">Products</Link>
-              <Link href="/categories" className="hover:underline text-sm text-yellow-600 dark:text-yellow-500">Categories</Link>
-              <Link href="/about-us" className="hover:underline text-sm text-yellow-600 dark:text-yellow-500">About Us</Link>
-              <Link href="/contact" className="hover:underline text-sm text-yellow-600 dark:text-yellow-500">Contact</Link>
+              <Link href="/" className="hover:underline text-sm text-yellow-600">Home</Link>
+              <Link href="/products" className="hover:underline text-sm text-yellow-600">Products</Link>
+              <Link href="/categories" className="hover:underline text-sm text-yellow-600">Categories</Link>
+              <Link href="/about-us" className="hover:underline text-sm text-yellow-600">About Us</Link>
+              <Link href="/contact" className="hover:underline text-sm text-yellow-600">Contact</Link>
             </nav>
 
             {/* Right side */}
@@ -144,7 +144,7 @@ export default function Header({ settings }: HeaderProps) {
 
               {/* Cart */}
               <Link href="/cart" className="relative p-2">
-                <svg className="h-6 w-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-6 w-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H19M7 13l-1.1 5M7 13h10m0 0v8a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 002 2v6a2 2 0 002 2z" />
                 </svg>
                 {itemCount > 0 && (
@@ -157,10 +157,10 @@ export default function Header({ settings }: HeaderProps) {
               {/* User section */}
               {user ? (
                 <div className="hidden md:flex items-center space-x-3">
-                  <Link href="/account" className="text-sm font-medium text-yellow-600 dark:text-yellow-500">Account</Link>
-                  <Link href="/my-orders" className="text-sm font-medium text-yellow-600 dark:text-yellow-500">My Orders</Link>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Hi, {user.name?.split(' ')[0] || 'User'}</span>
-                  <button onClick={handleLogout} className="text-sm text-red-600 dark:text-red-400 hover:underline">Logout</button>
+                  <Link href="/account" className="text-sm font-medium text-yellow-600">Account</Link>
+                  <Link href="/my-orders" className="text-sm font-medium text-yellow-600">My Orders</Link>
+                  <span className="text-sm text-gray-600">Hi, {user.name?.split(' ')[0] || 'User'}</span>
+                  <button onClick={handleLogout} className="text-sm text-red-600 hover:underline">Logout</button>
                 </div>
               ) : (
                 <button onClick={() => setShowRewardsPopup(true)} className="hidden md:block text-sm font-medium px-3 py-1.5 rounded-lg bg-yellow-600 text-white">
@@ -169,7 +169,7 @@ export default function Header({ settings }: HeaderProps) {
               )}
 
               {/* Mobile menu */}
-              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100">
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
@@ -179,27 +179,26 @@ export default function Header({ settings }: HeaderProps) {
 
           {/* Mobile Navigation */}
           {isMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 dark:border-gray-700 py-3">
+            <div className="md:hidden border-t border-gray-200 py-3">
               <nav className="flex flex-col space-y-2">
-                <Link href="/" className="px-2 py-1.5 hover:underline text-yellow-600 dark:text-yellow-500">Home</Link>
-                <Link href="/products" className="px-2 py-1.5 hover:underline text-yellow-600 dark:text-yellow-500">Products</Link>
-                <Link href="/categories" className="px-2 py-1.5 hover:underline text-yellow-600 dark:text-yellow-500">Categories</Link>
-                <Link href="/about-us" className="px-2 py-1.5 hover:underline text-yellow-600 dark:text-yellow-500">About Us</Link>
-                <Link href="/contact" className="px-2 py-1.5 hover:underline text-yellow-600 dark:text-yellow-500">Contact</Link>
-                <hr className="border-gray-200 dark:border-gray-700" />
+                <Link href="/" className="px-2 py-1.5 hover:underline text-yellow-600">Home</Link>
+                <Link href="/products" className="px-2 py-1.5 hover:underline text-yellow-600">Products</Link>
+                <Link href="/categories" className="px-2 py-1.5 hover:underline text-yellow-600">Categories</Link>
+                <Link href="/about-us" className="px-2 py-1.5 hover:underline text-yellow-600">About Us</Link>
+                <Link href="/contact" className="px-2 py-1.5 hover:underline text-yellow-600">Contact</Link>
+                <hr className="border-gray-200" />
                 {user ? (
                   <>
-                    <Link href="/account" className="px-2 py-1.5 font-medium hover:underline text-yellow-600 dark:text-yellow-500">Account</Link>
-                    <Link href="/my-orders" className="px-2 py-1.5 font-medium hover:underline text-yellow-600 dark:text-yellow-500">My Orders</Link>
-                    <button onClick={handleLogout} className="px-2 py-1.5 text-left text-red-600 dark:text-red-400">Logout</button>
+                    <Link href="/account" className="px-2 py-1.5 font-medium hover:underline text-yellow-600">Account</Link>
+                    <Link href="/my-orders" className="px-2 py-1.5 font-medium hover:underline text-yellow-600">My Orders</Link>
+                    <button onClick={handleLogout} className="px-2 py-1.5 text-left text-red-600">Logout</button>
                   </>
                 ) : (
-                  <button onClick={() => { setShowRewardsPopup(true); setIsMenuOpen(false); }} className="px-2 py-1.5 text-left font-medium text-yellow-600 dark:text-yellow-500">Login / Register</button>
+                  <button onClick={() => { setShowRewardsPopup(true); setIsMenuOpen(false); }} className="px-2 py-1.5 text-left font-medium text-yellow-600">Login / Register</button>
                 )}
               </nav>
             </div>
-          )
-        }
+          )}
         </div>
       </header>
 
