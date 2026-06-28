@@ -5,6 +5,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/app/contexts/CartContext'
 
+interface Toast {
+  id: number
+  message: string
+  type: 'success' | 'error'
+}
+
 interface Product {
   id: string
   name: string
@@ -39,6 +45,7 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
 
   const [selectedVariants, setSelectedVariants] = useState<Record<string, any>>({})
   const [wishlist, setWishlist] = useState<string[]>([])
+  const [toasts, setToasts] = useState<Toast[]>([])
   const { addItem } = useCart()
 
   // Load wishlist from localStorage
@@ -79,6 +86,12 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
 
     setWishlist(newWishlist)
     localStorage.setItem('wishlist', JSON.stringify(newWishlist))
+  }
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    const id = Date.now()
+    setToasts(prev => [...prev, { id, message, type }])
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000)
   }
 
   if (!products || products.length === 0) {
@@ -174,15 +187,18 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
 
                   <div className="flex space-x-2 mt-3">
                     <button
-                      onClick={() => addItem({
-                        id: product.id + `-${selectedVariant.size}`,
-                        productId: product.id,
-                        name: `${product.name} (${selectedVariant.size})`,
-                        slug: product.slug,
-                        price,
-                        images: images,
-                        selectedVariant
-                      })}
+                      onClick={() => {
+                        addItem({
+                          id: product.id + `-${selectedVariant.size}`,
+                          productId: product.id,
+                          name: `${product.name} (${selectedVariant.size})`,
+                          slug: product.slug,
+                          price,
+                          images: images,
+                          selectedVariant
+                        })
+                        showToast(`${product.name} added to cart!`, 'success')
+                      }}
                       style={{ backgroundColor: settings.themeColor || '#10b981' }}
                       className={`flex-1 text-white px-3 py-2.5 rounded-xl font-semibold text-sm transition hover:opacity-90 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
                       disabled={!inStock}
@@ -211,5 +227,22 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
         </div>
       </div>
     </section>
+
+    {/* Toast Notifications */}
+    {toasts.length > 0 && (
+      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] space-y-2 pointer-events-none">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className="px-4 py-3 rounded-lg shadow-lg text-white font-medium bg-green-600 flex items-center gap-2 min-w-[200px] justify-center"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            {toast.message}
+          </div>
+        ))}
+      </div>
+    )}
   )
 }
