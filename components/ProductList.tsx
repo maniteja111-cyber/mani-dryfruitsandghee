@@ -324,14 +324,17 @@ export function ProductList({ initialProducts, categories, searchParams, setting
 
       {/* Toast Notifications */}
       {toasts.length > 0 && (
-        <div className="fixed top-16 right-4 z-[9999] space-y-2">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] space-y-2">
           {toasts.map(toast => (
             <div
               key={toast.id}
-              className={`px-4 py-3 rounded-lg shadow-lg text-white font-medium toast-notification ${
+              className={`px-6 py-3 rounded-lg shadow-xl text-white font-medium flex items-center gap-2 min-w-[200px] justify-center animate-toast ${
                 toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
               }`}
             >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
               {toast.message}
             </div>
           ))}

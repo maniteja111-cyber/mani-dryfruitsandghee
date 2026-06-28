@@ -621,7 +621,7 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className="px-6 py-3 rounded-lg shadow-xl text-white font-medium bg-green-600 toast-notification flex items-center gap-2 min-w-[200px] justify-center"
+            className="px-6 py-3 rounded-lg shadow-xl text-white font-medium bg-green-600 flex items-center gap-2 min-w-[200px] justify-center animate-toast"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
