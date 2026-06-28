@@ -104,26 +104,17 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
   const { addItem } = useCart()
   const [toasts, setToasts] = useState<Toast[]>([])
 
-const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    console.log('TOAST: showToast called with:', message, type)
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     const id = Date.now()
-    setToasts(prev => {
-      console.log('TOAST: previous state:', prev)
-      return [...prev, { id, message, type }]
-    })
-    console.log('TOAST: setTimeout scheduled for 3 seconds')
+    setToasts(prev => [...prev, { id, message, type }])
     setTimeout(() => {
-      console.log('TOAST: removing toast with id:', id)
       setToasts(prev => prev.filter(t => t.id !== id))
     }, 3000)
   }
 
   const handleAddToCart = (item: any) => {
-    console.log('ADD_TO_CART: button clicked, item:', item)
     addItem(item)
-    console.log('ADD_TO_CART: addItem completed, showing toast')
     showToast(`${item.name} added to cart!`, 'success')
-    console.log('ADD_TO_CART: showToast called, toasts:', toasts)
   }
 
   const stockGramsRemaining = product.stockGrams
@@ -625,45 +616,18 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
         </div>
       </div>
 
-// Toast with forced visibility
-      <div 
-        className="fixed top-20 left-1/2 -translate-x-1/2 z-[9999] space-y-2"
-        style={{ pointerEvents: 'none' }}
-      >
+      {/* Toast Notifications */}
+      <div className="fixed top-20 right-4 z-[100] space-y-2 pointer-events-none">
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className="px-6 py-4 rounded-xl shadow-2xl text-white font-bold bg-green-600 flex items-center gap-3 min-w-[240px] justify-center"
-            style={{
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-              animation: 'fadeInOut 3s ease-in-out forwards'
-            }}
+            className={`px-4 py-3 rounded-lg shadow-lg text-white font-medium bg-green-600`}
+            style={{ animation: 'toast-fade 3s ease-in-out forwards' }}
           >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-            </svg>
-            <span className="text-lg">{toast.message}</span>
+            {toast.message}
           </div>
         ))}
       </div>
     </>
   )
-}
-
-// Inject toast animation CSS if not present
-if (typeof document !== 'undefined') {
-  const styleId = 'toast-animation-style'
-  if (!document.getElementById(styleId)) {
-    const style = document.createElement('style')
-    style.id = styleId
-    style.innerHTML = `
-      @keyframes fadeInOut {
-        0% { opacity: 0; transform: translateY(-20px); }
-        15% { opacity: 1; transform: translateY(0); }
-        85% { opacity: 1; transform: translateY(0); }
-        100% { opacity: 0; transform: translateY(0); }
-      }
-    `
-    document.head.appendChild(style)
-  }
 }
