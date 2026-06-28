@@ -5,6 +5,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useCart } from '@/app/contexts/CartContext'
 
+interface Toast {
+  id: number
+  message: string
+  type: 'success' | 'error'
+}
+
 interface Product {
   id: string
   name: string
@@ -96,6 +102,20 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
   const [deliveryInfo, setDeliveryInfo] = useState<{available: boolean, days: string, cod: boolean, shipping: string} | null>(null)
   const [activeTab, setActiveTab] = useState('description')
   const { addItem } = useCart()
+  const [toasts, setToasts] = useState<Toast[]>([])
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    const id = Date.now()
+    setToasts(prev => [...prev, { id, message, type }])
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id))
+    }, 3000)
+  }
+
+  const handleAddToCart = (item: any) => {
+    addItem(item)
+    showToast(`${item.name} added to cart!`, 'success')
+  }
 
   const stockGramsRemaining = product.stockGrams
   const stockKg = (stockGramsRemaining / 1000).toFixed(2)
@@ -375,9 +395,9 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                 <span className="text-gray-500 text-sm">Max: {maxKg} kg</span>
               </div>
 
-              <div className="space-y-3">
+<div className="space-y-3">
                 <button
-                  onClick={() => addItem({
+                  onClick={() => handleAddToCart({
                     id: product.id + `-${selectedVariant.size}`,
                     productId: product.id,
                     name: `${product.name} (${selectedVariant.size})`,
@@ -447,188 +467,21 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
               </button>
             </nav>
           </div>
-
-          <div className="min-h-[200px]">
-            {activeTab === 'description' && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">Product Description</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    {product.description || product.shortDescription || `${product.name} - Premium quality product.`}
-                  </p>
-                </div>
-
-                {product.ingredients && (
-                  <div>
-                    <h4 className="font-semibold text-gray-800 mb-2">Ingredients</h4>
-                    <p className="text-gray-600">{product.ingredients}</p>
-                  </div>
-                )}
-
-                {product.benefits && (
-                  <div>
-                    <h4 className="font-semibold text-gray-800 mb-2">Benefits</h4>
-                    <p className="text-gray-600">{product.benefits}</p>
-                  </div>
-                )}
-
-                {product.storageInstructions && (
-                  <div>
-                    <h4 className="font-semibold text-gray-800 mb-2">Storage Instructions</h4>
-                    <p className="text-gray-600">{product.storageInstructions}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'specifications' && (
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Product Specifications</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <tbody className="divide-y divide-gray-200">
-                      <tr><td className="py-3 font-medium text-gray-700">Category</td><td className="py-3">{product.category?.name || '-'}</td></tr>
-                      <tr><td className="py-3 font-medium text-gray-700">Origin</td><td className="py-3">{product.origin || '-'}</td></tr>
-                      <tr><td className="py-3 font-medium text-gray-700">Shelf Life</td><td className="py-3">{product.shelfLife || '-'}</td></tr>
-                      <tr><td className="py-3 font-medium text-gray-700">Storage</td><td className="py-3">{product.storageInstructions || '-'}</td></tr>
-                      <tr><td className="py-3 font-medium text-gray-700">Ingredients</td><td className="py-3">{product.ingredients || '-'}</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'reviews' && (
-              <div className="space-y-6">
-                <div className="flex items-start gap-6">
-                  <div className="text-center">
-                    <p className="text-4xl font-bold text-gray-900">{avgRating.toFixed(1)}</p>
-                    <p className="text-yellow-500 text-lg">{'★'.repeat(5)}</p>
-                    <p className="text-gray-500 text-sm">{reviewCount} reviews</p>
-                  </div>
-                  <div className="flex-1">
-                    {ratingBreakdown.map(({rating, count}) => (
-                      <div key={rating} className="flex items-center gap-2 mb-1">
-                        <span className="text-sm w-8">{rating}★</span>
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-yellow-500 h-2 rounded-full"
-                            style={{ width: `${reviewCount > 0 ? (count / reviewCount) * 100 : 0}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-sm text-gray-500 w-8">{count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="border-t pt-6">
-                  <h4 className="font-semibold text-gray-800 mb-4">Write a Review</h4>
-                  <form onSubmit={submitReview} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <input
-                        type="text"
-                        placeholder="Your Name"
-                        value={reviewForm.name}
-                        onChange={(e) => setReviewForm(prev => ({ ...prev, name: e.target.value }))}
-                        className="border border-gray-300 rounded-lg px-3 py-2"
-                        required
-                      />
-                      <input
-                        type="tel"
-                        placeholder="Phone Number"
-                        value={reviewForm.phone}
-                        onChange={(e) => setReviewForm(prev => ({ ...prev, phone: e.target.value }))}
-                        className="border border-gray-300 rounded-lg px-3 py-2"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Rating</label>
-                      <select
-                        value={reviewForm.rating}
-                        onChange={(e) => setReviewForm(prev => ({ ...prev, rating: parseInt(e.target.value) }))}
-                        className="border border-gray-300 rounded-lg px-3 py-2"
-                      >
-                        <option value={5}>⭐⭐⭐⭐⭐ Excellent</option>
-                        <option value={4}>⭐⭐⭐⭐ Very Good</option>
-                        <option value={3}>⭐⭐⭐ Good</option>
-                        <option value={2}>⭐⭐ Fair</option>
-                        <option value={1}>⭐ Poor</option>
-                      </select>
-                    </div>
-                    <textarea
-                      placeholder="Your review..."
-                      value={reviewForm.comment}
-                      onChange={(e) => setReviewForm(prev => ({ ...prev, comment: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                      rows={4}
-                      required
-                    />
-                    <button
-                      type="submit"
-                      disabled={submittingReview}
-                      className="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50"
-                    >
-                      {submittingReview ? 'Submitting...' : 'Submit Review'}
-                    </button>
-                    {reviewMessage && <p className="text-green-600 text-sm">{reviewMessage}</p>}
-                  </form>
-                </div>
-
-                <div className="space-y-4">
-                  {reviews.map((review) => (
-                    <div key={review.id} className="border-b pb-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-gray-800">{maskName(review.name)}</span>
-                        <span className="text-yellow-500">{'★'.repeat(review.rating)}</span>
-                      </div>
-                      <p className="text-gray-700">{review.comment}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg lg:hidden">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="text-lg font-bold text-gray-900">₹{price}</p>
-            <p className="text-gray-400 text-sm">({selectedVariant.size})</p>
+      {/* Toast Notifications */}
+      <div className="fixed top-16 right-4 z-50 space-y-2">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className={`px-4 py-3 rounded-lg shadow-lg text-white font-medium ${
+              toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            } animate-slide-in`}
+          >
+            {toast.message}
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => addItem({
-                id: product.id + `-${selectedVariant.size}`,
-                productId: product.id,
-                name: `${product.name} (${selectedVariant.size})`,
-                slug: product.slug,
-                price: price,
-                images: images,
-                stock: maxQuantity,
-                selectedVariant,
-                quantity
-              })}
-              disabled={maxQuantity === 0}
-              className="px-4 py-2 bg-yellow-600 text-white rounded-lg font-medium disabled:opacity-50"
-            >
-              Cart
-            </button>
-            <Link
-              href={whatsappUrl}
-              target="_blank"
-              className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium"
-            >
-              Buy
-            </Link>
-          </div>
-        </div>
+        ))}
       </div>
     </>
   )
