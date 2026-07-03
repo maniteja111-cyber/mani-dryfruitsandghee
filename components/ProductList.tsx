@@ -50,6 +50,23 @@ export function ProductList({ initialProducts, categories, searchParams, setting
     if (saved) setWishlist(JSON.parse(saved))
   }, [])
 
+  const getCategoryValue = () => {
+    const urlCategory = params.get('category')
+    return urlCategory || (searchParams.category as string) || ''
+  }
+
+  const getSortValue = () => {
+    const urlSort = params.get('sort')
+    const urlOrder = params.get('order')
+    const propSort = searchParams.sort
+    const propOrder = searchParams.order
+    return `${urlSort || propSort || 'createdAt'}-${urlOrder || propOrder || 'desc'}`
+  }
+
+  const getSearchValue = () => {
+    return params.get('search') || (searchParams.search as string) || ''
+  }
+
   const toggleWishlist = async (productId: string) => {
     const userStr = localStorage.getItem('user')
     let newWishlist = [...wishlist]
@@ -122,8 +139,17 @@ export function ProductList({ initialProducts, categories, searchParams, setting
   const fetchProducts = async () => {
     setLoading(true)
     try {
-      const searchParams = new URLSearchParams(window.location.search)
-      const res = await fetch(`/api/products?${searchParams}`)
+      const sp = new URLSearchParams()
+      Object.entries(searchParams).forEach(([key, val]) => {
+        if (val !== undefined && val !== null && val !== '') {
+          if (Array.isArray(val)) {
+            val.forEach(v => sp.append(key, v))
+          } else {
+            sp.set(key, val)
+          }
+        }
+      })
+      const res = await fetch(`/api/products?${sp}`)
       if (res.ok) {
         const data = await res.json()
         setProducts(data)
@@ -149,7 +175,7 @@ export function ProductList({ initialProducts, categories, searchParams, setting
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
             <select
-              value={params.get('category') || ''}
+              value={getCategoryValue()}
               onChange={(e) => updateFilters({ category: e.target.value })}
               className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
@@ -165,7 +191,7 @@ export function ProductList({ initialProducts, categories, searchParams, setting
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
             <select
-              value={`${params.get('sort') || 'createdAt'}-${params.get('order') || 'desc'}`}
+              value={getSortValue()}
               onChange={(e) => {
                 const [sort, order] = e.target.value.split('-')
                 updateFilters({ sort, order })
@@ -186,7 +212,7 @@ export function ProductList({ initialProducts, categories, searchParams, setting
             <input
               type="text"
               placeholder="Search products..."
-              defaultValue={params.get('search') || ''}
+              defaultValue={getSearchValue()}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
                   updateFilters({ search: (e.target as HTMLInputElement).value })

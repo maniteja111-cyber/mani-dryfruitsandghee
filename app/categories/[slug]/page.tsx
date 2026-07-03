@@ -8,38 +8,41 @@ import { notFound } from 'next/navigation'
 
 async function getData(slug: string) {
   try {
-    const [settings, category, products] = await Promise.all([
+    const [settings, category, categories] = await Promise.all([
       prisma.setting.findMany(),
       prisma.category.findUnique({ where: { slug } }),
-      prisma.product.findMany({
-        include: { category: true },
-        orderBy: { createdAt: 'desc' }
-      })
+      prisma.category.findMany({ orderBy: { createdAt: 'desc' } })
     ])
 
-    if (!category) return { settings: {}, category: null, products: [] }
+    const products = category
+      ? await prisma.product.findMany({
+          where: { categoryId: category.id },
+          include: { category: true },
+          orderBy: { createdAt: 'desc' }
+        })
+      : []
 
-    const categoryData = category
-    const filteredProducts = products.filter(p => p.categoryId === category.id)
+    if (!category) return { settings: {}, category: null, categories: [], products: [] }
 
     const settingsObj = settings.reduce((acc, setting) => {
       acc[setting.key] = setting.value
       return acc
     }, {} as Record<string, string>)
 
-    return { settings: settingsObj, category: categoryData, products: filteredProducts }
+    return { settings: settingsObj, category, categories, products }
   } catch (error) {
     console.error('Error fetching category data:', error)
-    return { settings: {}, category: null, products: [] }
+    return { settings: {}, category: null, categories: [], products: [] }
   }
 }
 
 interface CategoryPageProps {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 export async function generateMetadata({ params }: CategoryPageProps) {
-  const { category } = await getData(params.slug)
+  const { slug } = await params
+  const { category } = await getData(slug)
   if (!category) return { title: 'Category Not Found' }
   return {
     title: `${category.name} - Mani Dry Fruits & Ghee Store`,
@@ -49,7 +52,8 @@ export async function generateMetadata({ params }: CategoryPageProps) {
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const { settings, category, products } = await getData(params.slug)
+  const { slug } = await params
+  const { settings, category, categories, products } = await getData(slug)
 
   if (!category) notFound()
 
@@ -63,19 +67,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <p className="text-gray-600 mt-2">{category.description}</p>
           )}
         </div>
-        {products.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <div key={product.id} className="bg-white rounded-lg shadow p-4 hover:shadow-lg transition">
-                <img src={product.images?.[0] || '/placeholder.png'} alt={product.name} className="w-full h-40 object-cover rounded-md mb-3" />
-                <h3 className="font-semibold text-gray-900 line-clamp-2">{product.name}</h3>
-                <p className="text-orange-600 font-bold mt-2">₹{product.pricePerKg}/kg</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500">No products in this category yet.</p>
-        )}
+        <ProductList
+          initialProducts={products}
+          categories={categories}
+          searchParams={{ category: category.id }}
+          settings={settings}
+        />
       </main>
       <Footer settings={settings} />
       <WhatsAppButton phone={settings.whatsappNumber || '9515019393'} />

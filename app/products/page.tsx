@@ -50,11 +50,12 @@ async function getData(searchParams: { [key: string]: string | string[] | undefi
 }
 
 interface ProductsPageProps {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const { settings, categories, products } = await getData(searchParams)
+  const params = await searchParams
+  const { settings, categories, products } = await getData(params)
 
 return (
     <div className="min-h-screen bg-gray-50">
@@ -64,7 +65,7 @@ return (
         <ProductList
           initialProducts={products}
           categories={categories}
-          searchParams={searchParams}
+          searchParams={params}
           settings={settings}
         />
       </main>
