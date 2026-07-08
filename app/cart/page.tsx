@@ -169,7 +169,7 @@ export default function CartPage() {
                       {/* Quantity Selector */}
                       <div className="flex items-center border border-gray-200 rounded-lg">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1, item.stock)}
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 rounded-l-lg transition"
                           aria-label="Decrease quantity"
                         >
@@ -179,7 +179,7 @@ export default function CartPage() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1, item.stock)}
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 rounded-r-lg transition"
                           aria-label="Increase quantity"
                         >
@@ -208,7 +208,7 @@ export default function CartPage() {
                     <div className="sm:hidden px-4 pb-4">
                       <div className="flex items-center justify-center border border-gray-200 rounded-lg w-32">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1, item.stock)}
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 rounded-l-lg transition"
                           aria-label="Decrease quantity"
                         >
@@ -218,7 +218,7 @@ export default function CartPage() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1, item.stock)}
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           className="w-10 h-10 flex items-center justify-center text-gray-600 hover:bg-gray-50 rounded-r-lg transition"
                           aria-label="Increase quantity"
                         >

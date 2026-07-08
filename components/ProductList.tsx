@@ -112,8 +112,8 @@ export function ProductList({ initialProducts, categories, searchParams, setting
     console.log('PRODUCT_LIST ADD_TO_CART - clicked')
     
     const otherVariantsInCart = items.filter(i => i.productId === item.productId).reduce((sum, i) => sum + (i.selectedVariant?.grams || 1000) * i.quantity, 0)
-    const availableGrams = Math.max(0, item.stock - otherVariantsInCart)
-    const maxQuantity = Math.max(0, Math.floor(availableGrams / item.selectedVariant.grams))
+    const availableGrams = Math.max(0, (item.stock || 0) - otherVariantsInCart)
+    const maxQuantity = Math.max(0, Math.floor(availableGrams / (item.selectedVariant?.grams || 1000)))
     
     if (maxQuantity <= 0) {
       showToast(`${item.name} - Not enough stock!`, 'error')

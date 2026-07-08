@@ -119,6 +119,16 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
 
   const handleAddToCart = (item: any) => {
     console.log('TOAST DEBUG - handleAddToCart clicked')
+    
+    const otherVariantsInCart = items.filter(i => i.productId === item.productId).reduce((sum, i) => sum + (i.selectedVariant?.grams || 1000) * i.quantity, 0)
+    const availableGrams = Math.max(0, (item.stock || 0) - otherVariantsInCart)
+    const maxQuantity = Math.max(0, Math.floor(availableGrams / (item.selectedVariant?.grams || 1000)))
+    
+    if (maxQuantity <= 0) {
+      showToast(`${item.name} - Not enough stock!`, 'error')
+      return
+    }
+    
     addItem(item)
     showToast(`${item.name} added to cart!`, 'success')
   }

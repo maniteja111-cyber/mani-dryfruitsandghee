@@ -21,7 +21,7 @@ interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void
   removeItem: (id: string) => void
-  updateQuantity: (id: string, quantity: number, maxStock?: number, productId?: string) => void
+  updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
   total: number
   itemCount: number
@@ -48,17 +48,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('cart', JSON.stringify(items))
   }, [items])
 
-  const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
+const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setItems(prev => {
       const existing = prev.find(i => i.id === item.id)
+      const variantGrams = item.selectedVariant?.grams || 1000
+      const maxItems = item.stock > 0 ? Math.floor(item.stock / variantGrams) : 0
+      
       if (existing) {
-        const maxStock = item.stock ?? 999
-        const newQty = Math.min(maxStock, existing.quantity + (item.quantity || 1))
+        const newQty = Math.min(maxItems, existing.quantity + (item.quantity || 1))
         return prev.map(i => 
           i.id === item.id ? { ...i, quantity: newQty, stock: item.stock } : i
         )
       }
-      return [...prev, { ...item, quantity: item.quantity || 1, stock: item.stock }]
+      const initialQty = Math.min(maxItems, item.quantity || 1)
+      return [...prev, { ...item, quantity: initialQty, stock: item.stock }]
     })
   }
 
@@ -66,16 +69,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems(prev => prev.filter(i => i.id !== id))
   }
 
-  const updateQuantity = (id: string, quantity: number, maxStock?: number, productId?: string) => {
+  const updateQuantity = (id: string, quantity: number) => {
     if (quantity <= 0) {
       removeItem(id)
       return
     }
-    const max = maxStock ?? 999
-    const finalQty = Math.min(max, quantity)
-    setItems(prev => prev.map(i => 
-      i.id === id ? { ...i, quantity: finalQty } : i
-    ))
+    setItems(prev => {
+      const item = prev.find(i => i.id === id)
+      if (!item) return prev
+      const variantGrams = item.selectedVariant?.grams || 1000
+      const maxItems = item.stock > 0 ? Math.floor(item.stock / variantGrams) : 0
+      const finalQty = Math.min(maxItems, quantity)
+      return prev.map(i => 
+        i.id === id ? { ...i, quantity: finalQty } : i
+      )
+    })
   }
 
   const canAddToCart = (productId: string, variantGrams: number, availableStockGrams: number) => {
