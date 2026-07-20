@@ -4,11 +4,23 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCart } from '@/app/contexts/CartContext'
+import { getSelectorLabel, getUnitSymbol, VariantPrice } from '@/app/services/pricing.service'
+import { getImageSrc, isValidImageUrl, shouldUseNextImage } from '@/lib/image-utils'
 
 interface Toast {
   id: number
   message: string
   type: 'success' | 'error'
+}
+
+interface NormalizedVariant {
+  id: string
+  label: string
+  size: string
+  price: number
+  unitType: string
+  grams: number
+  sizeValue: string
 }
 
 interface Product {
@@ -29,6 +41,19 @@ interface Product {
   storageInstructions?: string | null
   shelfLife?: string | null
   brand?: string | null
+  extension?: {
+    unitTypeId: string | null
+    basePrice: number | null
+    pricingTemplateId: string | null
+    stockQuantity: number | null
+    masterUnit?: { id: string; code: string; name: string; type: string; symbol: string } | null
+  } | null
+  productVariants?: { variantId: string; variant?: { id: string; value: string; label: string; unit: { code: string; type: string; symbol: string } } }[]
+  variantPrices?: NormalizedVariant[]
+  defaultVariant?: NormalizedVariant | null
+  productType: string | null
+  unitSymbol: string
+  selectorLabel: string
 }
 
 interface Review {
@@ -44,23 +69,6 @@ interface ProductDetailProps {
   product: Product
   settings: Record<string, string>
   relatedProducts?: Product[]
-}
-
-const VARIANTS = [
-  { size: '125g', grams: 125 },
-  { size: '250g', grams: 250 },
-  { size: '500g', grams: 500 },
-  { size: '1kg', grams: 1000 }
-]
-
-function calculatePrice(basePricePerKg: number | null, grams: number): number {
-  if (!basePricePerKg) return 0
-  const kgPrice = basePricePerKg
-  const price = (kgPrice * grams) / 1000
-  if (grams === 500) return Math.round(kgPrice * 0.56)
-  if (grams === 250) return Math.round(kgPrice * 0.31)
-  if (grams === 125) return Math.round(kgPrice * 0.19)
-  return Math.round(kgPrice)
 }
 
 export default function ProductDetail({ product, settings, relatedProducts = [] }: ProductDetailProps) {
@@ -89,8 +97,22 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
     return img
   })
 
-  const [selectedVariant, setSelectedVariant] = useState(VARIANTS[3])
-  const [selectedImage, setSelectedImage] = useState(0)
+  const validImages = images.filter(img => typeof img === 'string' && isValidImageUrl(img))
+  const primaryImage = validImages[0] || '/placeholder.svg'
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+
+  const handleImageError = () => {
+    // Image failed to load, will use fallback
+  }
+
+  const displayImage = (index: number) => {
+    return validImages[index] || '/placeholder.svg'
+  }
+
+  const [availableVariants, setAvailableVariants] = useState<NormalizedVariant[]>(product.variantPrices || [])
+  const [selectedVariant, setSelectedVariant] = useState<NormalizedVariant | null>(
+    product.defaultVariant || (product.variantPrices && product.variantPrices.length > 0 ? product.variantPrices[0] : null)
+  )
   const [quantity, setQuantity] = useState(1)
   const [inWishlist, setInWishlist] = useState(false)
   const [reviews, setReviews] = useState<Review[]>([])
@@ -233,14 +255,38 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
 
   const stockGramsRemaining = product.stockGrams
 
-  const price = calculatePrice(product.pricePerKg, selectedVariant.grams)
-  const otherVariantsInCart = items.filter(i => i.productId === product.id).reduce((sum, i) => sum + (i.selectedVariant?.grams || 1000) * i.quantity, 0)
-  const availableGrams = Math.max(0, stockGramsRemaining - otherVariantsInCart)
-  const maxQuantity = Math.max(0, Math.floor(availableGrams / selectedVariant.grams))
-  const maxKg = (availableGrams / 1000).toFixed(2)
+  const price = selectedVariant?.price ?? product.pricePerKg ?? 0
+  const otherVariantsInCart = items.filter(i => i.productId === product.id).reduce((sum, i) => {
+    if (i.selectedVariant?.unitType === 'weight') {
+      return sum + (i.selectedVariant?.grams || 1000) * i.quantity
+    }
+    return sum + i.quantity
+  }, 0)
+  
+  const productType = selectedVariant?.unitType || product.productType
+  const stockSource = productType === 'weight' ? product.stockGrams : (product.extension?.stockQuantity || 0)
+  const available = Math.max(0, stockSource - otherVariantsInCart)
+  
+  const selectedGrams = selectedVariant?.grams || 1000
+  const maxQuantity = productType === 'weight' 
+    ? Math.max(0, Math.floor(available / selectedGrams))
+    : available
+  
+  const maxKg = (available / 1000).toFixed(2)
   const avgRating = reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) : 4.5
 
-  const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=Hi, I'm interested in ${product.name} (${selectedVariant.size}). Quantity: ${quantity}. Please share details.`
+  const unitSymbol = product.unitSymbol || getUnitSymbol(product.productType)
+  const displayLabel = selectedVariant?.label || selectedVariant?.size || '1kg'
+  const stockDisplay = productType === 'weight'
+    ? `${(available / 1000).toFixed(2)} ${unitSymbol} available`
+    : `${available} ${unitSymbol} available`
+  const maxDisplay = productType === 'weight'
+    ? `Max: ${maxKg} ${unitSymbol} available`
+    : `Max: ${maxQuantity} ${unitSymbol} available`
+  
+  const selectorLabel = product.selectorLabel || getSelectorLabel(product.productType)
+
+  const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=Hi, I'm interested in ${product.name} (${displayLabel}). Quantity: ${quantity}. Please share details.`
 
   const ratingBreakdown = [5, 4, 3, 2, 1].map(rating => ({
     rating,
@@ -254,30 +300,32 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
           <div>
             <div className="aspect-[1/1] relative mb-3 rounded-lg overflow-hidden bg-gray-100 shadow-md">
               <Image
-                src={images[selectedImage] && images[selectedImage] !== '' ? images[selectedImage] : '/placeholder.svg'}
+                src={displayImage(selectedImageIndex)}
                 alt={`${product.name} - Buy ${product.name} Online at Mani Dry Fruits & Ghee Store`}
                 fill
                 sizes="(max-width: 768px) 90vw, 40vw"
                 loading="eager"
                 className="object-cover"
+                onError={handleImageError}
               />
             </div>
-            {images.length > 1 && Array.isArray(images) && (
+            {validImages.length > 1 && (
               <div className="flex space-x-2 overflow-x-auto pb-1">
-                {images.map((image: string, index: number) => (
+                {validImages.map((image: string, index: number) => (
                   <button
                     key={index}
-                    onClick={() => setSelectedImage(index)}
+                    onClick={() => setSelectedImageIndex(index)}
                     className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition ${
-                      selectedImage === index ? 'border-yellow-500' : 'border-gray-200'
+                      selectedImageIndex === index ? 'border-yellow-500' : 'border-gray-200'
                     }`}
                   >
                     <Image
-                      src={image && image !== '' ? image : '/placeholder.svg'}
+                      src={image}
                       alt={`${product.name} thumbnail ${index + 1}`}
                       width={64}
                       height={64}
                       className="object-cover w-full h-full"
+                      onError={handleImageError}
                     />
                   </button>
                 ))}
@@ -304,9 +352,9 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
             <div className="mb-4">
               <div className="flex items-baseline gap-2 mb-1">
                 <span className="text-2xl font-bold text-gray-900">₹{price}</span>
-                <span className="text-gray-500 text-sm">({selectedVariant.size})</span>
+                <span className="text-gray-500 text-sm">({displayLabel})</span>
               </div>
-              <p className="text-gray-600 text-sm">Stock: {(stockGramsRemaining / 1000).toFixed(2)} kg available</p>
+              <p className="text-gray-600 text-sm">{stockDisplay}</p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
@@ -332,30 +380,38 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Weight</label>
-              <div className="flex flex-wrap gap-2">
-{VARIANTS.map((variant) => (
-                   <button
-                     key={variant.size}
-                     onClick={() => {
-                       setSelectedVariant(variant)
-                       setQuantity(1)
-                     }}
-                     disabled={Math.floor(stockGramsRemaining / variant.grams) === 0}
-                     formNoValidate
-                     className={`px-3 py-2 rounded-md border-2 font-medium transition text-sm ${
-                      selectedVariant.size === variant.size
-                        ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
-                        : Math.floor(stockGramsRemaining / variant.grams) === 0
-                          ? 'border-gray-200 opacity-50 cursor-not-allowed'
-                          : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    {variant.size}
-                  </button>
-                ))}
-              </div>
+<div className="mb-4">
+              {availableVariants.length > 0 ? (
+                <>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{selectorLabel}</label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableVariants.map((variant) => (
+                      <button
+                        key={variant.id}
+                        onClick={() => {
+                          setSelectedVariant(variant)
+                          setQuantity(1)
+                        }}
+                        formNoValidate
+                        className={`px-3 py-2 rounded-md border-2 font-medium transition text-sm ${
+                          selectedVariant?.id === variant.id
+                            ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div>{variant.size}</div>
+                          <div className="text-xs text-gray-600">₹{variant.price}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-4 bg-gray-50 rounded-md">
+                  <p className="text-gray-600">No variants configured for this product</p>
+                </div>
+              )}
             </div>
 
             <div className="mb-4">
@@ -404,26 +460,32 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                   <span className="w-10 text-center font-medium">{quantity}</span>
                   <button
                     onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
-                    disabled={maxQuantity === 0}
-                    className="w-8 h-8 rounded-md border border-gray-300 flex items-center justify-center text-base hover:bg-gray-100 disabled:opacity-50"
+                    disabled={quantity >= maxQuantity || maxQuantity === 0}
+                    className="w-8 h-8 rounded-md border border-gray-300 flex items-center justify-center text-base hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     +
                   </button>
                 </div>
-                <span className="text-gray-500 text-sm">Max: {maxKg} kg available</span>
+                <span className="text-gray-500 text-sm">{maxDisplay}</span>
               </div>
 
               <div className="space-y-2">
                 <button
                   onClick={() => handleAddToCart({
-                    id: product.id + `-${selectedVariant.size}`,
+                    id: product.id + `-${selectedVariant?.id || selectedVariant?.size}`,
                     productId: product.id,
-                    name: `${product.name} (${selectedVariant.size})`,
+                    name: `${product.name} (${displayLabel})`,
                     slug: product.slug,
                     price: price,
                     images: images,
-                    stock: maxQuantity,
-                    selectedVariant,
+                    stock: product.productType === 'weight' ? product.stockGrams : (product.extension?.stockQuantity || 0),
+                    selectedVariant: {
+                      id: selectedVariant?.id,
+                      size: selectedVariant?.size,
+                      label: selectedVariant?.label,
+                      grams: selectedVariant?.grams,
+                      unitType: selectedVariant?.unitType
+                    },
                     quantity
                   })}
                   disabled={maxQuantity === 0}
@@ -642,11 +704,19 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
         {toasts.map(toast => (
           <div
             key={toast.id}
-            className="px-4 py-3 rounded-lg shadow-lg text-white font-medium bg-green-600 flex items-center gap-2 min-w-[200px] justify-center"
+            className={`px-4 py-3 rounded-lg shadow-lg text-white font-medium flex items-center gap-2 min-w-[200px] justify-center ${
+              toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'
+            }`}
           >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+            {toast.type === 'error' ? (
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
             {toast.message}
           </div>
         ))}

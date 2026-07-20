@@ -4,11 +4,23 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/app/contexts/CartContext'
+import { getUnitSymbol } from '@/app/services/pricing.service'
+import { isValidImageUrl } from '@/lib/image-utils'
 
 interface Toast {
   id: number
   message: string
   type: 'success' | 'error'
+}
+
+interface NormalizedVariant {
+  id: string
+  label: string
+  size: string
+  price: number
+  unitType: string
+  grams: number
+  sizeValue: string
 }
 
 interface Product {
@@ -19,6 +31,14 @@ interface Product {
   stockGrams: number
   images: any
   category?: { name: string }
+  extension?: {
+    stockQuantity: number | null
+    basePrice?: number
+    masterUnit?: { type: string | null }
+  } | null
+  variantPrices?: NormalizedVariant[]
+  productType: string | null
+  unitSymbol: string
 }
 
 interface FeaturedProductsProps {
@@ -28,27 +48,11 @@ interface FeaturedProductsProps {
 }
 
 export default function FeaturedProducts({ products, title = "⭐ Featured Products", settings }: FeaturedProductsProps) {
-  const VARIANTS = [
-    { size: '125g', grams: 125 },
-    { size: '250g', grams: 250 },
-    { size: '500g', grams: 500 },
-    { size: '1kg', grams: 1000 }
-  ]
-
-  function calculatePrice(basePricePerKg: number | null, grams: number): number {
-    if (!basePricePerKg) return 0
-    if (grams === 500) return Math.round(basePricePerKg * 0.56)
-    if (grams === 250) return Math.round(basePricePerKg * 0.31)
-    if (grams === 125) return Math.round(basePricePerKg * 0.19)
-    return Math.round(basePricePerKg)
-  }
-
   const [selectedVariants, setSelectedVariants] = useState<Record<string, any>>({})
   const [wishlist, setWishlist] = useState<string[]>([])
   const [toasts, setToasts] = useState<Toast[]>([])
   const { addItem, items } = useCart()
 
-  // Load wishlist from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('wishlist')
     if (saved) setWishlist(JSON.parse(saved))
@@ -123,18 +127,21 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
                 }
                 return img
               })
-              const imageSrc = images[0] || '/placeholder.svg'
+              const validImages = images.filter(img => typeof img === 'string' && isValidImageUrl(img))
+              const imageSrc = validImages[0] || '/placeholder.svg'
 
-              const availableVariants = VARIANTS.filter(v => product.stockGrams >= v.grams)
-              const selectedVariant = selectedVariants[product.id] || availableVariants[0] || VARIANTS[3]
-              const price = calculatePrice(product.pricePerKg, selectedVariant.grams)
-              const stockKg = Math.round(product.stockGrams / 1000)
-              const inStock = product.stockGrams > 0
+              const availableVariants = product.variantPrices || []
+              const selectedVariant = selectedVariants[product.id] || availableVariants[0] || null
+              const price = selectedVariant?.price ?? product.pricePerKg ?? 0
+              const productType = selectedVariant?.unitType || product.productType
+              const hasStock = product.stockGrams > 0 || (product.extension?.stockQuantity ?? 0) > 0
+              const hasPricing = !!(product.extension?.basePrice || product.pricePerKg)
+              const inStock = hasStock || availableVariants.length > 0 || hasPricing
 
               return (
                 <div key={product.id} className="bg-white rounded-2xl shadow hover:shadow-lg transition-all p-4 group">
                   <Link href={`/products/${product.slug}`} className="relative block">
-                    {images && images.length > 0 ? (
+                    {validImages.length > 0 ? (
                       <img
                         src={imageSrc}
                         alt={product.name}
@@ -164,57 +171,80 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
                     <h3 className="font-bold hover:text-yellow-600 cursor-pointer">{product.name}</h3>
                   </Link>
 
-                  <select
-                    value={selectedVariant?.size || ''}
-                    onChange={(e) => {
-                      const variant = availableVariants.find((v) => v.size === e.target.value) || availableVariants[0]
-                      setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
-                    }}
-                    className="w-full mt-2 border border-gray-300 rounded px-2 py-1 text-sm"
-                  >
-                    {availableVariants.map((variant) => (
-                      <option key={variant.size} value={variant.size}>
-                        {variant.size} - ₹{calculatePrice(product.pricePerKg, variant.grams)}
-                      </option>
-                    ))}
-                    {availableVariants.length === 0 && (
-                      <option value="">Out of Stock</option>
-                    )}
-                  </select>
+                  {availableVariants.length > 0 ? (
+                    <select
+                      value={selectedVariant?.id || ''}
+                      onChange={(e) => {
+                        const variant = availableVariants.find((v) => v.id === e.target.value)
+                        if (variant) setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
+                      }}
+                      className="w-full mt-2 border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      {availableVariants.map((variant) => (
+                        <option key={variant.id} value={variant.id}>
+                          {variant.size} - ₹{variant.price}
+                        </option>
+                      ))}
+                      {availableVariants.length === 0 && (
+                        <option value="">Out of Stock</option>
+                      )}
+                    </select>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-2">No variants</p>
+                  )}
 
                   <div className="flex items-center space-x-2 mt-1">
                     <p className="font-bold text-xl">₹{price}</p>
                   </div>
 
-<div className="flex space-x-2 mt-3">
-                     <button
-                       onClick={() => {
-                         const otherVariantsInCart = items.filter(i => i.productId === product.id).reduce((sum, i) => sum + (i.selectedVariant?.grams || 1000) * i.quantity, 0)
-                         const availableGrams = Math.max(0, product.stockGrams - otherVariantsInCart)
-                         const maxQuantity = Math.max(0, Math.floor(availableGrams / selectedVariant.grams))
-                         
-                         if (maxQuantity <= 0) {
-                           showToast(`${product.name} - Not enough stock!`, 'error')
-                           return
-                         }
-                         
-                         addItem({
-                           id: product.id + `-${selectedVariant.size}`,
-                           productId: product.id,
-                           name: `${product.name} (${selectedVariant.size})`,
-                           slug: product.slug,
-                           price,
-                           images: images,
-                           selectedVariant
-                         })
-                         showToast(`${product.name} added to cart!`, 'success')
-                       }}
-                       style={{ backgroundColor: settings.themeColor || '#10b981' }}
-                       className={`flex-1 text-white px-3 py-2.5 rounded-xl font-semibold text-sm transition hover:opacity-90 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
-                       disabled={!inStock}
-                     >
-                       Add to Cart
-                     </button>
+                  <div className="flex space-x-2 mt-3">
+                    <button
+                      onClick={() => {
+                        const otherVariantsInCart = items.filter(i => i.productId === product.id).reduce((sum, i) => {
+                          if (i.selectedVariant?.unitType === 'weight') {
+                            return sum + (i.selectedVariant?.grams || 1000) * i.quantity
+                          }
+                          return sum + i.quantity
+                        }, 0)
+                        
+                        const productType = selectedVariant?.unitType || product.productType
+                        const stockSource = productType === 'weight' ? product.stockGrams : (product.extension?.stockQuantity || 0)
+                        const available = Math.max(0, stockSource - otherVariantsInCart)
+                        const selectedGrams = selectedVariant?.grams || 1000
+                        const maxQuantity = productType === 'weight' 
+                          ? Math.max(0, Math.floor(available / selectedGrams))
+                          : available
+                        
+                        if (maxQuantity <= 0) {
+                          showToast(`${product.name} - Not enough stock!`, 'error')
+                          return
+                        }
+                        
+                        addItem({
+                          id: product.id,
+                          productId: product.id,
+                          name: product.name,
+                          slug: product.slug,
+                          price,
+                          images,
+                          selectedVariant: selectedVariant ? {
+                            id: selectedVariant.id,
+                            size: selectedVariant.size,
+                            label: selectedVariant.label,
+                            grams: selectedVariant.grams,
+                            unitType: selectedVariant.unitType
+                          } : undefined,
+                          stock: productType === 'weight' ? product.stockGrams : (product.extension?.stockQuantity || 0),
+                          quantity: 1
+                        })
+                        showToast(`${product.name} added to cart!`, 'success')
+                      }}
+                      style={{ backgroundColor: settings.themeColor || '#10b981' }}
+                      className={`flex-1 text-white px-3 py-2.5 rounded-xl font-semibold text-sm transition hover:opacity-90 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={!inStock}
+                    >
+                      Add to Cart
+                    </button>
                     <a
                       style={{ backgroundColor: settings.themeColor || '#FFD60A' }}
                       className="flex-1 text-black px-3 py-2.5 rounded-xl font-semibold text-sm text-center transition hover:opacity-90"
@@ -225,7 +255,7 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
                   </div>
                 </div>
               )
-            })}
+          })}
         </div>
         <div className="text-center mt-8">
           <Link

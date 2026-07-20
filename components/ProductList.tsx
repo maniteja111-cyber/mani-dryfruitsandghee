@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCart } from '@/app/contexts/CartContext'
+import { getUnitSymbol } from '@/app/services/pricing.service'
+import { isValidImageUrl } from '@/lib/image-utils'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -10,6 +12,16 @@ interface Toast {
   id: number
   message: string
   type: 'success' | 'error'
+}
+
+interface NormalizedVariant {
+  id: string
+  label: string
+  size: string
+  price: number
+  unitType: string
+  grams: number
+  sizeValue: string
 }
 
 interface Product {
@@ -20,6 +32,17 @@ interface Product {
   stockGrams: number
   images: string[] | any
   category: { name: string }
+  extension?: {
+    stockQuantity: number | null
+    masterUnit?: { type: string | null }
+    basePrice?: number
+  } | null
+  variantPrices?: NormalizedVariant[]
+  productType: string | null
+  unitSymbol: string
+  priceDisplay?: string
+  hasStock?: boolean
+  stockQuantity?: number
 }
 
 interface Category {
@@ -236,7 +259,7 @@ export function ProductList({ initialProducts, categories, searchParams, setting
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map((product) => {
+{products.map((product) => {
               let images: string[] = []
               if (Array.isArray(product.images)) {
                 images = product.images.filter(Boolean)
@@ -253,33 +276,30 @@ export function ProductList({ initialProducts, categories, searchParams, setting
                   }
                 } catch {}
               }
+              images = images.map(img => {
+                if (typeof img === 'string' && img.trim().startsWith('"')) {
+                  try { return JSON.parse(img) } catch { return img }
+                }
+                return img
+              })
+              
+              const validImages = images.filter(img => typeof img === 'string' && isValidImageUrl(img))
+              const imageSrc = validImages[0] || '/placeholder.svg'
 
-              const VARIANTS = [
-                { size: '125g', grams: 125 },
-                { size: '250g', grams: 250 },
-                { size: '500g', grams: 500 },
-                { size: '1kg', grams: 1000 }
-              ]
-
-              function calculatePrice(basePricePerKg: number | null, grams: number): number {
-                if (!basePricePerKg) return 0
-                if (grams === 500) return Math.round(basePricePerKg * 0.56)
-                if (grams === 250) return Math.round(basePricePerKg * 0.31)
-                if (grams === 125) return Math.round(basePricePerKg * 0.19)
-                return Math.round(basePricePerKg)
-              }
-
-              const availableVariants = VARIANTS.filter(v => product.stockGrams >= v.grams)
-              const selectedVariant = selectedVariants[product.id] || availableVariants[0] || VARIANTS[3]
-              const price = calculatePrice(product.pricePerKg, selectedVariant.grams)
-              const inStock = product.stockGrams > 0
+              const availableVariants = product.variantPrices || []
+              const selectedVariant = selectedVariants[product.id] || availableVariants[0] || null
+              const price = selectedVariant?.price ?? (product.priceDisplay ? parseFloat(product.priceDisplay.replace('₹', '').split('/')[0]) : product.pricePerKg ?? 0)
+              const productType = selectedVariant?.unitType || product.productType
+              const hasStock = product.hasStock ?? (product.stockGrams > 0 || (product.extension?.stockQuantity ?? 0) > 0)
+              const hasPricing = !!(product.extension?.basePrice || product.pricePerKg)
+              const inStock = hasStock || availableVariants.length > 0 || hasPricing
 
               return (
                 <div key={product.id} className="bg-white rounded-lg shadow-sm p-3">
                   <Link href={`/products/${product.slug}`} className="relative block">
-                    {images && images.length > 0 ? (
+                    {validImages.length > 0 ? (
                       <img
-                        src={images[0]}
+                        src={imageSrc}
                         alt={product.name}
                         className="h-32 w-full object-cover rounded-md"
                       />
@@ -304,16 +324,16 @@ export function ProductList({ initialProducts, categories, searchParams, setting
                     </div>
                   )}
                   <select
-                    value={selectedVariant.size}
+                    value={selectedVariant?.id || ''}
                     onChange={(e) => {
-                      const variant = availableVariants.find((v) => v.size === e.target.value) || availableVariants[0]
-                      setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
+                      const variant = availableVariants.find((v) => v.id === e.target.value)
+                      if (variant) setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
                     }}
                     className="w-full mt-1 border border-gray-300 rounded px-1 py-1 text-xs"
                   >
                     {availableVariants.map((variant) => (
-                      <option key={variant.size} value={variant.size}>
-                        {variant.size} - ₹{calculatePrice(product.pricePerKg, variant.grams)}
+                      <option key={variant.id} value={variant.id}>
+                        {variant.size} - ₹{variant.price}
                       </option>
                     ))}
                     {availableVariants.length === 0 && (
@@ -327,16 +347,23 @@ export function ProductList({ initialProducts, categories, searchParams, setting
                     <p className="font-bold text-sm">₹{price}</p>
                     <div className="flex space-x-1">
                       <button
-onClick={() => handleAddToCart({
-                           id: product.id + `-${selectedVariant.size}`,
-                           productId: product.id,
-                           name: `${product.name} (${selectedVariant.size})`,
-                           slug: product.slug,
-                           price,
-                           images: images,
-                           selectedVariant,
-                           stock: product.stockGrams
-                         })}
+                        onClick={() => handleAddToCart({
+                          id: product.id,
+                          productId: product.id,
+                          name: product.name,
+                          slug: product.slug,
+                          price,
+                          images,
+                          selectedVariant: selectedVariant ? {
+                            id: selectedVariant.id,
+                            size: selectedVariant.size,
+                            label: selectedVariant.label,
+                            grams: selectedVariant.grams,
+                            unitType: selectedVariant.unitType
+                          } : undefined,
+                          stock: product.stockQuantity ?? (productType === 'weight' ? product.stockGrams : (product.extension?.stockQuantity || 0)),
+                          quantity: 1
+                        })}
                         style={{ backgroundColor: settings.themeColor || '#3b82f6' }}
                         className={`flex-1 text-white px-2 py-1 rounded text-xs font-bold hover:opacity-90 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
                         disabled={!inStock}

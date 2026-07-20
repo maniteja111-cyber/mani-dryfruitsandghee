@@ -4,11 +4,22 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/app/contexts/CartContext'
+import { isValidImageUrl } from '@/lib/image-utils'
 
 interface Toast {
   id: number
   message: string
   type: 'success' | 'error'
+}
+
+interface NormalizedVariant {
+  id: string
+  label: string
+  size: string
+  price: number
+  unitType: string
+  grams: number
+  sizeValue: string
 }
 
 interface Product {
@@ -19,6 +30,14 @@ interface Product {
   stockGrams: number
   images: any
   category?: { name: string }
+  extension?: {
+    stockQuantity: number | null
+    basePrice?: number
+    masterUnit?: { type: string | null }
+  } | null
+  variantPrices?: NormalizedVariant[]
+  productType: string | null
+  unitSymbol: string
 }
 
 interface TodaysOffersProps {
@@ -29,20 +48,6 @@ export default function TodaysOffers({ products }: TodaysOffersProps) {
   const [selectedVariants, setSelectedVariants] = useState<Record<string, any>>({})
   const [toasts, setToasts] = useState<Toast[]>([])
   const { addItem, items } = useCart()
-  const VARIANTS = [
-    { size: '125g', grams: 125 },
-    { size: '250g', grams: 250 },
-    { size: '500g', grams: 500 },
-    { size: '1kg', grams: 1000 }
-  ]
-
-  function calculatePrice(basePricePerKg: number | null, grams: number): number {
-    if (!basePricePerKg) return 0
-    if (grams === 500) return Math.round(basePricePerKg * 0.56)
-    if (grams === 250) return Math.round(basePricePerKg * 0.31)
-    if (grams === 125) return Math.round(basePricePerKg * 0.19)
-    return Math.round(basePricePerKg)
-  }
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     const id = Date.now()
@@ -54,121 +59,148 @@ export default function TodaysOffers({ products }: TodaysOffersProps) {
     return null
   }
 
-return (
+  return (
     <>
     <section className="py-12 bg-red-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">🔥 Today's Offers</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {products.map((product) => {
-            let images: string[] = []
-            if (Array.isArray(product.images)) {
-              images = product.images.filter(Boolean)
-            } else if (typeof product.images === 'string' && product.images.trim()) {
-              try {
-                let parsed = JSON.parse(product.images)
-                if (typeof parsed === 'string') {
-                  parsed = JSON.parse(parsed)
-                }
-                images = Array.isArray(parsed) ? parsed.filter(Boolean) : []
-              } catch {}
-            }
-            images = images.map(img => {
-              if (typeof img === 'string' && img.trim().startsWith('"')) {
-                try { return JSON.parse(img) } catch { return img }
+              let images: string[] = []
+              if (Array.isArray(product.images)) {
+                images = product.images.filter(Boolean)
+              } else if (typeof product.images === 'string' && product.images.trim()) {
+                try {
+                  let parsed = JSON.parse(product.images)
+                  if (typeof parsed === 'string') {
+                    parsed = JSON.parse(parsed)
+                  }
+                  images = Array.isArray(parsed) ? parsed.filter(Boolean) : []
+                } catch {}
               }
-              return img
-            })
-            const imageSrc = images[0] || ''
+              images = images.map(img => {
+                if (typeof img === 'string' && img.trim().startsWith('"')) {
+                  try { return JSON.parse(img) } catch { return img }
+                }
+                return img
+              })
+              const validImages = images.filter(img => typeof img === 'string' && isValidImageUrl(img))
+              const imageSrc = validImages[0] || '/placeholder.svg'
 
-            const availableVariants = VARIANTS.filter(v => product.stockGrams >= v.grams)
-            const selectedVariant = selectedVariants[product.id] || availableVariants[0] || VARIANTS[3]
-            const price = calculatePrice(product.pricePerKg, selectedVariant.grams)
-            const inStock = product.stockGrams > 0
+              const availableVariants = product.variantPrices || []
+              const selectedVariant = selectedVariants[product.id] || availableVariants[0] || null
+              const price = selectedVariant?.price ?? product.pricePerKg ?? 0
+              const productType = selectedVariant?.unitType || product.productType
+              const hasStock = product.stockGrams > 0 || (product.extension?.stockQuantity ?? 0) > 0
+              const hasPricing = !!(product.extension?.basePrice || product.pricePerKg)
+              const inStock = hasStock || availableVariants.length > 0 || hasPricing
 
-            return (
-              <div key={product.id} className="bg-white rounded-2xl shadow p-4">
-                <Link href={`/products/${product.slug}`} className="block">
-                  {images.length > 0 && imageSrc ? (
-                    <img
-                      src={imageSrc}
-                      alt={product.name}
-                      className="h-40 w-full object-cover rounded-xl"
-                    />
-                  ) : (
-                    <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
-                      <span className="text-gray-500">No Image</span>
+              return (
+                <div key={product.id} className="bg-white rounded-2xl shadow p-4">
+                  <Link href={`/products/${product.slug}`} className="block">
+                    {validImages.length > 0 ? (
+                      <img
+                        src={imageSrc}
+                        alt={product.name}
+                        className="h-40 w-full object-cover rounded-xl"
+                      />
+                    ) : (
+                      <div className="h-40 w-full bg-gray-200 flex items-center justify-center rounded-xl">
+                        <span className="text-gray-500">No Image</span>
+                      </div>
+                    )}
+                  </Link>
+                  {!inStock && (
+                    <div className="mt-2 text-center">
+                      <span className="bg-red-500 text-white px-2 py-1 text-xs rounded">Out of Stock</span>
                     </div>
                   )}
-                </Link>
-                {!inStock && (
-                  <div className="mt-2 text-center">
-                    <span className="bg-red-500 text-white px-2 py-1 text-xs rounded">Out of Stock</span>
-                  </div>
-                )}
-                <Link href={`/products/${product.slug}`} className="block mt-3">
-                  <h3 className="font-bold hover:text-red-600 cursor-pointer">{product.name}</h3>
-                </Link>
+                  <Link href={`/products/${product.slug}`} className="block mt-3">
+                    <h3 className="font-bold hover:text-red-600 cursor-pointer">{product.name}</h3>
+                  </Link>
 
-                <select
-                  value={selectedVariant?.size || ''}
-                  onChange={(e) => {
-                    const variant = availableVariants.find((v) => v.size === e.target.value) || availableVariants[0]
-                    setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
-                  }}
-                  className="w-full mt-2 border border-gray-300 rounded px-2 py-1 text-sm"
-                >
-                  {availableVariants.map((variant) => (
-                    <option key={variant.size} value={variant.size}>
-                      {variant.size} - ₹{calculatePrice(product.pricePerKg, variant.grams)}
-                    </option>
-                  ))}
-                  {availableVariants.length === 0 && (
-                    <option value="">Out of Stock</option>
+                  {availableVariants.length > 0 ? (
+                    <select
+                      value={selectedVariant?.id || ''}
+                      onChange={(e) => {
+                        const variant = availableVariants.find((v) => v.id === e.target.value)
+                        if (variant) setSelectedVariants(prev => ({ ...prev, [product.id]: variant }))
+                      }}
+                      className="w-full mt-2 border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      {availableVariants.map((variant) => (
+                        <option key={variant.id} value={variant.id}>
+                          {variant.size} - ₹{variant.price}
+                        </option>
+                      ))}
+                      {availableVariants.length === 0 && (
+                        <option value="">Out of Stock</option>
+                      )}
+                    </select>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-2">No variants</p>
                   )}
-                </select>
 
-                <div className="flex items-center space-x-2 mt-1">
-                  <p className="font-bold text-xl">₹{price}</p>
-                </div>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <p className="font-bold text-xl">₹{price}</p>
+                  </div>
 
-                <div className="flex space-x-2 mt-3">
-                  <button
-                    onClick={() => {
-                      const otherVariantsInCart = items.filter(i => i.productId === product.id).reduce((sum, i) => sum + (i.selectedVariant?.grams || 1000) * i.quantity, 0)
-                      const availableGrams = Math.max(0, product.stockGrams - otherVariantsInCart)
-                      const maxQuantity = Math.max(0, Math.floor(availableGrams / selectedVariant.grams))
-                      
-                      if (maxQuantity <= 0) {
-                        showToast(`${product.name} - Not enough stock!`, 'error')
-                        return
-                      }
-                      
-                      addItem({
-                        id: product.id + `-${selectedVariant.size}`,
-                        productId: product.id,
-                        name: `${product.name} (${selectedVariant.size})`,
-                        slug: product.slug,
-                        price,
-                        images: images,
-                        selectedVariant
-                      })
-                      showToast(`${product.name} added to cart!`, 'success')
-                    }}
-                    className={`flex-1 bg-red-600 text-white px-3 py-2 rounded-lg font-bold text-sm hover:bg-red-700 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    disabled={!inStock}
-                  >
-                    Add to Cart
-                  </button>
-                  <a
-                    className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg font-bold text-sm text-center hover:bg-red-600"
-                    href={`/products/${product.slug}`}
-                  >
-                    View
-                  </a>
+                  <div className="flex space-x-2 mt-3">
+                    <button
+                      onClick={() => {
+                        const otherVariantsInCart = items.filter(i => i.productId === product.id).reduce((sum, i) => {
+                          if (i.selectedVariant?.unitType === 'weight') {
+                            return sum + (i.selectedVariant?.grams || 1000) * i.quantity
+                          }
+                          return sum + i.quantity
+                        }, 0)
+                        
+                        const productType = selectedVariant?.unitType || product.productType
+                        const stockSource = productType === 'weight' ? product.stockGrams : (product.extension?.stockQuantity || 0)
+                        const available = Math.max(0, stockSource - otherVariantsInCart)
+                        const selectedGrams = selectedVariant?.grams || 1000
+                        const maxQuantity = productType === 'weight' 
+                          ? Math.max(0, Math.floor(available / selectedGrams))
+                          : available
+                        
+                        if (maxQuantity <= 0) {
+                          showToast(`${product.name} - Not enough stock!`, 'error')
+                          return
+                        }
+                        
+                        addItem({
+                          id: product.id,
+                          productId: product.id,
+                          name: product.name,
+                          slug: product.slug,
+                          price,
+                          images,
+                          selectedVariant: selectedVariant ? {
+                            id: selectedVariant.id,
+                            size: selectedVariant.size,
+                            label: selectedVariant.label,
+                            grams: selectedVariant.grams,
+                            unitType: selectedVariant.unitType
+                          } : undefined,
+                          stock: productType === 'weight' ? product.stockGrams : (product.extension?.stockQuantity || 0),
+                          quantity: 1
+                        })
+                        showToast(`${product.name} added to cart!`, 'success')
+                      }}
+                      className={`flex-1 bg-red-600 text-white px-3 py-2 rounded-lg font-bold text-sm hover:bg-red-700 ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={!inStock}
+                    >
+                      Add to Cart
+                    </button>
+                    <a
+                      className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg font-bold text-sm text-center hover:bg-red-600"
+                      href={`/products/${product.slug}`}
+                    >
+                      View
+                    </a>
+                  </div>
                 </div>
-              </div>
-            )
+              )
           })}
         </div>
         <div className="text-center mt-8">
