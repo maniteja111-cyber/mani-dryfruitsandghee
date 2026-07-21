@@ -63,6 +63,12 @@ export async function GET(req: NextRequest) {
     }
 
     const synonymProductIds = synonymMatches.map(s => s.productId)
+    if (synonymProductIds.length > 0) {
+      console.info('Search synonym matches', {
+        query: search?.trim(),
+        synonymProductIds
+      })
+    }
 
     const fieldWhere: any = { ...where }
     if (search) {
@@ -106,11 +112,22 @@ export async function GET(req: NextRequest) {
       })
     ])
 
+    console.info('Search product fetch complete', {
+      query: search?.trim(),
+      synonymCount: synonymProducts.length,
+      fieldCount: fieldProducts.length
+    })
+
     const seen = new Set<string>()
     const products = [...synonymProducts, ...fieldProducts].filter(p => {
       if (seen.has(p.id)) return false
       seen.add(p.id)
       return true
+    })
+
+    console.info('Search merged product count', {
+      query: search?.trim(),
+      count: products.length
     })
 
     const productsWithPrice = await Promise.all(products.map(async (p) => {
@@ -132,7 +149,34 @@ export async function GET(req: NextRequest) {
         const stockInfo = getStockInfo(p, productType)
 
         return {
-          ...p,
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          description: p.description,
+          images: p.images,
+          categoryId: p.categoryId,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt,
+          isFeatured: p.isFeatured,
+          isTodayOffer: p.isTodayOffer,
+          isVisible: p.isVisible,
+          faqs: p.faqs,
+          ingredients: p.ingredients,
+          productOverview: p.productOverview,
+          seoKeywords: p.seoKeywords,
+          shippingInfo: p.shippingInfo,
+          storageInstructions: p.storageInstructions,
+          whyChoose: p.whyChoose,
+          benefits: p.benefits,
+          nutritionalInfo: p.nutritionalInfo,
+          origin: p.origin,
+          shelfLife: p.shelfLife,
+          shortDescription: p.shortDescription,
+          pricePerKg: p.pricePerKg,
+          stockGrams: p.stockGrams,
+          category: p.category,
+          extension: p.extension,
+          productVariants: p.productVariants,
           productType,
           priceDisplay: getPriceDisplay(p, productType, basePrice),
           hasStock: stockInfo.hasStock,
@@ -146,6 +190,11 @@ export async function GET(req: NextRequest) {
     }))
 
     const validProducts = productsWithPrice.filter((p): p is NonNullable<typeof p> => p !== null)
+
+    console.info('Search response ready', {
+      query: search?.trim(),
+      validCount: validProducts.length
+    })
 
     return NextResponse.json(validProducts)
   } catch (error) {
