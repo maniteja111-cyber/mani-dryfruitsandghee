@@ -5,7 +5,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   try {
     const { id } = await context.params
     const body = await req.json()
-    const { name, slug, description, isActive, sortOrder, isDefault, rules } = body
+    const { name, slug, description, isActive, sortOrder, isDefault } = body
 
     if (!id) {
       return NextResponse.json({ error: 'Template ID is required' }, { status: 400 })
@@ -19,10 +19,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
         description: description !== undefined ? description?.trim() || null : undefined,
         isActive: isActive !== undefined ? isActive : undefined,
         sortOrder: sortOrder !== undefined ? sortOrder : undefined,
-        isDefault: isDefault !== undefined ? isDefault : undefined,
-        ...(rules !== undefined && {
-          rules: JSON.stringify(rules)
-        })
+        isDefault: isDefault !== undefined ? isDefault : undefined
       }
     })
 
