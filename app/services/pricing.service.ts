@@ -56,7 +56,7 @@ export class PricingService {
         variantId: variant.id,
         label: variant.label,
         price: Math.round(basePrice),
-        unitType: variant.unit.type,
+        unitType: variant.unit?.type || 'weight',
         sizeValue: variant.value
       }))
     }
@@ -93,7 +93,7 @@ export class PricingService {
         variantId: variant.id,
         label: variant.label,
         price,
-        unitType: variant.unit.type,
+        unitType: variant.unit?.type || 'weight',
         sizeValue: variant.value
       }
     })

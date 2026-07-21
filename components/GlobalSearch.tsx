@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import Link from 'next/link'
 
 export interface SearchResult {
   id: string
@@ -19,28 +18,6 @@ export interface GlobalSearchProps {
   debounceMs?: number
 }
 
-const MOCK_RESULTS: SearchResult[] = [
-  { id: '1', name: 'Premium Badam', slug: 'premium-badam', category: 'Dry Fruits', priceDisplay: '₹600/kg', image: 'https://picsum.photos/seed/premium-almonds/400/400' },
-  { id: '2', name: 'Tasty Cashews', slug: 'cashew-pieces', category: 'Dry Fruits', priceDisplay: '₹550/kg', image: 'https://picsum.photos/seed/cashew-pieces/400/400' },
-  { id: '3', name: 'Pure Desi Ghee', slug: 'pure-desi-ghee', category: 'Ghee', priceDisplay: '₹350/pieces', image: 'https://picsum.photos/seed/pure-ghee-1l/400/400' },
-  { id: '4', name: 'Spicy Mango Pickle', slug: 'spicy-mango-pickle', category: 'Pickles', priceDisplay: '₹120/packs', image: 'https://picsum.photos/seed/mango-pickle/400/400' },
-  { id: '5', name: 'Organic Honey', slug: 'organic-honey', category: 'Pickles & Candies', priceDisplay: '₹250/litres', image: 'https://picsum.photos/seed/organic-honey/400/400' },
-  { id: '6', name: 'Juicy Raisins', slug: 'juicy-raisins', category: 'Dry Fruits', priceDisplay: '₹180/kg', image: 'https://picsum.photos/seed/raisins-pack/400/400' },
-  { id: '7', name: 'Crunchy Peanuts', slug: 'crunchy-peanuts', category: 'Dry Fruits', priceDisplay: '₹120/kg', image: 'https://picsum.photos/seed/crunchy-peanuts/400/400' },
-  { id: '8', name: 'Premium Dates', slug: 'premium-dates', category: 'Dry Fruits', priceDisplay: '₹200/pieces', image: 'https://picsum.photos/seed/premium-dates/400/400' },
-  { id: '9', name: 'Healthy Walnuts', slug: 'healthy-walnuts', category: 'Dry Fruits', priceDisplay: '₹700/kg', image: 'https://picsum.photos/seed/healthy-walnuts/400/400' },
-  { id: '10', name: 'Virgin Coconut Oil', slug: 'virgin-coconut-oil', category: 'Ghee', priceDisplay: '₹180/litres', image: 'https://picsum.photos/seed/virgin-coconut-oil/400/400' },
-]
-
-function filterMockResults(query: string, maxResults: number): SearchResult[] {
-  const term = query.trim().toLowerCase()
-  if (!term) return []
-
-  return MOCK_RESULTS
-    .filter(r => r.name.toLowerCase().includes(term) || (r.category || '').toLowerCase().includes(term))
-    .slice(0, maxResults)
-}
-
 export default function GlobalSearch({
   onNavigate,
   placeholder = 'Search products...',
@@ -51,10 +28,13 @@ export default function GlobalSearch({
   const [results, setResults] = useState<SearchResult[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [activeIndex, setActiveIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const lastQueryRef = useRef<string | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const close = useCallback(() => {
     setIsOpen(false)
@@ -62,23 +42,80 @@ export default function GlobalSearch({
   }, [])
 
   useEffect(() => {
-    if (query.trim().length === 0) {
+    const trimmed = query.trim()
+    if (trimmed.length < 2) {
       setResults([])
       setIsOpen(false)
       setActiveIndex(-1)
+      setError(null)
       return
     }
 
+    if (trimmed === lastQueryRef.current) {
+      return
+    }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+    lastQueryRef.current = trimmed
+
     setLoading(true)
-    const timer = setTimeout(() => {
-      const filtered = filterMockResults(query, maxResults)
-      setResults(filtered)
-      setIsOpen(filtered.length > 0)
-      setActiveIndex(filtered.length > 0 ? 0 : -1)
-      setLoading(false)
+    setError(null)
+
+    const timer = setTimeout(async () => {
+      try {
+        const url = new URL('/api/products', window.location.origin)
+        url.searchParams.set('search', trimmed)
+        url.searchParams.set('limit', String(maxResults))
+
+        const response = await fetch(url.toString(), {
+          signal: controller.signal,
+          cache: 'no-store'
+        })
+
+        if (!response.ok) {
+          throw new Error(`Search failed: ${response.status}`)
+        }
+
+        const data = (await response.json()) as SearchResult[]
+        const mapped = (Array.isArray(data) ? data : []).map((item: any) => {
+          const categoryName = item.category && typeof item.category === 'object' && 'name' in item.category ? item.category.name : undefined
+          return {
+            id: item.id,
+            name: item.name,
+            slug: item.slug,
+            category: categoryName,
+            priceDisplay: item.priceDisplay,
+            image: Array.isArray(item.images) ? item.images[0] : undefined,
+          }
+        })
+
+        setResults(mapped)
+        setIsOpen(mapped.length > 0)
+        setActiveIndex(mapped.length > 0 ? 0 : -1)
+      } catch (err: unknown) {
+        if ((err as Error).name === 'AbortError') return
+        console.error('Global search error:', err)
+        setError(err instanceof Error ? err.message : 'Search failed')
+        setResults([])
+        setIsOpen(false)
+        setActiveIndex(-1)
+      } finally {
+        setLoading(false)
+      }
     }, debounceMs)
 
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null
+      }
+    }
   }, [query, maxResults, debounceMs])
 
   useEffect(() => {
@@ -180,7 +217,7 @@ export default function GlobalSearch({
         )}
       </div>
 
-      {isOpen && (
+      {isOpen && !error && (
         <ul
           ref={listRef}
           className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-auto"
@@ -215,9 +252,15 @@ export default function GlobalSearch({
         </ul>
       )}
 
-      {isOpen && !loading && results.length === 0 && query.trim().length > 0 && (
+      {isOpen && !loading && results.length === 0 && query.trim().length > 0 && !error && (
         <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-4 text-sm text-gray-500">
           No products found. Press Enter to search all products.
+        </div>
+      )}
+
+      {error && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-red-200 rounded-lg shadow-lg px-3 py-4 text-sm text-red-600">
+          {error}
         </div>
       )}
     </div>
