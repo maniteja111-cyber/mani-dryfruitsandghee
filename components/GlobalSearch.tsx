@@ -18,6 +18,31 @@ export interface GlobalSearchProps {
   debounceMs?: number
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function HighlightText({ text, query }: { text: string; query: string }) {
+  const trimmed = query.trim()
+  if (!trimmed) return <>{text}</>
+
+  const escaped = escapeRegExp(trimmed)
+  const regex = new RegExp(`(${escaped})`, 'gi')
+  const parts = text.split(regex)
+
+  return (
+    <>
+      {parts.map((part, index) =>
+        regex.test(part) ? (
+          <mark key={index} className="bg-yellow-200 text-gray-900 rounded px-0.5">{part}</mark>
+        ) : (
+          <span key={index}>{part}</span>
+        )
+      )}
+    </>
+  )
+}
+
 export default function GlobalSearch({
   onNavigate,
   placeholder = 'Search products...',
@@ -239,9 +264,13 @@ export default function GlobalSearch({
                 />
               )}
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{result.name}</p>
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  <HighlightText text={result.name} query={query} />
+                </p>
                 {result.category && (
-                  <p className="text-xs text-gray-500 truncate">{result.category}</p>
+                  <p className="text-xs text-gray-500 truncate">
+                    <HighlightText text={result.category} query={query} />
+                  </p>
                 )}
               </div>
               {result.priceDisplay && (
@@ -252,9 +281,16 @@ export default function GlobalSearch({
         </ul>
       )}
 
+      {loading && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-4 text-sm text-gray-500">
+          Searching...
+        </div>
+      )}
+
       {isOpen && !loading && results.length === 0 && query.trim().length > 0 && !error && (
         <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-4 text-sm text-gray-500">
-          No products found. Press Enter to search all products.
+          <p className="font-medium text-gray-700">No products found</p>
+          <p className="mt-1">Press Enter to search all products.</p>
         </div>
       )}
 

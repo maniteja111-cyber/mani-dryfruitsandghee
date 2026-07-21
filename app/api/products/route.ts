@@ -64,7 +64,47 @@ export async function GET(req: NextRequest) {
       return true
     })
 
-    const safeProducts = products.map(p => {
+    const normalized = search ? search.trim().replace(/\s+/g, ' ').toLowerCase() : ''
+    const scored = products
+      .map(p => {
+        const name = (p.name || '').toLowerCase()
+        const seoKeywords = (p.seoKeywords || '').toLowerCase()
+        const shortDescription = (p.shortDescription || '').toLowerCase()
+        const description = (p.description || '').toLowerCase()
+        const categoryName = (p.category?.name || '').toLowerCase()
+
+        let score = 0
+        if (!normalized) {
+          score = 1
+        } else if (synonymProductIds.includes(p.id)) {
+          score = 100
+        } else if (name === normalized) {
+          score = 90
+        } else if (name.startsWith(normalized)) {
+          score = 80
+        } else if (name.includes(normalized)) {
+          score = 50
+        } else if (seoKeywords.includes(normalized)) {
+          score = 40
+        } else if (shortDescription.includes(normalized)) {
+          score = 20
+        } else if (description.includes(normalized)) {
+          score = 10
+        } else if (categoryName.includes(normalized)) {
+          score = 15
+        }
+
+        return { ...p, _score: score }
+      })
+      .filter(p => p._score > 0)
+      .sort((a, b) => {
+        const scoreDiff = b._score - a._score
+        if (scoreDiff !== 0) return scoreDiff
+        if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      })
+
+    const safeProducts = scored.map((p) => {
       const extension = p.extension
       const productType = extension?.masterUnit?.type || 'weight'
       const basePrice = extension?.basePrice || p.pricePerKg || 0
