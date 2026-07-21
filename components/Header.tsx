@@ -7,6 +7,7 @@ import { useCart } from '@/app/contexts/CartContext'
 import { signOut } from 'next-auth/react'
 import RewardsPopup from '@/components/RewardsPopup'
 import RewardsPanel from '@/components/RewardsPanel'
+import GlobalSearch from '@/components/GlobalSearch'
 
 interface HeaderProps {
   settings: Record<string, string>
@@ -119,6 +120,11 @@ return (
               )}
             </Link>
 
+            {/* Desktop Search */}
+            <div className="hidden md:block w-full max-w-xs">
+              <GlobalSearch onNavigate={(url) => { window.location.href = url }} />
+            </div>
+
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-6">
               <Link href="/" className="hover:underline text-sm text-yellow-600">Home</Link>
@@ -180,6 +186,10 @@ return (
           {/* Mobile Navigation */}
           {isMenuOpen && (
             <div className="md:hidden border-t border-gray-200 py-3">
+              {/* Mobile Search */}
+              <div className="mb-3">
+                <GlobalSearch onNavigate={(url) => { window.location.href = url }} />
+              </div>
               <nav className="flex flex-col space-y-2">
                 <Link href="/" className="px-2 py-1.5 hover:underline text-yellow-600">Home</Link>
                 <Link href="/products" className="px-2 py-1.5 hover:underline text-yellow-600">Products</Link>

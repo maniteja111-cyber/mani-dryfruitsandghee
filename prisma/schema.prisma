@@ -136,9 +136,25 @@ model Product {
   extension               ProductExtension?
   productVariants         ProductProductVariant[]
   giftBoxEligibleProducts GiftBoxEligibleProduct[]
+  synonyms                ProductSynonym[]
 
   @@index([categoryId], map: "products_categoryId_fkey")
   @@map("products")
+}
+
+model ProductSynonym {
+  id        String    @id @default(cuid())
+  productId String
+  alias     String
+  language  String    @default("en")
+  weight    Int       @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, alias, language])
+  @@index([alias, language])
+  @@map("product_synonyms")
 }
 
 model Referral {

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+              import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -208,7 +208,129 @@ async function main() {
      }
    })
 
-   console.log('Seed data created successfully with 10 products and variants')
+    // Create synonyms for products
+    const synonymData: { productSlug: string; aliases: { alias: string; language: string; weight?: number }[] }[] = [
+      {
+        productSlug: 'premium-almonds',
+        aliases: [
+          { alias: 'almond', language: 'en', weight: 2 },
+          { alias: 'almonds', language: 'en', weight: 1 },
+          { alias: 'badam', language: 'en', weight: 3 },
+          { alias: 'ಬಾದাম', language: 'te', weight: 3 },
+          { alias: 'बादाम', language: 'hi', weight: 3 }
+        ]
+      },
+      {
+        productSlug: 'cashew-pieces',
+        aliases: [
+          { alias: 'cashew', language: 'en', weight: 2 },
+          { alias: 'cashews', language: 'en', weight: 1 },
+          { alias: 'kaju', language: 'en', weight: 3 },
+          { alias: 'ಕಜು', language: 'te', weight: 3 },
+          { alias: 'काजू', language: 'hi', weight: 3 }
+        ]
+      },
+      {
+        productSlug: 'almond-pack',
+        aliases: [
+          { alias: 'almond', language: 'en', weight: 2 },
+          { alias: 'almonds', language: 'en', weight: 1 },
+          { alias: 'badam', language: 'en', weight: 3 }
+        ]
+      },
+      {
+        productSlug: 'coconut-oil-1l',
+        aliases: [
+          { alias: 'coconut oil', language: 'en', weight: 2 },
+          { alias: 'coconut', language: 'en', weight: 1 }
+        ]
+      },
+      {
+        productSlug: 'pure-ghee-1l',
+        aliases: [
+          { alias: 'ghee', language: 'en', weight: 2 },
+          { alias: 'desi ghee', language: 'en', weight: 2 },
+          { alias: 'ঘি', language: 'hi', weight: 3 },
+          { alias: 'నెయ్యి', language: 'te', weight: 3 }
+        ]
+      },
+      {
+        productSlug: 'organic-walnuts',
+        aliases: [
+          { alias: 'walnut', language: 'en', weight: 2 },
+          { alias: 'walnuts', language: 'en', weight: 1 },
+          { alias: 'akhrot', language: 'en', weight: 3 },
+          { alias: 'అకరోట్', language: 'te', weight: 3 },
+          { alias: 'अखरोट', language: 'hi', weight: 3 }
+        ]
+      },
+      {
+        productSlug: 'pistachios',
+        aliases: [
+          { alias: 'pistachio', language: 'en', weight: 2 },
+          { alias: 'pista', language: 'en', weight: 3 }
+        ]
+      },
+      {
+        productSlug: 'raisins-pack',
+        aliases: [
+          { alias: 'raisin', language: 'en', weight: 2 },
+          { alias: 'raisins', language: 'en', weight: 1 },
+          { alias: 'kishmish', language: 'en', weight: 3 },
+          { alias: 'ద్రాక్ష', language: 'te', weight: 3 },
+          { alias: 'किशमिश', language: 'hi', weight: 3 }
+        ]
+      },
+      {
+        productSlug: 'butter-chicken',
+        aliases: [
+          { alias: 'butter chicken', language: 'en', weight: 2 }
+        ]
+      },
+      {
+        productSlug: 'mango-pickle',
+        aliases: [
+          { alias: 'mango pickle', language: 'en', weight: 2 },
+          { alias: 'pickle', language: 'en', weight: 1 },
+          { alias: 'పచ్చడి', language: 'te', weight: 3 },
+          { alias: 'अचार', language: 'hi', weight: 3 }
+        ]
+      }
+    ]
+
+    for (const syn of synonymData) {
+      const product = await prisma.product.findUnique({
+        where: { slug: syn.productSlug }
+      })
+
+      if (!product) {
+        console.log(`Skip synonyms for missing product: ${syn.productSlug}`)
+        continue
+      }
+
+      for (const alias of syn.aliases) {
+        await prisma.productSynonym.upsert({
+          where: {
+            productId_alias_language: {
+              productId: product.id,
+              alias: alias.alias,
+              language: alias.language
+            }
+          },
+          update: {
+            weight: alias.weight ?? 1
+          },
+          create: {
+            productId: product.id,
+            alias: alias.alias,
+            language: alias.language,
+            weight: alias.weight ?? 1
+          }
+        })
+      }
+    }
+
+    console.log('Synonyms seeded successfully')
  }
 
 main()
