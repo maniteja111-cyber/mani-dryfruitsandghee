@@ -130,73 +130,70 @@ export async function GET(req: NextRequest) {
       count: products.length
     })
 
-    const productsWithPrice = await Promise.all(products.map(async (p) => {
-      try {
-        const productType = p.extension?.masterUnit?.type || 'weight'
-        const basePrice = p.extension?.basePrice || p.pricePerKg || 0
+    let productsWithPrice: any[] = []
+    try {
+      productsWithPrice = await Promise.all(products.map(async (p) => {
+        try {
+          const productType = p.extension?.masterUnit?.type || 'weight'
+          const basePrice = p.extension?.basePrice || p.pricePerKg || 0
 
-        const variants = p.productVariants.map((pv: any) => pv.variantId)
-        const templateId: string | null = p.extension?.pricingTemplateId || null
+          const variants = p.productVariants.map((pv: any) => pv.variantId)
+          const templateId: string | null = p.extension?.pricingTemplateId || null
 
-        const prices = await PricingService.generateVariantPrices(
-          p.id,
-          basePrice,
-          templateId,
-          variants
-        )
+          const prices = await PricingService.generateVariantPrices(
+            p.id,
+            basePrice,
+            templateId,
+            variants
+          )
 
-        const normalizedVariants = getNormalizedVariants(prices)
-        const stockInfo = getStockInfo(p, productType)
+          const normalizedVariants = getNormalizedVariants(prices)
+          const stockInfo = getStockInfo(p, productType)
 
-        return {
-          id: p.id,
-          name: p.name,
-          slug: p.slug,
-          description: p.description,
-          images: p.images,
-          categoryId: p.categoryId,
-          createdAt: p.createdAt,
-          updatedAt: p.updatedAt,
-          isFeatured: p.isFeatured,
-          isTodayOffer: p.isTodayOffer,
-          isVisible: p.isVisible,
-          faqs: p.faqs,
-          ingredients: p.ingredients,
-          productOverview: p.productOverview,
-          seoKeywords: p.seoKeywords,
-          shippingInfo: p.shippingInfo,
-          storageInstructions: p.storageInstructions,
-          whyChoose: p.whyChoose,
-          benefits: p.benefits,
-          nutritionalInfo: p.nutritionalInfo,
-          origin: p.origin,
-          shelfLife: p.shelfLife,
-          shortDescription: p.shortDescription,
-          pricePerKg: p.pricePerKg,
-          stockGrams: p.stockGrams,
-          category: p.category,
-          extension: p.extension,
-          productVariants: p.productVariants,
-          productType,
-          priceDisplay: getPriceDisplay(p, productType, basePrice),
-          hasStock: stockInfo.hasStock,
-          stockQuantity: stockInfo.stockQuantity,
-          variantPrices: normalizedVariants
+          return {
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            description: p.description,
+            images: p.images,
+            categoryId: p.categoryId,
+            createdAt: p.createdAt,
+            updatedAt: p.updatedAt,
+            isFeatured: p.isFeatured,
+            isTodayOffer: p.isTodayOffer,
+            isVisible: p.isVisible,
+            faqs: p.faqs,
+            ingredients: p.ingredients,
+            productOverview: p.productOverview,
+            seoKeywords: p.seoKeywords,
+            shippingInfo: p.shippingInfo,
+            storageInstructions: p.storageInstructions,
+            whyChoose: p.whyChoose,
+            benefits: p.benefits,
+            nutritionalInfo: p.nutritionalInfo,
+            origin: p.origin,
+            shelfLife: p.shelfLife,
+            shortDescription: p.shortDescription,
+            pricePerKg: p.pricePerKg,
+            stockGrams: p.stockGrams,
+            category: p.category,
+            extension: p.extension,
+            productVariants: p.productVariants,
+            productType,
+            priceDisplay: getPriceDisplay(p, productType, basePrice),
+            hasStock: stockInfo.hasStock,
+            stockQuantity: stockInfo.stockQuantity,
+            variantPrices: normalizedVariants
+          }
+        } catch (error) {
+          console.error(`Failed to process product ${p.id}:`, error)
+          return null
         }
-      } catch (error) {
-        console.error(`Failed to process product ${p.id}:`, error)
-        return null
-      }
-    }))
-
-    const validProducts = productsWithPrice.filter((p): p is NonNullable<typeof p> => p !== null)
-
-    console.info('Search response ready', {
-      query: search?.trim(),
-      validCount: validProducts.length
-    })
-
-    return NextResponse.json(validProducts)
+      }))
+    } catch (error) {
+      console.error('Search product processing error:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
   } catch (error) {
     console.error('Get products error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
