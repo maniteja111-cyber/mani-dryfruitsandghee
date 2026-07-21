@@ -33,11 +33,11 @@ export async function GET(req: NextRequest) {
       if (trimmed.length >= 2) {
         const normalized = trimmed.replace(/\s+/g, ' ')
         fieldWhere.OR = [
-          { name: { contains: normalized, mode: 'insensitive' } },
-          { seoKeywords: { contains: normalized, mode: 'insensitive' } },
-          { shortDescription: { contains: normalized, mode: 'insensitive' } },
-          { description: { contains: normalized, mode: 'insensitive' } },
-          { category: { name: { contains: normalized, mode: 'insensitive' } } }
+          { name: { contains: normalized } },
+          { seoKeywords: { contains: normalized } },
+          { shortDescription: { contains: normalized } },
+          { description: { contains: normalized } },
+          { category: { name: { contains: normalized } } }
         ]
       }
     }
