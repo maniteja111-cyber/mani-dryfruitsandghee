@@ -159,8 +159,7 @@ async function validateRow(
 
   validateNonNegative(row.pricePerKg, 'pricePerKg')
   validateNonNegative(row.basePrice, 'basePrice')
-  validateNonNegative(row.stockKg, 'stockKg')
-  validateNonNegative(row.stockQuantity, 'stockQuantity')
+  validateNonNegative(row.stock, 'stock')
 
   if (row.images) {
     const imagesStr = String(row.images).trim()

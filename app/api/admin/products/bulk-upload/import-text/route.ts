@@ -58,9 +58,8 @@ export async function POST(req: NextRequest) {
           const category = String(row.category || '').trim()
           const productType = String(row.productType || '').toLowerCase().trim()
           const basePrice = row.basePrice ? parseFloat(String(row.basePrice)) : null
-          const stockKg = row.stockKg ? parseFloat(String(row.stockKg)) : 0
           const pricePerKg = row.pricePerKg ? parseFloat(String(row.pricePerKg)) : null
-          const stockQuantity = row.stockQuantity ? parseFloat(String(row.stockQuantity)) : 0
+          const stock = row.stock ? parseFloat(String(row.stock)) : null
 
           if (!name || !category || !productType) {
             errors.push({ row: rowIndex, message: 'Missing required field: name, category, or productType' })
@@ -159,7 +158,12 @@ export async function POST(req: NextRequest) {
 
           const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
-          const stockGrams = stockKg ? Math.round(parseFloat(String(stockKg)) * 1000) : 0
+          const stockGrams = productType === 'weight' && stock !== null
+            ? Math.round(stock * 1000)
+            : 0
+          const stockQuantity = productType !== 'weight' && stock !== null
+            ? stock
+            : 0
 
           await ProductService.createProduct({
             name,
