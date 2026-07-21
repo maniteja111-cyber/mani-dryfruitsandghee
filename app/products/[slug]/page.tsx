@@ -5,6 +5,8 @@ import WhatsAppButton from '@/components/WhatsAppButton'
 import RewardsButton from '@/components/RewardsButton'
 import ProductDetail from '@/components/ProductDetail'
 import { prisma } from '@/lib/prisma'
+import { PricingService, getSelectorLabel, getUnitSymbol } from '@/app/services/pricing.service'
+import { VariantService, getNormalizedVariants, NormalizedVariant } from '@/app/services/variant.service'
 import Link from 'next/link'
 import {
   generateProductSchema,
@@ -15,6 +17,57 @@ import {
   generateFAQSchema,
   generateLocalBusinessSchema
 } from '@/lib/schema'
+
+async function enrichProduct(prod: any): Promise<any> {
+    const ext = await prisma.productExtension.findUnique({
+      where: { productId: prod.id },
+      include: { masterUnit: true }
+    })
+    
+    const variants = await prisma.productProductVariant.findMany({
+      where: { productId: prod.id, isActive: true },
+      select: { variantId: true }
+    })
+    
+    const productType = ext?.masterUnit?.type || 'weight'
+    const basePrice = ext?.basePrice ?? prod.pricePerKg ?? 0
+    const templateId: string | null = ext?.pricingTemplateId ?? null
+    
+    const prices = (basePrice > 0 && variants.length > 0)
+      ? await PricingService.generateVariantPrices(
+          prod.id,
+          basePrice,
+          templateId,
+          variants.map(v => v.variantId)
+        )
+      : []
+    
+    const normalizedVariants = getNormalizedVariants(prices)
+    
+    const hasStock = prod.stockGrams > 0 || (ext?.stockQuantity ?? 0) > 0
+    const stockQuantity = ext?.stockQuantity ?? prod.stockGrams ?? 0
+    const unitLabels: Record<string, { symbol: string; plural: string }> = {
+      weight: { symbol: '₹', plural: 'kg' },
+      quantity: { symbol: '₹', plural: 'pieces' },
+      pack: { symbol: '₹', plural: 'packs' },
+      volume: { symbol: '₹', plural: 'litres' }
+    }
+    const unitInfo = unitLabels[productType] || unitLabels.weight
+    const priceDisplay = `${unitInfo.symbol}${basePrice}/${unitInfo.plural}`
+    
+    return {
+      ...prod,
+      extension: ext,
+      productVariants: variants,
+      variantPrices: normalizedVariants,
+      productType,
+      unitSymbol: getUnitSymbol(productType),
+      selectorLabel: getSelectorLabel(productType),
+      hasStock,
+      stockQuantity,
+      priceDisplay
+    }
+  }
 
 async function getData(slug: string) {
   try {
@@ -50,7 +103,48 @@ async function getData(slug: string) {
       return acc
     }, {} as Record<string, string>)
 
-    return { settings: settingsObj, product, relatedProducts }
+    const extension = await prisma.productExtension.findUnique({
+      where: { productId: product.id },
+      include: { masterUnit: true }
+    })
+
+    const productVariants = await prisma.productProductVariant.findMany({
+      where: { productId: product.id, isActive: true },
+      select: { variantId: true }
+    })
+
+    let variantPrices: { variantId: string; label: string; price: number; unitType: string; sizeValue: string }[] = []
+    if (extension?.basePrice && productVariants.length > 0) {
+      variantPrices = await PricingService.generateVariantPrices(
+        product.id,
+        extension.basePrice,
+        extension.pricingTemplateId,
+        productVariants.map(pv => pv.variantId)
+      )
+    }
+
+    const normalizedVariants: NormalizedVariant[] = getNormalizedVariants(variantPrices)
+    const productType = extension?.masterUnit?.type || (normalizedVariants[0]?.unitType) || null
+    const unitSymbol = getUnitSymbol(productType)
+    const selectorLabel = getSelectorLabel(productType)
+
+    const enrichedRelatedProducts = await Promise.all(
+      relatedProducts.map(p => enrichProduct(p))
+    )
+
+    return { 
+      settings: settingsObj, 
+      product: {
+        ...product,
+        extension,
+        productVariants,
+        variantPrices: normalizedVariants,
+        productType,
+        unitSymbol,
+        selectorLabel
+      }, 
+      relatedProducts: enrichedRelatedProducts 
+    }
   } catch (error) {
     console.error('Error fetching product data:', error)
     notFound()
@@ -101,10 +195,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const { settings, product, relatedProducts } = await getData(resolvedParams.slug)
 
   const productImages = Array.isArray(product.images) ? product.images.map(String) : []
-  const price = product.pricePerKg || 0
+  const selectedVariant = product.variantPrices?.[0] || null
+  const price = selectedVariant?.price ?? product.pricePerKg ?? 0
   const categoryName = product.category?.name || 'Product'
-  const stockGrams = product.stockGrams
-  const inStock = product.stockGrams > 0
+  const stockQuantity = product.extension?.stockQuantity ?? product.stockGrams ?? 0
+  const hasStock = stockQuantity > 0
+  const hasVariants = (product.variantPrices?.length || 0) > 0
+  const hasPricing = !!(product.extension?.basePrice || product.pricePerKg)
+  const inStock = hasStock || hasVariants || hasPricing
   const reviews = await prisma.review.findMany({
     where: { productId: product.id, approved: true },
     orderBy: { createdAt: 'desc' }

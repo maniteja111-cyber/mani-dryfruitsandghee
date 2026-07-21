@@ -4,14 +4,59 @@ import Footer from '@/components/Footer'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import RewardsButton from '@/components/RewardsButton'
 import { prisma } from '@/lib/prisma'
+import { PricingService, getSelectorLabel, getUnitSymbol } from '@/app/services/pricing.service'
+import { getNormalizedVariants } from '@/app/services/variant.service'
 
-export const metadata = {
-  title: 'Products - Mani Dry Fruits & Ghee Store',
-  description: 'Browse our collection of premium dry fruits, pickles, and ghee. High quality products with fast delivery.',
-  keywords: 'buy dry fruits online, buy ghee online, buy pickles online, premium quality, organic products',
-  alternates: {
-    canonical: 'https://manidryfruitsandghee.in/products'
-  }
+async function enrichProducts(products: any[]): Promise<any[]> {
+  return Promise.all(products.map(async (product) => {
+    const ext = await prisma.productExtension.findUnique({
+      where: { productId: product.id },
+      include: { masterUnit: true }
+    })
+    
+    const variants = await prisma.productProductVariant.findMany({
+      where: { productId: product.id, isActive: true },
+      select: { variantId: true }
+    })
+    
+    const prices = ext?.basePrice && variants.length > 0
+      ? await PricingService.generateVariantPrices(
+          product.id,
+          ext.basePrice,
+          ext.pricingTemplateId,
+          variants.map(v => v.variantId)
+        )
+      : []
+    
+    const normalizedVariants = getNormalizedVariants(prices)
+    const productType = ext?.masterUnit?.type || (normalizedVariants[0]?.unitType) || null
+    
+    const hasStock = product.stockGrams > 0 || (ext?.stockQuantity ?? 0) > 0
+    const basePrice = ext?.basePrice || product.pricePerKg || 0
+    const unit = productType || 'weight'
+    const unitLabels: Record<string, { symbol: string; plural: string }> = {
+      weight: { symbol: '₹', plural: 'kg' },
+      quantity: { symbol: '₹', plural: 'pieces' },
+      pack: { symbol: '₹', plural: 'packs' },
+      volume: { symbol: '₹', plural: 'litres' }
+    }
+    const unitInfo = unitLabels[unit] || unitLabels.weight
+    const priceDisplay = `${unitInfo.symbol}${basePrice}/${unitInfo.plural}`
+    const stockQuantity = ext?.stockQuantity ?? product.stockGrams ?? 0
+    
+    return {
+      ...product,
+      extension: ext,
+      productVariants: variants,
+      variantPrices: normalizedVariants,
+      productType,
+      unitSymbol: getUnitSymbol(productType),
+      selectorLabel: getSelectorLabel(productType),
+      hasStock,
+      stockQuantity,
+      priceDisplay
+    }
+  }))
 }
 
 async function getData(searchParams: { [key: string]: string | string[] | undefined }) {
@@ -42,7 +87,9 @@ async function getData(searchParams: { [key: string]: string | string[] | undefi
       return acc
     }, {} as Record<string, string>)
 
-    return { settings: settingsObj, categories, products }
+    const enrichedProducts = await enrichProducts(products)
+
+    return { settings: settingsObj, categories, products: enrichedProducts }
   } catch (error) {
     console.error('Error fetching products data:', error)
     return { settings: {}, categories: [], products: [] }

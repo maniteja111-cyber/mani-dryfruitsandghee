@@ -4,7 +4,13 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
-      include: { category: true },
+      include: { 
+        category: true,
+        extension: { include: { masterUnit: true } },
+        productVariants: {
+          select: { variantId: true }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     })
     return NextResponse.json(products)
@@ -16,7 +22,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, slug, description, shortDescription, pricePerKg, stockGrams, images, categoryId, isFeatured, isTodayOffer, isVisible, productOverview, whyChoose, ingredients, nutritionalInfo, storageInstructions, shelfLife, origin, benefits, shippingInfo, faqs, seoKeywords } = await req.json()
+    const { name, slug, description, shortDescription, pricePerKg, stockGrams, images, categoryId, isFeatured, isTodayOffer, isVisible, productOverview, whyChoose, ingredients, nutritionalInfo, storageInstructions, shelfLife, origin, benefits, shippingInfo, faqs, seoKeywords, productType, stockQuantity, variantIds, basePrice, pricingTemplateId } = await req.json()
 
     if (!categoryId) {
       return NextResponse.json({ error: 'Category is required' }, { status: 400 })
@@ -32,14 +38,16 @@ export async function POST(req: NextRequest) {
 
     const cleanImages = (images || []).filter((img: string) => img && img.trim() !== '')
 
+    const unitTypeId = productType ? await getUnitTypeId(productType) : null
+
     const product = await prisma.product.create({
       data: {
         name,
         slug: cleanSlug,
         description,
         shortDescription,
-        stockGrams: Math.round(parseFloat(stockGrams)),
-        pricePerKg: parseFloat(pricePerKg) || 0,
+        stockGrams: productType === 'weight' ? Math.round(parseFloat(stockGrams)) : 0,
+        pricePerKg: productType === 'weight' ? (parseFloat(pricePerKg) || 0) : null,
         images: JSON.stringify(cleanImages),
         categoryId,
         isFeatured: isFeatured || false,
@@ -55,9 +63,24 @@ export async function POST(req: NextRequest) {
         benefits: benefits || null,
         shippingInfo: shippingInfo || null,
         faqs: faqs && faqs.length > 0 ? JSON.stringify(faqs) : null,
-        seoKeywords: seoKeywords || null
+        seoKeywords: seoKeywords || null,
+        extension: {
+          create: {
+            basePrice: parseFloat(basePrice) || 0,
+            stockQuantity: productType === 'weight' ? undefined : (parseFloat(stockQuantity) || 0),
+            unitTypeId,
+            pricingTemplateId: pricingTemplateId === 'none' ? null : (pricingTemplateId || undefined)
+          }
+        },
+        productVariants: variantIds && variantIds.length > 0 ? {
+          create: variantIds.map((variantId: string, index: number) => ({
+            id: `${productType === 'weight' ? 'weight' : 'nonweight'}_${Date.now()}_${index}`,
+            variantId,
+            sortOrder: index
+          }))
+        } : undefined
       },
-      include: { category: true }
+      include: { category: true, extension: { include: { masterUnit: true } }, productVariants: { select: { variantId: true } } }
     })
 
     return NextResponse.json(product)
@@ -65,4 +88,11 @@ export async function POST(req: NextRequest) {
     console.error('Create product error:', error)
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
+}
+
+async function getUnitTypeId(productType: string): Promise<string | null> {
+  const unit = await prisma.masterUnit.findFirst({
+    where: { type: productType, isActive: true }
+  })
+  return unit?.id || null
 }

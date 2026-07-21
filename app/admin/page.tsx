@@ -2,6 +2,44 @@
 
 import { useEffect, useState } from 'react'
 
+type ProductType = 'weight' | 'quantity' | 'pack' | 'volume'
+
+interface Product {
+  id: string
+  name: string
+  productType?: ProductType
+  stockGrams: number
+  extension?: {
+    stockQuantity?: number
+    masterUnit?: {
+      type: ProductType
+    }
+  }
+}
+
+function getLowStockDisplay(product: Product): string {
+  const productType = product.extension?.masterUnit?.type || 'weight'
+  const units: Record<ProductType, { plural: string; getStock: (p: Product) => number }> = {
+    weight: { plural: 'kg', getStock: (p) => p.stockGrams / 1000 },
+    quantity: { plural: 'pieces', getStock: (p) => p.extension?.stockQuantity || 0 },
+    pack: { plural: 'packs', getStock: (p) => p.extension?.stockQuantity || 0 },
+    volume: { plural: 'litres', getStock: (p) => p.extension?.stockQuantity || 0 }
+  }
+  const unit = units[productType]
+  const stock = unit.getStock(product).toFixed(2)
+  return `${stock} ${unit.plural}`
+}
+
+function isLowStock(product: Product): boolean {
+  const productType = product.extension?.masterUnit?.type || 'weight'
+  const THRESHOLD = 10000
+  
+  if (productType === 'weight') {
+    return product.stockGrams > 0 && product.stockGrams <= THRESHOLD
+  }
+  return (product.extension?.stockQuantity || 0) > 0
+}
+
 // TODO: auth check handled by admin layout — remove guard from here once layout is verified
 
 export default function AdminPage() {
@@ -27,7 +65,7 @@ export default function AdminPage() {
 
       const revenue = orders.reduce((sum: number, order: any) => sum + order.total, 0)
       const pending = orders.filter((o: any) => o.status === 'pending').length
-      const lowStockItems = products.filter((p: any) => p.stockGrams > 0 && p.stockGrams <= 10000)
+      const lowStockItems = products.filter((p: any) => isLowStock(p))
       const totalPoints = users.reduce((sum: number, u: any) => sum + (u.loyaltyPoints || 0), 0)
 
       setStats({
@@ -128,7 +166,7 @@ export default function AdminPage() {
                     <div key={p.id} className="flex justify-between items-center border-b pb-1.5 last:border-0">
                       <div>
                         <span className="font-medium">{p.name}</span>
-                        <span className="ml-2 text-red-600 font-semibold">({(p.stockGrams / 1000).toFixed(2)} kg left)</span>
+                        <span className="ml-2 text-red-600 font-semibold">({getLowStockDisplay(p)} left)</span>
                       </div>
                       <a
                         href={`/admin/products`}

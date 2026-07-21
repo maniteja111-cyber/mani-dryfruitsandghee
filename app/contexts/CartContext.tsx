@@ -52,7 +52,8 @@ const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setItems(prev => {
       const existing = prev.find(i => i.id === item.id)
       const variantGrams = item.selectedVariant?.grams || 1000
-      const maxItems = item.stock > 0 ? Math.floor(item.stock / variantGrams) : 0
+      const stockValue = item.stock || 0
+      const maxItems = stockValue > 0 ? Math.floor(stockValue / variantGrams) : 0
       
       if (existing) {
         const newQty = Math.min(maxItems, existing.quantity + (item.quantity || 1))
@@ -78,7 +79,8 @@ const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
       const item = prev.find(i => i.id === id)
       if (!item) return prev
       const variantGrams = item.selectedVariant?.grams || 1000
-      const maxItems = item.stock > 0 ? Math.floor(item.stock / variantGrams) : 0
+      const stockValue = item.stock || 0
+      const maxItems = stockValue > 0 ? Math.floor(stockValue / variantGrams) : 0
       const finalQty = Math.min(maxItems, quantity)
       return prev.map(i => 
         i.id === id ? { ...i, quantity: finalQty } : i

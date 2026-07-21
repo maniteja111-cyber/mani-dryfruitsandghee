@@ -3,7 +3,7 @@ import { MasterVariant, ProductProductVariant } from '@prisma/client'
 import { VariantPrice } from './pricing.service'
 
 export interface VariantWithUnit extends MasterVariant {
-  unit: { id: string; code: string; name: string; type: string; symbol: string }
+  unit: { id: string; code: string; name: string; type: string; symbol: string | null }
 }
 
 export interface ProductVariantWithDetails extends ProductProductVariant {
@@ -101,7 +101,7 @@ export class VariantService {
             include: { unit: true }
           }
         },
-        orderBy: [{ sortOrder: 'asc' }, { variant: { createdAt: 'asc' } }],
+        orderBy: [{ sortOrder: 'asc' }],
         take: 1
       })
 

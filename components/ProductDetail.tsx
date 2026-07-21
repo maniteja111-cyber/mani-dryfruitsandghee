@@ -46,9 +46,9 @@ interface Product {
     basePrice: number | null
     pricingTemplateId: string | null
     stockQuantity: number | null
-    masterUnit?: { id: string; code: string; name: string; type: string; symbol: string } | null
+    masterUnit?: { id: string; code: string; name: string; type: string; symbol: string | null } | null
   } | null
-  productVariants?: { variantId: string; variant?: { id: string; value: string; label: string; unit: { code: string; type: string; symbol: string } } }[]
+  productVariants?: { variantId: string; variant?: { id: string; value: string; label: string; unit: { code: string; type: string; symbol: string | null } } }[]
   variantPrices?: NormalizedVariant[]
   defaultVariant?: NormalizedVariant | null
   productType: string | null

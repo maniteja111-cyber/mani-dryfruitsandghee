@@ -5,6 +5,61 @@ import WhatsAppButton from '@/components/WhatsAppButton'
 import RewardsButton from '@/components/RewardsButton'
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
+import { PricingService, getSelectorLabel, getUnitSymbol } from '@/app/services/pricing.service'
+import { getNormalizedVariants, NormalizedVariant } from '@/app/services/variant.service'
+
+async function enrichProducts(products: any[]): Promise<any[]> {
+  return Promise.all(products.map(async (product) => {
+    const ext = await prisma.productExtension.findUnique({
+      where: { productId: product.id },
+      include: { masterUnit: true }
+    })
+    
+    const variants = await prisma.productProductVariant.findMany({
+      where: { productId: product.id, isActive: true },
+      select: { variantId: true }
+    })
+    
+    const productType = ext?.masterUnit?.type || 'weight'
+    const basePrice = ext?.basePrice ?? product.pricePerKg ?? 0
+    const templateId: string | null = ext?.pricingTemplateId ?? null
+    
+    const prices = (basePrice > 0 && variants.length > 0)
+      ? await PricingService.generateVariantPrices(
+          product.id,
+          basePrice,
+          templateId,
+          variants.map(v => v.variantId)
+        )
+      : []
+    
+    const normalizedVariants = getNormalizedVariants(prices)
+    
+    const hasStock = product.stockGrams > 0 || (ext?.stockQuantity ?? 0) > 0
+    const stockQuantity = ext?.stockQuantity ?? product.stockGrams ?? 0
+    const unitLabels: Record<string, { symbol: string; plural: string }> = {
+      weight: { symbol: '₹', plural: 'kg' },
+      quantity: { symbol: '₹', plural: 'pieces' },
+      pack: { symbol: '₹', plural: 'packs' },
+      volume: { symbol: '₹', plural: 'litres' }
+    }
+    const unitInfo = unitLabels[productType] || unitLabels.weight
+    const priceDisplay = `${unitInfo.symbol}${basePrice}/${unitInfo.plural}`
+    
+    return {
+      ...product,
+      extension: ext,
+      productVariants: variants,
+      variantPrices: normalizedVariants,
+      productType,
+      unitSymbol: getUnitSymbol(productType),
+      selectorLabel: getSelectorLabel(productType),
+      hasStock,
+      stockQuantity,
+      priceDisplay
+    }
+  }))
+}
 
 async function getData(slug: string) {
   try {
@@ -29,7 +84,9 @@ async function getData(slug: string) {
       return acc
     }, {} as Record<string, string>)
 
-    return { settings: settingsObj, category, categories, products }
+    const enrichedProducts = await enrichProducts(products)
+
+    return { settings: settingsObj, category, categories, products: enrichedProducts }
   } catch (error) {
     console.error('Error fetching category data:', error)
     return { settings: {}, category: null, categories: [], products: [] }

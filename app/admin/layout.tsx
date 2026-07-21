@@ -32,10 +32,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { href: '/admin', label: 'Dashboard' },
     { href: '/admin/products', label: 'Products' },
+    { href: '/admin/products/bulk-upload', label: 'Bulk Upload' },
     { href: '/admin/categories', label: 'Categories' },
     { href: '/admin/orders', label: 'Orders' },
     { href: '/admin/coupons', label: 'Coupons' },
     { href: '/admin/reviews', label: 'Reviews' },
+    { href: '/admin/users', label: 'Users' },
+    { href: '/admin/variants', label: 'Variants' },
+    { href: '/admin/units', label: 'Units' },
+    { href: '/admin/pricing-templates', label: 'Pricing Templates' },
+    { href: '/admin/gift-boxes', label: 'Gift Boxes' },
     { href: '/admin/settings', label: 'Settings' },
   ]
 

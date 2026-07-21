@@ -11,24 +11,69 @@ import RewardsButton from '@/components/RewardsButton'
 import Footer from '@/components/Footer'
 import { prisma } from '@/lib/prisma'
 import { generateOrganizationSchema, generateWebsiteSchema } from '@/lib/schema'
+import { PricingService, getSelectorLabel, getUnitSymbol } from '@/app/services/pricing.service'
+import { getNormalizedVariants, NormalizedVariant } from '@/app/services/variant.service'
 
-export const metadata = {
-  title: 'MANI DRY FRUITS, PICKLES AND GHEE STORES - Premium Quality Products',
-  description: 'Shop for premium dry fruits, authentic pickles, and pure ghee. Fast delivery across India. Buy almonds, cashews, dates, ghee online at best prices.',
-  keywords: 'dry fruits, ghee, pickle, buy online, premium quality, organic, manidryfruitsandghee, Mani Dry Fruits Stores',
-  alternates: {
-    canonical: 'https://manidryfruitsandghee.in'
-  },
-  openGraph: {
-    title: 'MANI DRY FRUITS, PICKLES AND GHEE STORES',
-    description: 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com',
-    type: 'website'
-  }
+interface Product {
+  id: string
+  name: string
+  slug: string
+  pricePerKg: number | null
+  stockGrams: number
+  images: any
+  category?: { name: string }
+  extension?: {
+    stockQuantity: number | null
+    basePrice?: number
+    masterUnit?: { type: string | null }
+  } | null
+  variantPrices?: NormalizedVariant[]
+  productType: string | null
+  unitSymbol: string
+}
+
+async function enrichProducts(products: any[]): Promise<Product[]> {
+  return Promise.all(products.map(async (product) => {
+    const ext = await prisma.productExtension.findUnique({
+      where: { productId: product.id },
+      include: { masterUnit: true }
+    })
+    
+    const variants = await prisma.productProductVariant.findMany({
+      where: { productId: product.id, isActive: true },
+      select: { variantId: true }
+    })
+    
+    const productType = ext?.masterUnit?.type || 'weight'
+    const basePrice = ext?.basePrice ?? product.pricePerKg ?? 0
+    const templateId: string | null = ext?.pricingTemplateId ?? null
+    
+    const prices = (basePrice > 0 && variants.length > 0)
+      ? await PricingService.generateVariantPrices(
+          product.id,
+          basePrice,
+          templateId,
+          variants.map(v => v.variantId)
+        )
+      : []
+    
+    const normalizedVariants = getNormalizedVariants(prices)
+    
+return {
+      ...product,
+      extension: ext,
+      productVariants: variants,
+      variantPrices: normalizedVariants,
+      productType,
+      unitSymbol: getUnitSymbol(productType),
+      selectorLabel: getSelectorLabel(productType)
+    }
+  }))
 }
 
 async function getHomeData() {
   try {
-    const [settingsData, categories, featuredProducts, todaysOffers, topReviews] = await Promise.all([
+    const [settingsData, categories, featuredProductsRaw, todaysOffersRaw, topReviews] = await Promise.all([
       prisma.setting.findMany(),
       prisma.category.findMany({ orderBy: { createdAt: 'desc' } }),
       prisma.product.findMany({ where: { isFeatured: true }, include: { category: true }, orderBy: { createdAt: 'desc' } }),
@@ -45,6 +90,9 @@ async function getHomeData() {
       acc[setting.key] = setting.value
       return acc
     }, {} as Record<string, string>)
+
+    const featuredProducts = await enrichProducts(featuredProductsRaw)
+    const todaysOffers = await enrichProducts(todaysOffersRaw)
 
     return { settings: settingsObj, categories, featuredProducts, todaysOffers, topReviews }
   } catch (error) {

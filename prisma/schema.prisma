@@ -104,35 +104,38 @@ model Order {
 }
 
 model Product {
-  id                  String      @id @default(cuid())
-  name                String
-  slug                String      @unique
-  description         String?
-  images              String      @db.LongText
-  categoryId          String
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
-  isFeatured          Boolean     @default(false)
-  isTodayOffer        Boolean     @default(false)
-  isVisible           Boolean     @default(true)
-  faqs                String?     @db.LongText
-  ingredients         String?
-  productOverview     String?
-  seoKeywords         String?
-  shippingInfo        String?
-  storageInstructions String?
-  whyChoose           String?
-  benefits            String?
-  nutritionalInfo     String?
-  origin              String?
-  shelfLife           String?
-  shortDescription    String?
-  pricePerKg          Float?
-  stockGrams          Int         @default(0)
-  orderItems          OrderItem[]
-  category            Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  reviews             Review[]
-  wishlists           Wishlist[]
+  id                      String                   @id @default(cuid())
+  name                    String
+  slug                    String                   @unique
+  description             String?
+  images                  String                   @db.LongText
+  categoryId              String
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  isFeatured              Boolean                  @default(false)
+  isTodayOffer            Boolean                  @default(false)
+  isVisible               Boolean                  @default(true)
+  faqs                    String?                  @db.LongText
+  ingredients             String?
+  productOverview         String?
+  seoKeywords             String?
+  shippingInfo            String?
+  storageInstructions     String?
+  whyChoose               String?
+  benefits                String?
+  nutritionalInfo         String?
+  origin                  String?
+  shelfLife               String?
+  shortDescription        String?
+  pricePerKg              Float?
+  stockGrams              Int                      @default(0)
+  orderItems              OrderItem[]
+  category                Category                 @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  reviews                 Review[]
+  wishlists               Wishlist[]
+  extension               ProductExtension?
+  productVariants         ProductProductVariant[]
+  giftBoxEligibleProducts GiftBoxEligibleProduct[]
 
   @@index([categoryId], map: "products_categoryId_fkey")
   @@map("products")
@@ -225,4 +228,220 @@ model Wishlist {
   @@unique([userId, productId])
   @@index([productId], map: "wishlists_productId_fkey")
   @@map("wishlists")
+}
+
+model MasterUnit {
+  id         String             @id @default(cuid())
+  code       String             @unique
+  name       String
+  type       String
+  symbol     String?
+  sortOrder  Int                @default(0)
+  isActive   Boolean            @default(true)
+  variants   MasterVariant[]
+  extensions ProductExtension[]
+
+  @@map("master_units")
+}
+
+model MasterVariant {
+  id           String                  @id @default(cuid())
+  unitId       String
+  value        String
+  label        String
+  sortOrder    Int                     @default(0)
+  isActive     Boolean                 @default(true)
+  unit         MasterUnit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  products     ProductProductVariant[]
+  pricingRules PricingRule[]
+
+  @@unique([unitId, value])
+  @@map("master_variants")
+}
+
+model PricingTemplate {
+  id           String             @id @default(cuid())
+  name         String
+  slug         String             @unique
+  description  String?
+  isActive     Boolean            @default(true)
+  sortOrder    Int                @default(0)
+  isDefault    Boolean            @default(false)
+  rules        String?            @db.LongText
+  extensions   ProductExtension[]
+  pricingRules PricingRule[]
+
+  @@map("pricing_templates")
+}
+
+model PricingRule {
+  id         String          @id @default(cuid())
+  templateId String
+  variantId  String
+  percentage Float
+  sortOrder  Int             @default(0)
+  template   PricingTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  variant    MasterVariant   @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, variantId])
+  @@map("pricing_rules")
+}
+
+model ProductExtension {
+  id                String           @id @default(cuid())
+  productId         String           @unique
+  unitTypeId        String?
+  basePrice         Float?
+  pricingTemplateId String?
+  stockQuantity     Int              @default(0)
+  product           Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  masterUnit        MasterUnit?      @relation(fields: [unitTypeId], references: [id])
+  pricingTemplate   PricingTemplate? @relation(fields: [pricingTemplateId], references: [id])
+
+  @@map("product_extensions")
+}
+
+model ProductProductVariant {
+  id        String        @id @default(cuid())
+  productId String
+  variantId String
+  sortOrder Int           @default(0)
+  isActive  Boolean       @default(true)
+  product   Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant   MasterVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, variantId])
+  @@map("product_product_variants")
+}
+
+model GiftBox {
+  id                   String                      @id @default(cuid())
+  name                 String
+  slug                 String                      @unique
+  description          String?
+  heroImage            String?
+  thumbnail            String?
+  gallery              String?
+  seoTitle             String?
+  seoDescription       String?
+  seoKeywords          String?
+  metaImage            String?
+  ogTitle              String?
+  ogDescription        String?
+  ogImage              String?
+  fixedPrice           Float
+  originalPrice        Float?
+  discount             Int                         @default(0)
+  offerPrice           Float?
+  gstRate              Float                       @default(18)
+  packagingCharge      Float                       @default(0)
+  deliveryCharge       Float                       @default(0)
+  isActive             Boolean                     @default(true)
+  isFeatured           Boolean                     @default(false)
+  isTodayOffer         Boolean                     @default(false)
+  sortOrder            Int                         @default(0)
+  startDate            DateTime?
+  endDate              DateTime?
+  maxOrdersPerCustomer Int                         @default(0)
+  minQuantity          Int                         @default(1)
+  maxQuantity          Int?
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @updatedAt
+  eligibleProducts     GiftBoxEligibleProduct[]
+  rules                GiftBoxRule[]
+  orders               GiftBoxOrder[]
+  savedConfigurations  GiftBoxSavedConfiguration[]
+  analytics            GiftBoxAnalytics[]
+
+  @@map("gift_boxes")
+}
+
+model GiftBoxEligibleProduct {
+  id           String  @id @default(cuid())
+  giftBoxId    String
+  productId    String
+  sortOrder    Int     @default(0)
+  price        Float?
+  pricePerUnit String?
+  giftBox      GiftBox @relation(fields: [giftBoxId], references: [id], onDelete: Cascade)
+  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([giftBoxId, productId])
+  @@map("gift_box_eligible_products")
+}
+
+model GiftBoxRule {
+  id          String  @id @default(cuid())
+  giftBoxId   String
+  ruleType    String
+  ruleValue   String  @db.LongText
+  description String?
+  giftBox     GiftBox @relation(fields: [giftBoxId], references: [id], onDelete: Cascade)
+
+  @@map("gift_box_rules")
+}
+
+model GiftBoxOrder {
+  id              String   @id @default(cuid())
+  giftBoxId       String
+  userId          String?
+  userName        String
+  userPhone       String
+  userEmail       String?
+  items           String   @db.LongText
+  totalWeight     Float
+  totalPrice      Float
+  discount        Float    @default(0)
+  GST             Float
+  packagingCharge Float    @default(0)
+  deliveryCharge  Float    @default(0)
+  finalTotal      Float
+  address         String?
+  city            String?
+  state           String?
+  pincode         String?
+  notes           String?
+  giftWrap        Boolean  @default(false)
+  ribbonColor     String?
+  greetingCard    Boolean  @default(false)
+  giftMessage     String?
+  theme           String?
+  paymentMethod   String   @default("cod")
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  giftBox         GiftBox  @relation(fields: [giftBoxId], references: [id], onDelete: Cascade)
+
+  @@map("gift_box_orders")
+}
+
+model GiftBoxSavedConfiguration {
+  id          String   @id @default(cuid())
+  giftBoxId   String
+  userId      String?
+  guestId     String?
+  name        String
+  items       String   @db.LongText
+  totalWeight Float
+  totalPrice  Float
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  giftBox     GiftBox  @relation(fields: [giftBoxId], references: [id], onDelete: Cascade)
+
+  @@map("gift_box_saved_configurations")
+}
+
+model GiftBoxAnalytics {
+  id              String   @id @default(cuid())
+  giftBoxId       String
+  date            DateTime @default(now())
+  ordersCount     Int      @default(0)
+  totalRevenue    Float    @default(0)
+  avgOrderValue   Float    @default(0)
+  popularProducts String   @db.LongText
+  createdAt       DateTime @default(now())
+  giftBox         GiftBox  @relation(fields: [giftBoxId], references: [id], onDelete: Cascade)
+
+  @@map("gift_box_analytics")
 }

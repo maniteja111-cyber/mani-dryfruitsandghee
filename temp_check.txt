@@ -1,0 +1,891 @@
+﻿'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+interface Product {
+   id: string
+   name: string
+   slug: string
+   pricePerKg: number | null
+   stockGrams: number
+   images: string | string[]
+   categoryId: string
+   category?: { name: string }
+   isFeatured: boolean
+   isTodayOffer: boolean
+   isVisible: boolean
+   description?: string
+   shortDescription?: string
+   productOverview?: string
+   whyChoose?: string
+   ingredients?: string
+   nutritionalInfo?: string
+   storageInstructions?: string
+   shelfLife?: string
+   origin?: string
+   benefits?: string
+   shippingInfo?: string
+   faqs?: {question: string, answer: string}[]
+   seoKeywords?: string
+   extension?: {
+     unitTypeId: string | null
+     basePrice: number | null
+     pricingTemplateId: string | null
+     stockQuantity: number | null
+     masterUnit?: { id: string; code: string; name: string; type: string } | null
+     pricingTemplate?: { id: string; name: string; slug: string } | null
+   } | null
+   productVariants?: { variantId: string }[]
+ }
+
+interface Category {
+  id: string
+  name: string
+  slug: string
+}
+
+interface MasterUnit {
+  id: string
+  code: string
+  name: string
+  type: string
+  symbol: string
+}
+
+interface PricingTemplate {
+  id: string
+  name: string
+  slug: string
+}
+
+interface MasterVariant {
+  id: string
+  unitId: string
+  value: string
+  label: string
+  sortOrder: number
+  isActive: boolean
+  unit: MasterUnit
+}
+
+export default function AdminProductsPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [units, setUnits] = useState<MasterUnit[]>([])
+  const [pricingTemplates, setPricingTemplates] = useState<PricingTemplate[]>([])
+  const [allVariants, setAllVariants] = useState<MasterVariant[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    shortDescription: '',
+    pricePerKg: '',
+    stockKg: '',
+    images: [] as string[],
+    categoryId: '',
+    isFeatured: false,
+    isTodayOffer: false,
+    isVisible: true,
+    productOverview: '',
+    whyChoose: '',
+    ingredients: '',
+    nutritionalInfo: '',
+    storageInstructions: '',
+    shelfLife: '',
+    origin: '',
+    benefits: '',
+    shippingInfo: '',
+    faqs: [] as {question: string, answer: string}[],
+    seoKeywords: '',
+    unitTypeId: '',
+    basePrice: '',
+    pricingTemplateId: '',
+    stockQuantity: '',
+    variantIds: [] as string[]
+  })
+
+const fetchData = async () => {
+     try {
+       const [productsRes, categoriesRes, unitsRes, templatesRes, variantsRes] = await Promise.all([
+         fetch('/api/admin/products'),
+         fetch('/api/admin/categories'),
+         fetch('/api/admin/units'),
+         fetch('/api/admin/pricing-templates'),
+         fetch('/api/admin/variants?activeOnly=true')
+       ])
+       if (productsRes.ok) setProducts(await productsRes.json())
+       if (categoriesRes.ok) setCategories(await categoriesRes.json())
+       if (unitsRes.ok) {
+         const units = await unitsRes.json()
+         setUnits(units)
+         console.log("Units:", units)
+       }
+       if (templatesRes.ok) setPricingTemplates(await templatesRes.json())
+       if (variantsRes.ok) {
+         const variants = await variantsRes.json()
+         setAllVariants(variants)
+         console.log("All Variants:", variants)
+       }
+     } catch (error) {
+       console.error('Error fetching data:', error)
+     }
+   }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const data = {
+        ...formData,
+        pricePerKg: formData.pricePerKg ? parseFloat(formData.pricePerKg) : null,
+        stockGrams: formData.stockKg ? parseFloat(formData.stockKg) * 1000 : 0,
+        images: Array.isArray(formData.images) ? formData.images.filter(Boolean) : [],
+        categoryId: formData.categoryId,
+        isFeatured: formData.isFeatured,
+        isTodayOffer: formData.isTodayOffer,
+        isVisible: formData.isVisible !== false,
+        productOverview: formData.productOverview,
+        whyChoose: formData.whyChoose,
+        ingredients: formData.ingredients,
+        nutritionalInfo: formData.nutritionalInfo,
+        storageInstructions: formData.storageInstructions,
+        shelfLife: formData.shelfLife,
+        origin: formData.origin,
+        benefits: formData.benefits,
+        shippingInfo: formData.shippingInfo,
+        faqs: formData.faqs,
+        seoKeywords: formData.seoKeywords,
+        unitTypeId: formData.unitTypeId || null,
+        basePrice: formData.basePrice ? parseFloat(formData.basePrice) : null,
+        pricingTemplateId: formData.pricingTemplateId || null,
+        stockQuantity: formData.stockQuantity ? parseFloat(formData.stockQuantity) : 0,
+        variantIds: formData.variantIds
+      }
+
+      const url = editingProduct ? `/api/admin/products/${editingProduct.id}` : '/api/admin/products'
+      const method = editingProduct ? 'PUT' : 'POST'
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+
+      if (res.ok) {
+        fetchData()
+        setShowForm(false)
+        setEditingProduct(null)
+        resetForm()
+      } else {
+        const err = await res.json().catch(() => ({}))
+        alert('Failed to save: ' + (err.error || 'Unknown error'))
+      }
+    } catch (error) {
+      console.error('Error saving product:', error)
+      alert('Something went wrong while saving the product.')
+    }
+  }
+
+const handleEdit = (product: any) => {
+     setEditingProduct(product)
+
+     let loadedImages: string[] = []
+     try {
+       if (Array.isArray(product.images)) {
+         loadedImages = product.images
+       } else if (typeof product.images === 'string') {
+         loadedImages = JSON.parse(product.images)
+       }
+     } catch {
+       loadedImages = product.images ? [product.images] : []
+     }
+     while (loadedImages.length < 3) loadedImages.push('')
+
+     const extension = product.extension || {}
+     const assignedVariantIds = product.productVariants?.map((pv: any) => pv.variantId) || []
+
+     setFormData({
+       name: product.name,
+       slug: product.slug,
+       description: product.description || '',
+       shortDescription: product.shortDescription || '',
+       pricePerKg: product.pricePerKg?.toString() || '',
+       stockKg: (product.stockGrams / 1000).toFixed(2),
+       images: loadedImages,
+       categoryId: product.categoryId,
+       isFeatured: product.isFeatured || false,
+       isTodayOffer: product.isTodayOffer || false,
+       isVisible: product.isVisible !== false,
+       productOverview: product.productOverview || '',
+       whyChoose: product.whyChoose || '',
+       ingredients: product.ingredients || '',
+       nutritionalInfo: product.nutritionalInfo || '',
+       storageInstructions: product.storageInstructions || '',
+       shelfLife: product.shelfLife || '',
+       origin: product.origin || '',
+       benefits: product.benefits || '',
+       shippingInfo: product.shippingInfo || '',
+       faqs: Array.isArray(product.faqs)
+         ? product.faqs
+         : (product.faqs && typeof product.faqs === 'string' ? JSON.parse(product.faqs) : []),
+       seoKeywords: product.seoKeywords || '',
+       unitTypeId: extension.unitTypeId || '',
+       basePrice: extension.basePrice?.toString() || '',
+       pricingTemplateId: extension.pricingTemplateId || '',
+       stockQuantity: extension.stockQuantity?.toString() || '',
+       variantIds: assignedVariantIds
+     })
+
+     setShowForm(true)
+   }
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this product?')) {
+      try {
+        const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
+        if (res.ok) {
+          fetchData()
+        }
+      } catch (error) {
+        console.error('Error deleting product:', error)
+      }
+    }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const formDataUpload = new FormData()
+    formDataUpload.append('image', file)
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formDataUpload
+      })
+
+      if (res.ok) {
+        const { imageUrl } = await res.json()
+        setFormData(prev => {
+          const newImages = [...prev.images]
+          newImages[index] = imageUrl
+          return { ...prev, images: newImages }
+        })
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+    }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      slug: '',
+      description: '',
+      shortDescription: '',
+      pricePerKg: '',
+      stockKg: '',
+      images: [],
+      categoryId: '',
+      isFeatured: false,
+      isTodayOffer: false,
+      isVisible: true,
+      productOverview: '',
+      whyChoose: '',
+      ingredients: '',
+      nutritionalInfo: '',
+      storageInstructions: '',
+      shelfLife: '',
+      origin: '',
+      benefits: '',
+      shippingInfo: '',
+      faqs: [],
+      seoKeywords: '',
+      unitTypeId: '',
+      basePrice: '',
+      pricingTemplateId: '',
+      stockQuantity: '',
+      variantIds: []
+    })
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Manage Products</h1>
+        <button
+          onClick={() => {
+            if (showForm) {
+              setShowForm(false)
+              setEditingProduct(null)
+              resetForm()
+            } else {
+              setShowForm(true)
+            }
+          }}
+          className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2"
+        >
+          {showForm ? 'Close Form' : '+ Add New Product'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="bg-white p-6 rounded-2xl shadow mb-8 border">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {editingProduct ? 'Edit Product' : 'Add New Product'}
+            </h2>
+            <button
+              type="button"
+              onClick={() => { setShowForm(false); setEditingProduct(null); resetForm() }}
+              className="text-gray-500 hover:text-gray-700 text-xl"
+            >
+              X
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Basic Info */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                Product Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Premium Almonds"
+                    value={formData.name}
+                    onChange={(e) => {
+                      const name = e.target.value
+                      const autoSlug = name
+                        .toLowerCase()
+                        .trim()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/(^-|-$)/g, '')
+                      setFormData(prev => ({
+                        ...prev,
+                        name,
+                        slug: autoSlug || prev.slug
+                      }))
+                    }}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-lg"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">URL Slug (auto-generated)</label>
+                  <input
+                    type="text"
+                    value={formData.slug}
+                    readOnly
+                    className="w-full border border-gray-300 bg-gray-100 rounded-lg px-4 py-3 text-gray-600"
+                  />
+                  <p className="text-xs text-green-600 mt-1">Automatically cleaned from the product name.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                  <select
+                    value={formData.categoryId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    required
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map(category => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Short Description</label>
+                  <input
+                    type="text"
+                    placeholder="Brief description"
+                    value={formData.shortDescription}
+                    onChange={(e) => setFormData(prev => ({ ...prev, shortDescription: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    placeholder="Full product description..."
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    rows={4}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Base Price & Stock */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                Base Price & Stock
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Base Price Per KG (Rs) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="800"
+                    value={formData.pricePerKg}
+                    onChange={(e) => setFormData(prev => ({ ...prev, pricePerKg: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Auto-calculated: 125g ~19%, 250g ~31%, 500g ~56%, 1kg 100%</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Total Stock (kg) *</label>
+                  <input
+                    type="number"
+                    placeholder="10"
+                    value={formData.stockKg}
+                    onChange={(e) => setFormData(prev => ({ ...prev, stockKg: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Converted to grams internally</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Unit & Pricing Configuration */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                Unit & Pricing Configuration
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit Type</label>
+                  <select
+                    value={formData.unitTypeId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, unitTypeId: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                  >
+                    <option value="">None (legacy weight only)</option>
+                    {units.map(unit => (
+                      <option key={unit.id} value={unit.id}>{unit.name} ({unit.symbol})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Base Price (Rs)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="800"
+                    value={formData.basePrice}
+                    onChange={(e) => setFormData(prev => ({ ...prev, basePrice: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Used for variant pricing calculations</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Pricing Template</label>
+                  <select
+                    value={formData.pricingTemplateId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, pricingTemplateId: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                  >
+                    <option value="">None</option>
+                    {pricingTemplates.map(template => (
+                      <option key={template.id} value={template.id}>{template.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Extension Stock Quantity</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0"
+                    value={formData.stockQuantity}
+                    onChange={(e) => setFormData(prev => ({ ...prev, stockQuantity: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">For piece/quantity tracking</p>
+                </div>
+              </div>
+
+{/* Variant Selection */}
+                 <div className="mt-4">
+                   <label className="block text-sm font-medium text-gray-700 mb-2">Allowed Variants</label>
+                   {(() => {
+                     const selectedUnitId = formData.unitTypeId
+                     console.log("Selected Unit:", selectedUnitId)
+                     console.log("All Variants:", allVariants)
+                     console.log("Filtered Variants:", filteredVariants)
+
+                     if (filteredVariants.length === 0) {
+                       console.log("No variants matched selected unit")
+                       if (selectedUnitId) {
+                         console.log("Looking for unit.id =", selectedUnitId)
+                         allVariants.forEach((v, i) => {
+                           console.log(`Variant ${i}: id=${v.id}, unit.id=${v.unit?.id}, unitCode=${v.unit?.code}")
+                         })
+                       }
+                       return <p className="text-xs text-gray-500">Select a unit type to see available variants</p>
+                     }
+
+                  const grouped = filteredVariants.reduce((acc, variant) => {
+                    const unitKey = variant.unit.code
+                    if (!acc[unitKey]) acc[unitKey] = []
+                    acc[unitKey].push(variant)
+                    return acc
+                  }, {} as Record<string, MasterVariant[]>)
+
+                  return (
+                    <div className="space-y-3">
+                      {Object.entries(grouped).map(([unitCode, variants]) => (
+                        <div key={unitCode} className="border border-gray-200 rounded-lg p-3">
+                          <p className="text-sm font-medium text-gray-700 mb-2">{unitCode}</p>
+                          <div className="flex flex-wrap gap-3">
+                            {variants.map(variant => (
+                              <label key={variant.id} className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.variantIds.includes(variant.id)}
+                                  onChange={(e) => {
+                                    const newIds = e.target.checked
+                                      ? [...formData.variantIds, variant.id]
+                                      : formData.variantIds.filter(id => id !== variant.id)
+                                    setFormData(prev => ({ ...prev, variantIds: newIds }))
+                                  }}
+                                  className="rounded"
+                                />
+                                <span className="text-sm">{variant.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+              </div>
+            </div>
+
+            {/* Images */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Product Photos (up to 3)</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[0, 1, 2].map((index) => (
+                  <div key={index} className="border-2 border-dashed border-gray-300 rounded-2xl p-4 text-center">
+                    <label className="block text-sm font-medium mb-2 text-gray-600">Photo {index + 1}</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, index)}
+                      className="block w-full text-sm mb-3"
+                    />
+                    {formData.images[index] && (
+                      <img
+                        src={formData.images[index]}
+                        alt={`Preview ${index + 1}`}
+                        className="mx-auto h-24 w-24 object-cover rounded-xl border"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">First photo is used as the main image on the website.</p>
+            </div>
+
+            {/* SEO Content Sections */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">SEO Content</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Overview</label>
+                  <textarea
+                    placeholder="Brief overview of the product..."
+                    value={formData.productOverview}
+                    onChange={(e) => setFormData(prev => ({ ...prev, productOverview: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Why Choose This Product</label>
+                  <textarea
+                    placeholder="Key reasons to choose this product..."
+                    value={formData.whyChoose}
+                    onChange={(e) => setFormData(prev => ({ ...prev, whyChoose: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ingredients</label>
+                  <textarea
+                    placeholder="List of ingredients..."
+                    value={formData.ingredients}
+                    onChange={(e) => setFormData(prev => ({ ...prev, ingredients: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nutritional Information</label>
+                  <textarea
+                    placeholder="Nutritional details..."
+                    value={formData.nutritionalInfo}
+                    onChange={(e) => setFormData(prev => ({ ...prev, nutritionalInfo: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Shelf Life</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 12 months"
+                    value={formData.shelfLife}
+                    onChange={(e) => setFormData(prev => ({ ...prev, shelfLife: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Origin</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Andhra Pradesh, India"
+                    value={formData.origin}
+                    onChange={(e) => setFormData(prev => ({ ...prev, origin: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Benefits</label>
+                  <textarea
+                    placeholder="Health and taste benefits..."
+                    value={formData.benefits}
+                    onChange={(e) => setFormData(prev => ({ ...prev, benefits: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Storage Instructions</label>
+                  <textarea
+                    placeholder="How to store the product..."
+                    value={formData.storageInstructions}
+                    onChange={(e) => setFormData(prev => ({ ...prev, storageInstructions: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Info</label>
+                  <textarea
+                    placeholder="Shipping details..."
+                    value={formData.shippingInfo}
+                    onChange={(e) => setFormData(prev => ({ ...prev, shippingInfo: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                    rows={2}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* FAQ Section */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">FAQ</h3>
+              <div className="space-y-3">
+                {formData.faqs.map((faq, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Question"
+                      value={faq.question}
+                      onChange={(e) => {
+                        const newFaqs = [...formData.faqs]
+                        newFaqs[idx].question = e.target.value
+                        setFormData(prev => ({ ...prev, faqs: newFaqs }))
+                      }}
+                      className="border border-gray-300 rounded-lg px-3 py-2"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Answer"
+                      value={faq.answer}
+                      onChange={(e) => {
+                        const newFaqs = [...formData.faqs]
+                        newFaqs[idx].answer = e.target.value
+                        setFormData(prev => ({ ...prev, faqs: newFaqs }))
+                      }}
+                      className="border border-gray-300 rounded-lg px-3 py-2"
+                    />
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, faqs: [...prev.faqs, {question: '', answer: ''}] }))}
+                className="mt-2 text-sm text-yellow-600 hover:text-yellow-700"
+              >
+                + Add FAQ
+              </button>
+            </div>
+
+            {/* SEO Keywords */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">SEO Keywords</label>
+              <input
+                type="text"
+                placeholder="comma, separated, keywords"
+                value={formData.seoKeywords}
+                onChange={(e) => setFormData(prev => ({ ...prev, seoKeywords: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3"
+              />
+              <p className="text-xs text-gray-500 mt-1">Enter keywords separated by commas</p>
+            </div>
+
+            {/* Display Options */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <h3 className="text-lg font-semibold text-gray-800">Display Options</h3>
+              <div className="flex gap-6">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.isFeatured}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isFeatured: e.target.checked }))}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">Featured Product</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.isTodayOffer}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isTodayOffer: e.target.checked }))}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">Today's Offer</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.isVisible}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isVisible: e.target.checked }))}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">Visible on Site</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Submit */}
+            <div className="flex gap-3 pt-4 border-t">
+              <button
+                type="submit"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold text-lg"
+              >
+                {editingProduct ? 'Save Changes' : 'Add This Product to Store'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowForm(false); setEditingProduct(null); resetForm() }}
+                className="px-8 py-3 border rounded-xl font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Product
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Price
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Stock
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Category
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {products.map((product) => (
+              <tr key={product.id}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                    <div className="text-sm text-gray-500">{product.slug}</div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  Rs.{product.pricePerKg || '-'}/kg
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {(product.stockGrams / 1000).toFixed(2)} kg
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <div className="flex flex-col gap-1">
+                    <span className={`inline-block px-2 py-0.5 text-xs rounded-full ${product.isVisible ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                      {product.isVisible ? 'Visible' : 'Hidden'}
+                    </span>
+                    {product.isFeatured && <span className="text-xs text-yellow-600 font-medium">Featured</span>}
+                    {product.isTodayOffer && <span className="text-xs text-red-600 font-medium">Offer</span>}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {product.category?.name || '-'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button
+                    onClick={() => handleEdit(product)}
+                    className="text-indigo-600 hover:text-indigo-900 mr-4"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(product.id)}
+                    className="text-red-600 hover:text-red-900"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
