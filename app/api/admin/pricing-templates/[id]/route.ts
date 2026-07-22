@@ -5,7 +5,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
   try {
     const { id } = await context.params
     const body = await req.json()
-    const { name, slug, description, isActive, sortOrder, isDefault } = body
+    const { name, slug, description, isActive, sortOrder, isDefault, rules } = body
 
     if (!id) {
       return NextResponse.json({ error: 'Template ID is required' }, { status: 400 })
@@ -19,7 +19,15 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
         description: description !== undefined ? description?.trim() || null : undefined,
         isActive: isActive !== undefined ? isActive : undefined,
         sortOrder: sortOrder !== undefined ? sortOrder : undefined,
-        isDefault: isDefault !== undefined ? isDefault : undefined
+        isDefault: isDefault !== undefined ? isDefault : undefined,
+        pricingRules: rules && Array.isArray(rules) ? {
+          deleteMany: {},
+          create: rules.map((r: any) => ({
+            variantId: r.variantId,
+            percentage: typeof r.percentage === 'number' ? r.percentage : 100,
+            sortOrder: typeof r.sortOrder === 'number' ? r.sortOrder : 0
+          }))
+        } : undefined
       }
     })
 

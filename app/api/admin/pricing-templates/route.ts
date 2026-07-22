@@ -4,10 +4,16 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
    try {
      const templates = await prisma.pricingTemplate.findMany({
-       orderBy: { sortOrder: 'asc' }
+       orderBy: { sortOrder: 'asc' },
+       include: { pricingRules: true }
      })
 
-     return NextResponse.json(templates)
+     const normalized = templates.map(t => ({
+       ...t,
+       rules: t.pricingRules ?? []
+     }))
+
+     return NextResponse.json(normalized)
    } catch (error) {
      console.error('Get pricing templates error:', error)
      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
