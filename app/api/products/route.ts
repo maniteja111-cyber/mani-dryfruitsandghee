@@ -112,13 +112,20 @@ export async function GET(req: NextRequest) {
       const variantPrices = (p.productVariants || [])
         .map((pv: any) => pv.variant)
         .filter(Boolean)
-        .map((v: any) => ({
-          variantId: v.id,
-          label: v.label,
-          price: Math.round(basePrice),
-          unitType: v.unit?.type || 'weight',
-          sizeValue: v.value
-        }))
+        .map((v: any) => {
+          const sizeValue = String(v.value || '')
+          const parsed = parseInt(sizeValue) || 0
+          const grams = v.unit?.type === 'weight' && parsed === 1 ? 1000 : parsed
+          return {
+            id: v.id,
+            label: v.label || v.value || '',
+            size: v.label || v.value || '',
+            price: Math.round(basePrice),
+            unitType: v.unit?.type || 'weight',
+            grams,
+            sizeValue
+          }
+        })
 
       const stockQuantity =
         productType === 'weight'
