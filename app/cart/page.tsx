@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import Link from 'next/link'
 import { useCart } from '@/app/contexts/CartContext'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
