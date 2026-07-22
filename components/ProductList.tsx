@@ -202,7 +202,7 @@ export function ProductList({ initialProducts, categories, searchParams, setting
               onChange={(e) => updateFilters({ category: e.target.value })}
               className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
-              <option value="">All Categories</option>
+              <option key="all-categories" value="">All Categories</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -221,12 +221,12 @@ export function ProductList({ initialProducts, categories, searchParams, setting
               }}
               className="w-full border border-gray-300 rounded-md px-3 py-2"
             >
-              <option value="createdAt-desc">Newest First</option>
-              <option value="createdAt-asc">Oldest First</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="name-asc">Name: A to Z</option>
-              <option value="name-desc">Name: Z to A</option>
+              <option key="newest" value="createdAt-desc">Newest First</option>
+              <option key="oldest" value="createdAt-asc">Oldest First</option>
+              <option key="price-low" value="price-asc">Price: Low to High</option>
+              <option key="price-high" value="price-desc">Price: High to Low</option>
+              <option key="name-a" value="name-asc">Name: A to Z</option>
+              <option key="name-z" value="name-desc">Name: Z to A</option>
             </select>
           </div>
 

@@ -650,11 +650,11 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                         onChange={(e) => setReviewForm(prev => ({ ...prev, rating: parseInt(e.target.value) }))}
                         className="border border-gray-300 rounded-lg px-3 py-2"
                       >
-                        <option value={5}>⭐⭐⭐⭐⭐ Excellent</option>
-                        <option value={4}>⭐⭐⭐⭐ Very Good</option>
-                        <option value={3}>⭐⭐⭐ Good</option>
-                        <option value={2}>⭐⭐ Fair</option>
-                        <option value={1}>⭐ Poor</option>
+                        <option key="5" value={5}>⭐⭐⭐⭐⭐ Excellent</option>
+                        <option key="4" value={4}>⭐⭐⭐⭐ Very Good</option>
+                        <option key="3" value={3}>⭐⭐⭐ Good</option>
+                        <option key="2" value={2}>⭐⭐ Fair</option>
+                        <option key="1" value={1}>⭐ Poor</option>
                       </select>
                     </div>
                     <textarea

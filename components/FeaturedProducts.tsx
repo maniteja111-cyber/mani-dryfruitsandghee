@@ -186,7 +186,7 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
                         </option>
                       ))}
                       {availableVariants.length === 0 && (
-                        <option value="">Out of Stock</option>
+                        <option key="out-of-stock" value="">Out of Stock</option>
                       )}
                     </select>
                   ) : (

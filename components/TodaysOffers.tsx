@@ -134,7 +134,7 @@ export default function TodaysOffers({ products }: TodaysOffersProps) {
                         </option>
                       ))}
                       {availableVariants.length === 0 && (
-                        <option value="">Out of Stock</option>
+                        <option key="out-of-stock" value="">Out of Stock</option>
                       )}
                     </select>
                   ) : (

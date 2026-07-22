@@ -266,9 +266,9 @@ export default function CartPage() {
                         onChange={(e) => handleRedeemPoints(parseInt(e.target.value))}
                         className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                       >
-                        <option value={0}>Redeem Points: No discount</option>
-                        {loyaltyPoints >= 50 && <option value={50}>Redeem Points: 50 pts = ₹25 off</option>}
-                        {loyaltyPoints >= 100 && <option value={100}>Redeem Points: 100 pts = ₹50 off</option>}
+                        <option key="no-discount" value={0}>Redeem Points: No discount</option>
+                        {loyaltyPoints >= 50 && <option key="50-points" value={50}>Redeem Points: 50 pts = ₹25 off</option>}
+                        {loyaltyPoints >= 100 && <option key="100-points" value={100}>Redeem Points: 100 pts = ₹50 off</option>}
                       </select>
                     </div>
                   )}

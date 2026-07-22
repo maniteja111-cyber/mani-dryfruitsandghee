@@ -304,9 +304,9 @@ export default function CheckoutPage() {
                     onChange={(e) => setRedeemedPoints(parseInt(e.target.value))}
                     className="w-full px-2 py-1 border rounded text-sm"
                   >
-                    <option value={0}>0 pts (No discount)</option>
-                    {loyaltyPoints >= 50 && <option value={50}>50 pts = ₹25 off</option>}
-                    {loyaltyPoints >= 100 && <option value={100}>100 pts = ₹50 off</option>}
+                    <option key="no-discount" value={0}>0 pts (No discount)</option>
+                    {loyaltyPoints >= 50 && <option key="50-pts" value={50}>50 pts = ₹25 off</option>}
+                    {loyaltyPoints >= 100 && <option key="100-pts" value={100}>100 pts = ₹50 off</option>}
                   </select>
                   <p className="text-xs text-green-600 mt-1">Discount: ₹{redeemedPoints === 100 ? 50 : redeemedPoints === 50 ? 25 : 0}</p>
                 </div>
