@@ -19,7 +19,7 @@ async function enrichProducts(products: any[]): Promise<any[]> {
       select: { variantId: true }
     })
     
-    const prices = ext?.basePrice && variants.length > 0
+    const prices = (ext?.basePrice !== undefined && ext?.basePrice !== null && variants.length > 0)
       ? await PricingService.generateVariantPrices(
           product.id,
           ext.basePrice,
@@ -66,7 +66,7 @@ async function getData(searchParams: { [key: string]: string | string[] | undefi
       where.categoryId = searchParams.category as string
     }
     if (searchParams.search) {
-      where.name = { contains: searchParams.search as string, mode: 'insensitive' }
+      where.name = { contains: searchParams.search as string }
     }
 
     const sort = (searchParams.sort as string) || 'createdAt'
