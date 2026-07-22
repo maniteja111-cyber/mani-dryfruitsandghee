@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { PricingService } from '@/app/services/pricing.service'
 
 export async function GET(req: NextRequest) {
   try {
@@ -104,28 +105,38 @@ export async function GET(req: NextRequest) {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       })
 
-    const safeProducts = scored.map((p) => {
+    const safeProductsPromises = scored.map(async (p) => {
       const extension = p.extension
       const productType = extension?.masterUnit?.type || 'weight'
       const basePrice = extension?.basePrice || p.pricePerKg || 0
+      const templateId = extension?.pricingTemplateId || null
 
-      const variantPrices = (p.productVariants || [])
+      const variants = (p.productVariants || [])
         .map((pv: any) => pv.variant)
         .filter(Boolean)
-        .map((v: any) => {
-          const sizeValue = String(v.value || '')
-          const parsed = parseInt(sizeValue) || 0
-          const grams = v.unit?.type === 'weight' && parsed === 1 ? 1000 : parsed
-          return {
-            id: v.id,
-            label: v.label || v.value || '',
-            size: v.label || v.value || '',
-            price: Math.round(basePrice),
-            unitType: v.unit?.type || 'weight',
-            grams,
-            sizeValue
-          }
-        })
+
+      const rawVariantPrices = basePrice > 0 && variants.length > 0
+        ? await PricingService.generateVariantPrices(
+            p.id,
+            basePrice,
+            templateId,
+            variants.map((v: any) => v.id)
+          )
+        : []
+
+      const variantPrices = rawVariantPrices.map((vp) => {
+        const parsed = parseInt(vp.sizeValue) || 0
+        const grams = vp.unitType === 'weight' && parsed === 1 ? 1000 : parsed
+        return {
+          id: vp.variantId,
+          label: vp.label || '',
+          size: vp.label || '',
+          price: vp.price,
+          unitType: vp.unitType,
+          grams,
+          sizeValue: vp.sizeValue
+        }
+      })
 
       const stockQuantity =
         productType === 'weight'
@@ -169,6 +180,7 @@ export async function GET(req: NextRequest) {
       }
     })
 
+    const safeProducts = await Promise.all(safeProductsPromises)
     return NextResponse.json(safeProducts)
   } catch (error) {
     console.error('Get products error:', error)
