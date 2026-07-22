@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useCart } from '@/app/contexts/CartContext'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -115,7 +116,7 @@ export default function CartPage() {
                   <div className="flex flex-col sm:flex-row">
                     {/* Product Image */}
                     <div className="w-full sm:w-24 md:w-28 lg:w-32 flex-shrink-0">
-                      <div className="aspect-square relative bg-gray-50">
+                      <div className="aspect-square relative bg-gray-50 cursor-pointer" onClick={() => router.push(`/products/${item.slug}`)}>
                         <Image
                           src={item.images && item.images.length > 0 && item.images[0] ? item.images[0] : '/placeholder.svg'}
                           alt={item.name}
@@ -129,7 +130,10 @@ export default function CartPage() {
                     {/* Product Details */}
                     <div className="flex-1 p-4 sm:p-5 flex flex-col justify-between min-w-0">
                       <div>
-                        <h3 className="font-semibold text-gray-900 text-base sm:text-lg line-clamp-2 mb-1">
+                        <h3 
+                          className="font-semibold text-gray-900 text-base sm:text-lg line-clamp-2 mb-1 cursor-pointer hover:text-yellow-600"
+                          onClick={() => router.push(`/products/${item.slug}`)}
+                        >
                           {item.name}
                         </h3>
                         {item.selectedVariant && (
