@@ -114,19 +114,87 @@ async function main() {
      }
    })
 
-   // Pricing template
-   const linearPricing = await prisma.pricingTemplate.upsert({
-     where: { slug: 'linear-pricing' },
-     update: {},
-     create: {
-       name: 'Linear Pricing',
-       slug: 'linear-pricing',
-       description: 'Standard linear pricing template',
-       isActive: true,
-       sortOrder: 1,
-       isDefault: true
-     }
-   })
+    // Pricing template
+    const linearPricing = await prisma.pricingTemplate.upsert({
+      where: { slug: 'linear-pricing' },
+      update: {},
+      create: {
+        name: 'Linear Pricing',
+        slug: 'linear-pricing',
+        description: 'Standard linear pricing template',
+        isActive: true,
+        sortOrder: 1,
+        isDefault: true
+      }
+    })
+
+    const linearPricingRules = [
+      { unitValue: '100', unitType: 'weight', percentage: 10 },
+      { unitValue: '125', unitType: 'weight', percentage: 12.5 },
+      { unitValue: '150', unitType: 'weight', percentage: 15 },
+      { unitValue: '200', unitType: 'weight', percentage: 20 },
+      { unitValue: '250', unitType: 'weight', percentage: 25 },
+      { unitValue: '300', unitType: 'weight', percentage: 30 },
+      { unitValue: '350', unitType: 'weight', percentage: 35 },
+      { unitValue: '400', unitType: 'weight', percentage: 40 },
+      { unitValue: '500', unitType: 'weight', percentage: 50 },
+      { unitValue: '750', unitType: 'weight', percentage: 75 },
+      { unitValue: '1000', unitType: 'weight', percentage: 100 },
+      { unitValue: '1500', unitType: 'weight', percentage: 150 },
+      { unitValue: '2000', unitType: 'weight', percentage: 200 },
+      { unitValue: '3000', unitType: 'weight', percentage: 300 },
+      { unitValue: '5000', unitType: 'weight', percentage: 500 },
+      { unitValue: '1', unitType: 'quantity', percentage: 100 },
+      { unitValue: '2', unitType: 'quantity', percentage: 200 },
+      { unitValue: '3', unitType: 'quantity', percentage: 300 },
+      { unitValue: '4', unitType: 'quantity', percentage: 400 },
+      { unitValue: '5', unitType: 'quantity', percentage: 500 },
+      { unitValue: '6', unitType: 'quantity', percentage: 600 },
+      { unitValue: '8', unitType: 'quantity', percentage: 800 },
+      { unitValue: '10', unitType: 'quantity', percentage: 1000 },
+      { unitValue: '12', unitType: 'quantity', percentage: 1200 },
+      { unitValue: '15', unitType: 'quantity', percentage: 1500 },
+      { unitValue: '20', unitType: 'quantity', percentage: 2000 },
+      { unitValue: '25', unitType: 'quantity', percentage: 2500 },
+      { unitValue: '30', unitType: 'quantity', percentage: 3000 },
+      { unitValue: '50', unitType: 'quantity', percentage: 5000 },
+      { unitValue: '100', unitType: 'quantity', percentage: 10000 },
+      { unitValue: '3', unitType: 'pack', percentage: 300 },
+      { unitValue: '5', unitType: 'pack', percentage: 500 },
+      { unitValue: '10', unitType: 'pack', percentage: 1000 },
+      { unitValue: '12', unitType: 'pack', percentage: 1200 },
+      { unitValue: '15', unitType: 'pack', percentage: 1500 },
+      { unitValue: '20', unitType: 'pack', percentage: 2000 },
+      { unitValue: '25', unitType: 'pack', percentage: 2500 },
+      { unitValue: '50', unitType: 'pack', percentage: 5000 },
+      { unitValue: '100', unitType: 'pack', percentage: 10000 },
+      { unitValue: '0.125', unitType: 'volume', percentage: 12.5 },
+      { unitValue: '0.25', unitType: 'volume', percentage: 25 },
+      { unitValue: '0.5', unitType: 'volume', percentage: 50 },
+      { unitValue: '1', unitType: 'volume', percentage: 100 },
+      { unitValue: '2', unitType: 'volume', percentage: 200 },
+      { unitValue: '3', unitType: 'volume', percentage: 300 },
+      { unitValue: '5', unitType: 'volume', percentage: 500 },
+      { unitValue: '10', unitType: 'volume', percentage: 1000 }
+    ]
+
+    const masterUnits = await prisma.masterUnit.findMany()
+    const unitMap = Object.fromEntries(masterUnits.map(u => [u.type, u.id]))
+
+    for (const rule of linearPricingRules) {
+      const variant = await prisma.masterVariant.findFirst({
+        where: { unitId: unitMap[rule.unitType], value: rule.unitValue },
+        include: { unit: true }
+      })
+
+      if (!variant) continue
+
+      await prisma.pricingRule.upsert({
+        where: { templateId_variantId: { templateId: linearPricing.id, variantId: variant.id } },
+        update: { percentage: rule.percentage },
+        create: { templateId: linearPricing.id, variantId: variant.id, percentage: rule.percentage }
+      })
+    }
 
    // 10 products with different types
    const products = [

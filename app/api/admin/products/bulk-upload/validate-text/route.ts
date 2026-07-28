@@ -159,7 +159,20 @@ async function validateRow(
 
   validateNonNegative(row.pricePerKg, 'pricePerKg')
   validateNonNegative(row.basePrice, 'basePrice')
-  validateNonNegative(row.stock, 'stock')
+            const stockKg = row.stockKg ? parseFloat(String(row.stockKg)) : null
+            const stockQty = row.stockQty ? parseFloat(String(row.stockQty)) : null
+            const stockLitres = row.stockLitres ? parseFloat(String(row.stockLitres)) : null
+
+            let stock: number | null = null
+            if (productType === 'weight') {
+              stock = stockKg
+            } else if (productType === 'quantity' || productType === 'pack') {
+              stock = stockQty ?? stockKg
+            } else if (productType === 'volume') {
+              stock = stockLitres ?? stockKg
+            }
+
+            validateNonNegative(stock, 'stock')
 
   if (row.images) {
     const imagesStr = String(row.images).trim()
