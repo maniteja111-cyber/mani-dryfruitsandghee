@@ -204,6 +204,18 @@ model SiteVisit {
   @@map("site_visits")
 }
 
+model SiteVisitUnique {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now())
+  visitorId String
+  userAgent String?
+  ip        String?
+
+  @@unique([visitorId, date])
+  @@index([date])
+  @@map("site_visit_unique")
+}
+
 model User {
   id                String               @id @default(cuid())
   phone             String               @unique

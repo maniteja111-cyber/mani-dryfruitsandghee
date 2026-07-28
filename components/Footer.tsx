@@ -15,6 +15,9 @@ export default function Footer({ settings }: FooterProps) {
       .then(res => res.json())
       .then(data => setTotalVisits(data.totalVisits || 0))
       .catch(() => {})
+
+    fetch('/api/visits/unique', { method: 'POST' })
+      .catch(() => {})
   }, [])
 
   return (

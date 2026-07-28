@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "./contexts/CartContext";
 import AuthProvider from "@/components/AuthProvider";
+import { prisma } from "@/lib/prisma";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,10 +15,38 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "MANI DRY FRUITS, PICKLES AND GHEE STORES",
-  description: "Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com",
-};
+async function getSettings() {
+  try {
+    const settings = await prisma.setting.findMany()
+    return settings.reduce((acc: Record<string, string>, setting) => {
+      acc[setting.key] = setting.value
+      return acc
+    }, {})
+  } catch {
+    return {}
+  }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings()
+  const siteName = settings.siteName || "MANI DRY FRUITS, PICKLES AND GHEE STORES"
+  const description = settings.description || "Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com"
+  const logo = settings.logo || ""
+
+  const icon = logo
+    ? {
+        rel: "icon",
+        type: "image/png",
+        url: logo.startsWith("http") ? logo : logo.startsWith("/") ? logo : `/uploads/${logo}`,
+      }
+    : undefined
+
+  return {
+    title: siteName,
+    description,
+    icons: icon ? [icon] : undefined,
+  }
+}
 
 export default function RootLayout({
   children,
