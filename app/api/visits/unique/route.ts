@@ -18,15 +18,30 @@ export async function POST(req: NextRequest) {
     const now = new Date()
     const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
 
+    let userPhone: string | undefined
+    let userName: string | undefined
+    try {
+      const body = await req.json()
+      userPhone = body.userPhone
+      userName = body.userName
+    } catch {
+      // body is optional
+    }
+
     await prisma.siteVisitUnique.upsert({
       where: { visitorId_dateOnly: { visitorId, dateOnly: today } },
-      update: {},
+      update: {
+        userPhone: userPhone || undefined,
+        userName: userName || undefined
+      },
       create: {
         visitorId,
         date: now,
         dateOnly: today,
         ip: req.headers.get('x-forwarded-for')?.split(',')[0].trim() || undefined,
-        userAgent: req.headers.get('user-agent') || undefined
+        userAgent: req.headers.get('user-agent') || undefined,
+        userPhone,
+        userName
       }
     })
 

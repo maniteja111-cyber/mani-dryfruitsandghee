@@ -16,8 +16,22 @@ export default function Footer({ settings }: FooterProps) {
       .then(data => setTotalVisits(data.totalVisits || 0))
       .catch(() => {})
 
-    fetch('/api/visits/unique', { method: 'POST' })
-      .catch(() => {})
+    const userStr = localStorage.getItem('user')
+    let userPhone: string | undefined
+    let userName: string | undefined
+    if (userStr) {
+      try {
+        const parsed = JSON.parse(userStr)
+        userPhone = parsed.phone
+        userName = parsed.name
+      } catch {}
+    }
+
+    fetch('/api/visits/unique', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userPhone, userName })
+    }).catch(() => {})
   }, [])
 
   return (

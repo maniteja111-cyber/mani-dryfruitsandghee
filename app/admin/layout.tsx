@@ -43,6 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/pricing-templates', label: 'Pricing Templates' },
     { href: '/admin/gift-boxes', label: 'Gift Boxes' },
     { href: '/admin/settings', label: 'Settings' },
+    { href: '/admin/visits', label: 'Visits' },
   ]
 
   if (!user) {

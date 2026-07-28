@@ -211,6 +211,8 @@ model SiteVisitUnique {
   visitorId String
   userAgent String?
   ip        String?
+  userPhone String?
+  userName  String?
 
   @@unique([visitorId, dateOnly])
   @@index([dateOnly])

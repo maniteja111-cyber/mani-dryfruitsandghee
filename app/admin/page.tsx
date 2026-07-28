@@ -46,7 +46,6 @@ export default function AdminPage() {
   const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, pendingOrders: 0, lowStock: 0, users: 0, totalPoints: 0, uniqueVisits: 0, todayUnique: 0 })
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [lowStockProducts, setLowStockProducts] = useState<any[]>([])
-  const [uniqueVisits, setUniqueVisits] = useState<any[]>([])
 
   useEffect(() => {
     fetchStats()
@@ -64,7 +63,7 @@ export default function AdminPage() {
       const products = productsRes.ok ? await productsRes.json() : []
       const orders = ordersRes.ok ? await ordersRes.json() : []
       const users = usersRes.ok ? await usersRes.json() : []
-      const uniqueData = uniqueRes.ok ? await uniqueRes.json() : { todayUnique: 0, totalUnique: 0, visits: [] }
+      const uniqueData = uniqueRes.ok ? await uniqueRes.json() : { todayUnique: 0, totalUnique: 0 }
 
       const revenue = orders.reduce((sum: number, order: any) => sum + order.total, 0)
       const pending = orders.filter((o: any) => o.status === 'pending').length
@@ -85,7 +84,6 @@ export default function AdminPage() {
 
       setRecentOrders(orders.slice(0, 5))
       setLowStockProducts(lowStockItems.slice(0, 6))
-      setUniqueVisits(uniqueData.visits || [])
     } catch (error) {
       console.error('Error fetching stats:', error)
     }
@@ -138,36 +136,6 @@ export default function AdminPage() {
               <p className="text-3xl font-bold text-green-600 mt-1">₹{stats.revenue}</p>
             </div>
           </div>
-
-          {uniqueVisits.length > 0 && (
-            <div className="bg-white rounded-2xl shadow p-6 mb-8">
-              <h2 className="text-xl font-semibold mb-4">Unique Visits Debug</h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Visitor ID</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">User Agent</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {uniqueVisits.slice(0, 20).map((visit: any) => (
-                      <tr key={visit.id}>
-                        <td className="px-4 py-2 text-sm text-gray-900 whitespace-nowrap">
-                          {visit.dateOnly ? new Date(visit.dateOnly).toLocaleDateString() : '-'}
-                        </td>
-                        <td className="px-4 py-2 text-sm text-gray-900 font-mono">{visit.ip || '-'}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900 font-mono break-all">{visit.visitorId}</td>
-                        <td className="px-4 py-2 text-sm text-gray-500 break-all">{visit.userAgent || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Recent Orders */}
