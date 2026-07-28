@@ -15,14 +15,16 @@ function getVisitorId(req: NextRequest): string {
 export async function POST(req: NextRequest) {
   try {
     const visitorId = getVisitorId(req)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const now = new Date()
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
 
     await prisma.siteVisitUnique.upsert({
-      where: { visitorId_date: { visitorId, date: today } },
+      where: { visitorId_dateOnly: { visitorId, dateOnly: today } },
       update: {},
       create: {
         visitorId,
+        date: now,
+        dateOnly: today,
         ip: req.headers.get('x-forwarded-for')?.split(',')[0].trim() || undefined,
         userAgent: req.headers.get('user-agent') || undefined
       }
@@ -37,21 +39,34 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const now = new Date()
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
 
     const todayUnique = await prisma.siteVisitUnique.count({
-      where: { date: { gte: today } }
+      where: { dateOnly: { gte: today } }
     })
 
     const totalUnique = await prisma.siteVisitUnique.count()
 
+    const visits = await prisma.siteVisitUnique.findMany({
+      orderBy: { dateOnly: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        dateOnly: true,
+        visitorId: true,
+        ip: true,
+        userAgent: true
+      }
+    })
+
     return NextResponse.json({
       todayUnique,
-      totalUnique
+      totalUnique,
+      visits
     })
   } catch (error) {
     console.error('Get unique visits error:', error)
-    return NextResponse.json({ todayUnique: 0, totalUnique: 0 }, { status: 500 })
+    return NextResponse.json({ todayUnique: 0, totalUnique: 0, visits: [] }, { status: 500 })
   }
 }

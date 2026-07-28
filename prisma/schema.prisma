@@ -207,12 +207,13 @@ model SiteVisit {
 model SiteVisitUnique {
   id        String   @id @default(cuid())
   date      DateTime @default(now())
+  dateOnly  DateTime
   visitorId String
   userAgent String?
   ip        String?
 
-  @@unique([visitorId, date])
-  @@index([date])
+  @@unique([visitorId, dateOnly])
+  @@index([dateOnly])
   @@map("site_visit_unique")
 }
 
