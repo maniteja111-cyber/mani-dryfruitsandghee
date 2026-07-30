@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
           },
           orderBy: { sortOrder: 'asc' }
         },
+        rules: true,
         _count: {
           select: { orders: true }
         }
