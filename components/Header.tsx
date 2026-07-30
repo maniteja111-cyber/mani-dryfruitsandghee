@@ -129,6 +129,7 @@ return (
             <nav className="hidden md:flex space-x-6">
               <Link href="/" className="hover:underline text-sm text-yellow-600">Home</Link>
               <Link href="/products" className="hover:underline text-sm text-yellow-600">Products</Link>
+              <Link href="/gift-boxes" className="hover:underline text-sm text-yellow-600">Gift Boxes</Link>
               <Link href="/categories" className="hover:underline text-sm text-yellow-600">Categories</Link>
               <Link href="/about-us" className="hover:underline text-sm text-yellow-600">About Us</Link>
               <Link href="/contact" className="hover:underline text-sm text-yellow-600">Contact</Link>
@@ -193,6 +194,7 @@ return (
               <nav className="flex flex-col space-y-2">
                 <Link href="/" className="px-2 py-1.5 hover:underline text-yellow-600">Home</Link>
                 <Link href="/products" className="px-2 py-1.5 hover:underline text-yellow-600">Products</Link>
+                <Link href="/gift-boxes" className="px-2 py-1.5 hover:underline text-yellow-600">Gift Boxes</Link>
                 <Link href="/categories" className="px-2 py-1.5 hover:underline text-yellow-600">Categories</Link>
                 <Link href="/about-us" className="px-2 py-1.5 hover:underline text-yellow-600">About Us</Link>
                 <Link href="/contact" className="px-2 py-1.5 hover:underline text-yellow-600">Contact</Link>
