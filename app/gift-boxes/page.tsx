@@ -112,7 +112,7 @@ export default async function GiftBoxesPage() {
                     </div>
 
                     <a
-                      href={`/gift-boxes/${giftBox.slug}/build`}
+                      href={`/gift-boxes/${giftBox.slug}`}
                       className="w-full bg-yellow-600 text-white py-3 rounded-lg font-semibold text-center hover:bg-yellow-700 transition"
                     >
                       Build Your Box
