@@ -1,20 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-function getVisitorId(req: NextRequest): string {
-  const forwarded = req.headers.get('x-forwarded-for')
-  const realIp = forwarded ? forwarded.split(',')[0].trim() : req.headers.get('x-real-ip') || ''
-
-  const userAgent = req.headers.get('user-agent') || ''
-
-  const id = `${realIp}-${userAgent}`
-
-  return Buffer.from(id).toString('base64')
-}
+import { isBot, isLocalhost } from '@/lib/botDetector'
+import { getClientIP, getVisitorTokenFromCookie, generateVisitorToken, parseVisitor } from '@/lib/visitor'
 
 export async function POST(req: NextRequest) {
   try {
-    const visitorId = getVisitorId(req)
+    const visitor = parseVisitor(req)
+    const ip = visitor.ip
+
+    if (!ip) {
+      return NextResponse.json({ success: true, ignored: true })
+    }
+
+    if (isLocalhost(ip)) {
+      return NextResponse.json({ success: true, ignored: true })
+    }
+
+    const cookieHeader = req.headers.get('cookie')
+    let visitorToken = getVisitorTokenFromCookie(cookieHeader)
+
+    if (!visitorToken) {
+      visitorToken = generateVisitorToken()
+    }
+
     const now = new Date()
     const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
 
@@ -28,24 +36,46 @@ export async function POST(req: NextRequest) {
       // body is optional
     }
 
-    await prisma.siteVisitUnique.upsert({
-      where: { visitorId_dateOnly: { visitorId, dateOnly: today } },
+    const visitorId = Buffer.from(`${ip}-${visitor.userAgent || ''}`).toString('base64')
+
+    const record = await prisma.siteVisitUnique.upsert({
+      where: { visitorToken_dateOnly: { visitorToken, dateOnly: today } },
       update: {
         userPhone: userPhone || undefined,
         userName: userName || undefined
       },
       create: {
         visitorId,
+        visitorToken,
         date: now,
         dateOnly: today,
-        ip: req.headers.get('x-forwarded-for')?.split(',')[0].trim() || undefined,
-        userAgent: req.headers.get('user-agent') || undefined,
+        ip,
+        userAgent: visitor.userAgent || undefined,
+        isBot: visitor.isBot,
+        deviceType: visitor.deviceType,
+        browser: visitor.browser,
+        os: visitor.os,
+        country: visitor.country || undefined,
+        referer: visitor.referer || undefined,
+        path: visitor.path || undefined,
         userPhone,
         userName
       }
     })
 
-    return NextResponse.json({ success: true })
+    const response = NextResponse.json({ success: true, ignored: false })
+
+    if (!getVisitorTokenFromCookie(cookieHeader)) {
+      response.cookies.set('visitor_token', visitorToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365
+      })
+    }
+
+    return response
   } catch (error) {
     console.error('Unique visit tracking error:', error)
     return NextResponse.json({ success: false }, { status: 500 })
@@ -57,11 +87,21 @@ export async function GET(req: NextRequest) {
     const now = new Date()
     const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
 
-    const todayUnique = await prisma.siteVisitUnique.count({
-      where: { dateOnly: { gte: today } }
+    const todayHuman = await prisma.siteVisitUnique.count({
+      where: { dateOnly: { gte: today }, isBot: false }
     })
 
-    const totalUnique = await prisma.siteVisitUnique.count()
+    const todayBot = await prisma.siteVisitUnique.count({
+      where: { dateOnly: { gte: today }, isBot: true }
+    })
+
+    const totalHuman = await prisma.siteVisitUnique.count({
+      where: { isBot: false }
+    })
+
+    const totalBot = await prisma.siteVisitUnique.count({
+      where: { isBot: true }
+    })
 
     const visits = await prisma.siteVisitUnique.findMany({
       orderBy: { dateOnly: 'desc' },
@@ -70,18 +110,30 @@ export async function GET(req: NextRequest) {
         id: true,
         dateOnly: true,
         visitorId: true,
+        visitorToken: true,
         ip: true,
-        userAgent: true
+        userAgent: true,
+        isBot: true,
+        deviceType: true,
+        browser: true,
+        os: true,
+        country: true,
+        referer: true,
+        path: true,
+        userPhone: true,
+        userName: true
       }
     })
 
     return NextResponse.json({
-      todayUnique,
-      totalUnique,
+      todayHumanVisitors: todayHuman,
+      todayBotVisitors: todayBot,
+      totalHumanVisitors: totalHuman,
+      totalBotVisitors: totalBot,
       visits
     })
   } catch (error) {
     console.error('Get unique visits error:', error)
-    return NextResponse.json({ todayUnique: 0, totalUnique: 0, visits: [] }, { status: 500 })
+    return NextResponse.json({ todayHumanVisitors: 0, todayBotVisitors: 0, totalHumanVisitors: 0, totalBotVisitors: 0, visits: [] }, { status: 500 })
   }
 }

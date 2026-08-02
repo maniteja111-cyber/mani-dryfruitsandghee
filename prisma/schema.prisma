@@ -205,17 +205,26 @@ model SiteVisit {
 }
 
 model SiteVisitUnique {
-  id        String   @id @default(cuid())
-  date      DateTime @default(now())
-  dateOnly  DateTime
-  visitorId String
-  userAgent String?
-  ip        String?
-  userPhone String?
-  userName  String?
+  id          String   @id @default(cuid())
+  date        DateTime @default(now())
+  dateOnly    DateTime
+  visitorId   String
+  visitorToken String  @unique
+  isBot       Boolean  @default(false)
+  deviceType  String?
+  browser     String?
+  os          String?
+  country     String?
+  referer     String?
+  path        String?
+  userAgent   String?
+  ip          String?
+  userPhone   String?
+  userName    String?
 
-  @@unique([visitorId, dateOnly])
+  @@unique([visitorToken, dateOnly])
   @@index([dateOnly])
+  @@index([isBot])
   @@map("site_visit_unique")
 }
 

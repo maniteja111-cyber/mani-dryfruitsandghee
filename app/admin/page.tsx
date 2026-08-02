@@ -43,7 +43,7 @@ function isLowStock(product: Product): boolean {
 // TODO: auth check handled by admin layout — remove guard from here once layout is verified
 
 export default function AdminPage() {
-  const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, pendingOrders: 0, lowStock: 0, users: 0, totalPoints: 0, uniqueVisits: 0, todayUnique: 0 })
+  const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, pendingOrders: 0, lowStock: 0, users: 0, totalPoints: 0 })
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [lowStockProducts, setLowStockProducts] = useState<any[]>([])
 
@@ -53,17 +53,15 @@ export default function AdminPage() {
 
   const fetchStats = async () => {
     try {
-      const [productsRes, ordersRes, usersRes, uniqueRes] = await Promise.all([
+      const [productsRes, ordersRes, usersRes] = await Promise.all([
         fetch('/api/admin/products'),
         fetch('/api/admin/orders'),
-        fetch('/api/admin/users'),
-        fetch('/api/visits/unique')
+        fetch('/api/admin/users')
       ])
 
       const products = productsRes.ok ? await productsRes.json() : []
       const orders = ordersRes.ok ? await ordersRes.json() : []
       const users = usersRes.ok ? await usersRes.json() : []
-      const uniqueData = uniqueRes.ok ? await uniqueRes.json() : { todayUnique: 0, totalUnique: 0 }
 
       const revenue = orders.reduce((sum: number, order: any) => sum + order.total, 0)
       const pending = orders.filter((o: any) => o.status === 'pending').length
@@ -77,9 +75,7 @@ export default function AdminPage() {
         pendingOrders: pending,
         lowStock: lowStockItems.length,
         users: users.length,
-        totalPoints,
-        uniqueVisits: uniqueData.totalUnique,
-        todayUnique: uniqueData.todayUnique
+        totalPoints
       })
 
       setRecentOrders(orders.slice(0, 5))
@@ -106,11 +102,6 @@ export default function AdminPage() {
             <div className="bg-white p-6 rounded-2xl shadow">
               <h3 className="text-sm text-gray-500">Loyalty Points Outstanding</h3>
               <p className="text-3xl font-bold text-yellow-600 mt-1">{stats.totalPoints.toLocaleString()}</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow">
-              <h3 className="text-sm text-gray-500">Unique Visits</h3>
-              <p className="text-3xl font-bold text-indigo-600 mt-1">{stats.uniqueVisits}</p>
-              <p className="text-xs text-gray-500 mt-1">{stats.todayUnique} today</p>
             </div>
           </div>
 

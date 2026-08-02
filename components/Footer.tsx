@@ -27,10 +27,12 @@ export default function Footer({ settings }: FooterProps) {
       } catch {}
     }
 
+    const path = typeof window !== 'undefined' ? window.location.pathname : undefined
+
     fetch('/api/visits/unique', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userPhone, userName })
+      body: JSON.stringify({ userPhone, userName, path })
     }).catch(() => {})
   }, [])
 
