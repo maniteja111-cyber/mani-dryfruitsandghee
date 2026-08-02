@@ -126,7 +126,6 @@ export default function AdminVisitsPage() {
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Referrer</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Landing Page</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Visitor ID</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">User Agent</th>
                   </tr>
                 </thead>
@@ -146,7 +145,6 @@ export default function AdminVisitsPage() {
                       <td className="px-4 py-2 text-sm text-gray-900">{getReferrerLabel(visit.referer)}</td>
                       <td className="px-4 py-2 text-sm text-gray-900">{visit.path || '-'}</td>
                       <td className="px-4 py-2 text-sm text-gray-900">{visit.userName || visit.userPhone || '-'}</td>
-                      <td className="px-4 py-2 text-sm text-gray-900 font-mono break-all">{visit.visitorId}</td>
                       <td className="px-4 py-2 text-sm text-gray-500 break-all" title={visit.userAgent || ''}>
                         {visit.userAgent ? visit.userAgent.slice(0, 40) + (visit.userAgent.length > 40 ? '...' : '') : '-'}
                       </td>
