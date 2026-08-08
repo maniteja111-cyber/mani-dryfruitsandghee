@@ -35,6 +35,13 @@ export interface CreateProductData {
 
 export class ProductService {
   static async createProduct(data: CreateProductData): Promise<any> {
+    console.log('========== PRODUCT SERVICE STOCK TRACE ==========')
+    console.log('name:', data.name)
+    console.log('stockGrams:', data.stockGrams)
+    console.log('stockQuantity:', data.stockQuantity)
+    console.log('unitTypeId:', data.unitTypeId)
+    console.log('===============================================')
+
     const product = await prisma.product.create({
       data: {
         name: data.name,
@@ -63,7 +70,7 @@ export class ProductService {
     })
 
     if (data.unitTypeId) {
-      await prisma.productExtension.create({
+      const extension = await prisma.productExtension.create({
         data: {
           productId: product.id,
           unitTypeId: data.unitTypeId,
@@ -72,6 +79,11 @@ export class ProductService {
           stockQuantity: data.stockQuantity ?? 0
         }
       })
+
+      console.log('========== EXTENSION STOCK RESULT ==========')
+      console.log('productId:', product.id)
+      console.log('stockQuantity:', extension.stockQuantity)
+      console.log('===========================================')
     }
 
     if (data.variantIds && data.variantIds.length > 0) {

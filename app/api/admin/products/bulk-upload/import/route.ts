@@ -193,6 +193,15 @@ export async function POST(req: NextRequest) {
 
           const stockGrams = stockKg ? Math.round(parseFloat(String(stockKg)) * 1000) : 0
 
+          console.log('========== BULK STOCK TRACE ==========')
+          console.log('Product:', name)
+          console.log('productType:', productType)
+          console.log('Excel stockKg:', stockKg)
+          console.log('Excel stockQuantity:', stockQuantity)
+          console.log('Calculated stockGrams:', stockGrams)
+          console.log('Calculated stockQuantity:', stockQuantity)
+          console.log('======================================')
+
           await ProductService.createProduct({
             name,
             slug: finalSlug,
