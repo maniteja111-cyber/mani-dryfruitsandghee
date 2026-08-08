@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCart } from '@/app/contexts/CartContext'
 import { getUnitSymbol } from '@/app/services/pricing.service'
-import { isValidImageUrl } from '@/lib/image-utils'
+import { isValidImageUrl, getCacheBustedImages } from '@/lib/image-utils'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -257,33 +257,10 @@ export function ProductList({ initialProducts, categories, searchParams, setting
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No products found</p>
           </div>
-        ) : (
+         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-{products.map((product) => {
-              let images: string[] = []
-              if (Array.isArray(product.images)) {
-                images = product.images.filter(Boolean)
-              } else if (typeof product.images === 'string' && product.images.trim()) {
-                try {
-                  let parsed = JSON.parse(product.images)
-                  if (typeof parsed === 'string') {
-                    parsed = JSON.parse(parsed)
-                  }
-                  if (Array.isArray(parsed)) {
-                    images = parsed.filter(Boolean)
-                  } else if (typeof parsed === 'string') {
-                    images = [parsed]
-                  }
-                } catch {}
-              }
-              images = images.map(img => {
-                if (typeof img === 'string' && img.trim().startsWith('"')) {
-                  try { return JSON.parse(img) } catch { return img }
-                }
-                return img
-              })
-              
-              const validImages = images.filter(img => typeof img === 'string' && isValidImageUrl(img))
+            {products.map((product) => {
+              const validImages = getCacheBustedImages(product.images, (product as any).updatedAt).filter(img => isValidImageUrl(img))
               const imageSrc = validImages[0] || '/placeholder.svg'
 
               const availableVariants = product.variantPrices || []
@@ -353,7 +330,7 @@ export function ProductList({ initialProducts, categories, searchParams, setting
                           name: product.name,
                           slug: product.slug,
                           price,
-                          images,
+                          images: validImages,
                           selectedVariant: selectedVariant ? {
                             id: selectedVariant.id,
                             size: selectedVariant.size,

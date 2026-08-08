@@ -40,3 +40,51 @@ export function getImageSrc(images: string[] | any, fallback: string = '/placeho
 export function shouldUseNextImage(url: string | undefined | null): boolean {
   return isValidImageUrl(url)
 }
+
+export function addImageCacheBuster(url: string, updatedAt?: string | null): string {
+  if (!url || typeof url !== 'string') return url
+  const trimmed = url.trim()
+  if (!trimmed) return trimmed
+
+  const timestamp = updatedAt ? new Date(updatedAt).getTime() : Date.now()
+
+  try {
+    const urlObj = new URL(trimmed)
+    urlObj.searchParams.set('v', String(timestamp))
+    return urlObj.toString()
+  } catch {
+    const separator = trimmed.includes('?') ? '&' : '?'
+    return `${trimmed}${separator}v=${timestamp}`
+  }
+}
+
+export function getCacheBustedImages(images: string[] | any, updatedAt?: string | null): string[] {
+  let raw: string[] = []
+  if (Array.isArray(images)) {
+    raw = images.filter(Boolean)
+  } else if (typeof images === 'string' && images.trim()) {
+    try {
+      let parsed = JSON.parse(images)
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed)
+      }
+      if (Array.isArray(parsed)) {
+        raw = parsed.filter(Boolean)
+      } else if (typeof parsed === 'string') {
+        raw = [parsed]
+      }
+    } catch {
+      raw = [images]
+    }
+  }
+
+  return raw
+    .map(img => {
+      if (typeof img === 'string' && img.trim().startsWith('"')) {
+        try { return JSON.parse(img) } catch { return img }
+      }
+      return img
+    })
+    .filter((img): img is string => typeof img === 'string' && img.trim() !== '')
+    .map(img => addImageCacheBuster(img, updatedAt))
+}

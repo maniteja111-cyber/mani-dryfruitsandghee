@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
+import CloudinaryMediaPicker from '@/components/CloudinaryMediaPicker'
 
 interface Product {
   id: string
@@ -121,6 +122,9 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
   const [pricingTemplates, setPricingTemplates] = useState<PricingTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [cloudinaryPickerOpen, setCloudinaryPickerOpen] = useState(false)
+  const [cloudinaryPickerIndex, setCloudinaryPickerIndex] = useState<number | null>(null)
+  const [customImageNames, setCustomImageNames] = useState<string[]>(['', '', ''])
   
   const [formData, setFormData] = useState({
     name: '',
@@ -232,6 +236,10 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
 
     const formDataUpload = new FormData()
     formDataUpload.append('image', file)
+    const customName = customImageNames[index]?.trim()
+    if (customName) {
+      formDataUpload.append('filename', customName)
+    }
 
     try {
       const res = await fetch('/api/upload', {
@@ -250,6 +258,23 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
     } catch (error) {
       console.error('Upload error:', error)
     }
+  }
+
+  const handleSelectCloudinaryImage = (url: string) => {
+    if (cloudinaryPickerIndex !== null) {
+      setFormData(prev => {
+        const newImages = [...prev.images]
+        newImages[cloudinaryPickerIndex] = url
+        return { ...prev, images: newImages }
+      })
+    }
+    setCloudinaryPickerOpen(false)
+    setCloudinaryPickerIndex(null)
+  }
+
+  const openCloudinaryPicker = (index: number) => {
+    setCloudinaryPickerIndex(index)
+    setCloudinaryPickerOpen(true)
   }
 
   const currentStock = formData.productType === 'weight' 
@@ -583,11 +608,32 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
               <div key={index} className="border-2 border-dashed border-gray-300 rounded-2xl p-4 text-center">
                 <label className="block text-sm font-medium mb-2 text-gray-600">Photo {index + 1}</label>
                 <input
+                  type="text"
+                  value={customImageNames[index]}
+                  onChange={(e) => {
+                    const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+                    setCustomImageNames(prev => {
+                      const next = [...prev]
+                      next[index] = value
+                      return next
+                    })
+                  }}
+                  placeholder="SEO-friendly name (optional)"
+                  className="block w-full text-sm mb-2 px-2 py-1 border border-gray-300 rounded"
+                />
+                <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => handleImageUpload(e, index)}
                   className="block w-full text-sm mb-3"
                 />
+                <button
+                  type="button"
+                  onClick={() => openCloudinaryPicker(index)}
+                  className="text-xs text-blue-600 hover:text-blue-700 mb-3"
+                >
+                  Or choose from Cloudinary
+                </button>
                 {formData.images[index] ? (
                   <img
                     src={formData.images[index]}
@@ -603,8 +649,18 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-500 mt-2">First photo is used as the main image on the website.</p>
+          <p className="text-xs text-gray-500 mt-2">First photo is used as the main image on the website. Leave name blank for auto-generated filename.</p>
         </div>
+
+        <CloudinaryMediaPicker
+          isOpen={cloudinaryPickerOpen}
+          onClose={() => {
+            setCloudinaryPickerOpen(false)
+            setCloudinaryPickerIndex(null)
+          }}
+          onSelect={handleSelectCloudinaryImage}
+          selectedUrl={cloudinaryPickerIndex !== null ? formData.images[cloudinaryPickerIndex] : undefined}
+        />
 
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-4">SEO Content</h3>

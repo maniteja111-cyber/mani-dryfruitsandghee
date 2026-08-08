@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useCart } from '@/app/contexts/CartContext'
 import { getSelectorLabel, getUnitSymbol, VariantPrice } from '@/app/services/pricing.service'
-import { getImageSrc, isValidImageUrl, shouldUseNextImage } from '@/lib/image-utils'
+import { getCacheBustedImages, isValidImageUrl, shouldUseNextImage } from '@/lib/image-utils'
 
 interface Toast {
   id: number
@@ -72,32 +72,7 @@ interface ProductDetailProps {
 }
 
 export default function ProductDetail({ product, settings, relatedProducts = [] }: ProductDetailProps) {
-  let images: string[] = []
-  if (Array.isArray(product.images)) {
-    images = product.images.filter(Boolean)
-  } else if (typeof product.images === 'string' && product.images.trim()) {
-    try {
-      let parsed = JSON.parse(product.images)
-      if (typeof parsed === 'string') {
-        parsed = JSON.parse(parsed)
-      }
-      if (Array.isArray(parsed)) {
-        images = parsed.filter(Boolean)
-      } else if (typeof parsed === 'string') {
-        images = [parsed]
-      }
-    } catch {
-      images = [product.images]
-    }
-  }
-  images = images.map(img => {
-    if (typeof img === 'string' && img.trim().startsWith('"')) {
-      try { return JSON.parse(img) } catch { return img }
-    }
-    return img
-  })
-
-  const validImages = images.filter(img => typeof img === 'string' && isValidImageUrl(img))
+  const validImages = getCacheBustedImages(product.images, (product as any).updatedAt).filter(img => isValidImageUrl(img))
   const primaryImage = validImages[0] || '/placeholder.svg'
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
 
@@ -477,7 +452,7 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
                     name: `${product.name} (${displayLabel})`,
                     slug: product.slug,
                     price: price,
-                    images: images,
+                    images: validImages,
                     stock: product.productType === 'weight' ? product.stockGrams : (product.extension?.stockQuantity || 0),
                     selectedVariant: {
                       id: selectedVariant?.id,

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/app/contexts/CartContext'
-import { isValidImageUrl } from '@/lib/image-utils'
+import { isValidImageUrl, getCacheBustedImages } from '@/lib/image-utils'
 
 interface Toast {
   id: number
@@ -66,28 +66,10 @@ export default function TodaysOffers({ products }: TodaysOffersProps) {
         <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">🔥 Today's Offers</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {products.map((product) => {
-              let images: string[] = []
-              if (Array.isArray(product.images)) {
-                images = product.images.filter(Boolean)
-              } else if (typeof product.images === 'string' && product.images.trim()) {
-                try {
-                  let parsed = JSON.parse(product.images)
-                  if (typeof parsed === 'string') {
-                    parsed = JSON.parse(parsed)
-                  }
-                  images = Array.isArray(parsed) ? parsed.filter(Boolean) : []
-                } catch {}
-              }
-              images = images.map(img => {
-                if (typeof img === 'string' && img.trim().startsWith('"')) {
-                  try { return JSON.parse(img) } catch { return img }
-                }
-                return img
-              })
-              const validImages = images.filter(img => typeof img === 'string' && isValidImageUrl(img))
-              const imageSrc = validImages[0] || '/placeholder.svg'
+            const validImages = getCacheBustedImages(product.images, (product as any).updatedAt).filter(img => isValidImageUrl(img))
+            const imageSrc = validImages[0] || '/placeholder.svg'
 
-              const availableVariants = product.variantPrices || []
+            const availableVariants = product.variantPrices || []
               const selectedVariant = selectedVariants[product.id] || availableVariants[0] || null
               const price = selectedVariant?.price ?? product.pricePerKg ?? 0
               const productType = selectedVariant?.unitType || product.productType
@@ -174,7 +156,7 @@ export default function TodaysOffers({ products }: TodaysOffersProps) {
                           name: product.name,
                           slug: product.slug,
                           price,
-                          images,
+                          images: validImages,
                           selectedVariant: selectedVariant ? {
                             id: selectedVariant.id,
                             size: selectedVariant.size,

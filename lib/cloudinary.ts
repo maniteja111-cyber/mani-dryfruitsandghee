@@ -8,12 +8,13 @@ cloudinary.config({
 
 export default cloudinary
 
-export async function uploadToCloudinary(buffer: Buffer, filename: string): Promise<string> {
+export async function uploadToCloudinary(buffer: Buffer, filename: string, publicId?: string): Promise<string> {
   return new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
         {
           resource_type: 'auto',
+          public_id: publicId || filename,
           transformation: [
             { width: 1200, height: 1200, crop: 'limit' },
             { quality: 'auto' },

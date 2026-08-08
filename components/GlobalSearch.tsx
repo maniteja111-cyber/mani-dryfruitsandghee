@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { addImageCacheBuster } from '@/lib/image-utils'
 
 export interface SearchResult {
   id: string
@@ -109,13 +110,14 @@ export default function GlobalSearch({
         const data = (await response.json()) as SearchResult[]
         const mapped = (Array.isArray(data) ? data : []).map((item: any) => {
           const categoryName = item.category && typeof item.category === 'object' && 'name' in item.category ? item.category.name : undefined
+          const rawImage = Array.isArray(item.images) ? item.images[0] : undefined
           return {
             id: item.id,
             name: item.name,
             slug: item.slug,
             category: categoryName,
             priceDisplay: item.priceDisplay,
-            image: Array.isArray(item.images) ? item.images[0] : undefined,
+            image: rawImage ? addImageCacheBuster(rawImage, item.updatedAt) : undefined,
           }
         })
 
