@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface Product {
   id: string
@@ -416,7 +417,6 @@ export default function AdminProductsPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...product,
           [field]: !product[field]
         })
       })
@@ -470,7 +470,7 @@ export default function AdminProductsPage() {
         return fetch(`/api/admin/products/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...product, ...updates })
+          body: JSON.stringify(updates)
         })
       })
 
@@ -736,22 +736,144 @@ export default function AdminProductsPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Manage Products</h1>
-        <button
-          onClick={() => {
-            if (showForm) {
-              setShowForm(false)
-              setEditingProduct(null)
-              resetForm()
-            } else {
-              setShowForm(true)
-            }
-          }}
-          className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2"
-        >
-          {showForm ? 'Close Form' : '+ Add New Product'}
-        </button>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-gray-900">Manage Products</h1>
+          {selectedIds.length > 0 && (
+            <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+              {selectedIds.length} selected
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/products/bulk-upload"
+            className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2"
+          >
+            Bulk Upload
+          </Link>
+          <button
+            onClick={() => {
+              if (showForm) {
+                setShowForm(false)
+                setEditingProduct(null)
+                resetForm()
+              } else {
+                setShowForm(true)
+              }
+            }}
+            className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2"
+          >
+            {showForm ? 'Close Form' : '+ Add New Product'}
+          </button>
+        </div>
       </div>
+
+      {selectedIds.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-3 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => handleBulkAction('delete')}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => handleBulkAction('hide')}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded"
+              >
+                Hide
+              </button>
+              <button
+                onClick={() => handleBulkAction('show')}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded"
+              >
+                Show
+              </button>
+              <button
+                onClick={() => handleBulkAction('featured')}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-yellow-600 hover:bg-yellow-50 rounded"
+              >
+                Featured
+              </button>
+              <button
+                onClick={() => handleBulkAction('remove-featured')}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded"
+              >
+                Remove Featured
+              </button>
+              <button
+                onClick={() => handleBulkAction('offer-on')}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded"
+              >
+                Offer On
+              </button>
+              <button
+                onClick={() => handleBulkAction('offer-off')}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded"
+              >
+                Offer Off
+              </button>
+              <select
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value === 'category') {
+                    const catId = prompt('Enter category ID:')
+                    if (catId) {
+                      selectedIds.forEach(id => {
+                        const product = allProducts.find(p => p.id === id)
+                        if (product) {
+                          fetch(`/api/admin/products/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ...product, categoryId: catId })
+                          })
+                        }
+                      })
+                      fetchData()
+                    }
+                  } else if (value === 'template') {
+                    const templateId = prompt('Enter pricing template ID (or "none" for no template):')
+                    if (templateId) {
+                      selectedIds.forEach(id => {
+                        const product = allProducts.find(p => p.id === id)
+                        if (product) {
+                          fetch(`/api/admin/products/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              ...product,
+                              extension: {
+                                ...product.extension,
+                                pricingTemplateId: templateId === 'none' ? null : templateId
+                              }
+                            })
+                          })
+                        }
+                      })
+                      fetchData()
+                    }
+                  } else if (value === 'export') {
+                    handleBulkAction('export')
+                  }
+                }}
+                className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-100"
+              >
+                <option value="">Change...</option>
+                <option value="category">Change Category</option>
+                <option value="template">Change Pricing Template</option>
+                <option value="export">Export Selected</option>
+              </select>
+            </div>
+            <button
+              onClick={() => setSelectedIds([])}
+              className="text-xs text-gray-500 hover:text-gray-700"
+            >
+              Clear selection
+            </button>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-white p-6 rounded-2xl shadow mb-8 border">
@@ -1473,101 +1595,14 @@ export default function AdminProductsPage() {
         </div>
 
         {selectedIds.length > 0 && (
-          <div className="border-t border-gray-200 p-4 bg-gray-50">
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={() => handleBulkAction('delete')}
-                className="flex items-center gap-1 px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
-              >
-                Delete
-              </button>
-              <button
-                onClick={() => handleBulkAction('hide')}
-                className="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded"
-              >
-                Hide
-              </button>
-              <button
-                onClick={() => handleBulkAction('show')}
-                className="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded"
-              >
-                Show
-              </button>
-              <button
-                onClick={() => handleBulkAction('featured')}
-                className="flex items-center gap-1 px-3 py-1 text-sm text-yellow-600 hover:bg-yellow-50 rounded"
-              >
-                Featured
-              </button>
-              <button
-                onClick={() => handleBulkAction('remove-featured')}
-                className="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded"
-              >
-                Remove Featured
-              </button>
-              <button
-                onClick={() => handleBulkAction('offer-on')}
-                className="flex items-center gap-1 px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded"
-              >
-                Offer On
-              </button>
-              <button
-                onClick={() => handleBulkAction('offer-off')}
-                className="flex items-center gap-1 px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded"
-              >
-                Offer Off
-              </button>
-              <select
-                onChange={(e) => {
-                  const value = e.target.value
-                  if (value === 'category') {
-                    const catId = prompt('Enter category ID:')
-                    if (catId) {
-                      selectedIds.forEach(id => {
-                        const product = allProducts.find(p => p.id === id)
-                        if (product) {
-                          fetch(`/api/admin/products/${id}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ ...product, categoryId: catId })
-                          })
-                        }
-                      })
-                      fetchData()
-                    }
-                  } else if (value === 'template') {
-                    const templateId = prompt('Enter pricing template ID (or "none" for no template):')
-                    if (templateId) {
-                      selectedIds.forEach(id => {
-                        const product = allProducts.find(p => p.id === id)
-                        if (product) {
-                          fetch(`/api/admin/products/${id}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ 
-                              ...product, 
-                              extension: {
-                                ...product.extension,
-                                pricingTemplateId: templateId === 'none' ? null : templateId
-                              }
-                            })
-                          })
-                        }
-                      })
-                      fetchData()
-                    }
-                  } else if (value === 'export') {
-                    handleBulkAction('export')
-                  }
-                }}
-                className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-100"
-              >
-                <option value="">Change...</option>
-                <option value="category">Change Category</option>
-                <option value="template">Change Pricing Template</option>
-                <option value="export">Export Selected</option>
-              </select>
-            </div>
+          <div className="border-t border-gray-200 px-6 py-3 bg-gray-50 flex items-center justify-between">
+            <span className="text-sm text-gray-600">{selectedIds.length} selected</span>
+            <button
+              onClick={() => setSelectedIds([])}
+              className="text-xs text-gray-500 hover:text-gray-700"
+            >
+              Clear selection
+            </button>
           </div>
         )}
 

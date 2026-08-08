@@ -33,7 +33,10 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     
     const { name, slug, description, shortDescription, pricePerKg, stockGrams, images, categoryId, isFeatured, isTodayOffer, isVisible, productOverview, whyChoose, ingredients, nutritionalInfo, storageInstructions, shelfLife, origin, benefits, shippingInfo, faqs, seoKeywords, productType, stockQuantity, variantIds, basePrice, pricingTemplateId } = body
 
-    if (!categoryId) {
+    const isPartialUpdate = [isFeatured, isTodayOffer, isVisible].some(field => field !== undefined) &&
+      !name && !slug && !description && !shortDescription && !pricePerKg && !stockGrams && !images && !productOverview && !whyChoose && !ingredients && !nutritionalInfo && !storageInstructions && !shelfLife && !origin && !benefits && !shippingInfo && !faqs && !seoKeywords && !productType && !stockQuantity && !variantIds && !basePrice && !pricingTemplateId
+
+    if (!isPartialUpdate && !categoryId) {
       return NextResponse.json({ error: 'Category is required' }, { status: 400 })
     }
 
@@ -71,32 +74,36 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     const currentProductType = existingProduct.extension?.masterUnit?.type || 'weight'
     const newUnitTypeId = productType ? await getUnitTypeId(productType) : existingProduct.extension?.unitTypeId
 
-    const updateData: any = {
-      name,
-      slug: cleanSlug,
-      description,
-      shortDescription,
-      images: JSON.stringify(cleanImages),
-      categoryId,
-      isFeatured: isFeatured ?? existingProduct.isFeatured,
-      isTodayOffer: isTodayOffer ?? existingProduct.isTodayOffer,
-      isVisible: isVisible !== false,
-      productOverview,
-      whyChoose,
-      ingredients,
-      nutritionalInfo,
-      storageInstructions,
-      shelfLife,
-      origin,
-      benefits,
-      shippingInfo,
-      faqs: faqs && faqs.length > 0 ? JSON.stringify(faqs) : null,
-      seoKeywords
-    }
+    const updateData: any = {}
+
+    if (name !== undefined) updateData.name = name
+    if (slug !== undefined || name !== undefined) updateData.slug = cleanSlug
+    if (description !== undefined) updateData.description = description
+    if (shortDescription !== undefined) updateData.shortDescription = shortDescription
+    if (images !== undefined) updateData.images = JSON.stringify(cleanImages)
+    if (categoryId !== undefined) updateData.categoryId = categoryId
+    if (isFeatured !== undefined) updateData.isFeatured = isFeatured
+    if (isTodayOffer !== undefined) updateData.isTodayOffer = isTodayOffer
+    if (isVisible !== undefined) updateData.isVisible = isVisible !== false
+    if (productOverview !== undefined) updateData.productOverview = productOverview
+    if (whyChoose !== undefined) updateData.whyChoose = whyChoose
+    if (ingredients !== undefined) updateData.ingredients = ingredients
+    if (nutritionalInfo !== undefined) updateData.nutritionalInfo = nutritionalInfo
+    if (storageInstructions !== undefined) updateData.storageInstructions = storageInstructions
+    if (shelfLife !== undefined) updateData.shelfLife = shelfLife
+    if (origin !== undefined) updateData.origin = origin
+    if (benefits !== undefined) updateData.benefits = benefits
+    if (shippingInfo !== undefined) updateData.shippingInfo = shippingInfo
+    if (faqs !== undefined) updateData.faqs = faqs && faqs.length > 0 ? JSON.stringify(faqs) : null
+    if (seoKeywords !== undefined) updateData.seoKeywords = seoKeywords
 
     if (currentProductType === 'weight') {
-      updateData.stockGrams = stockGrams ? Math.round(parseFloat(String(stockGrams)) * 1000) : 0
-      updateData.pricePerKg = pricePerKg ? parseFloat(pricePerKg) : null
+      if (stockGrams !== undefined && stockGrams !== null && stockGrams !== '') {
+        updateData.stockGrams = Math.round(parseFloat(String(stockGrams)))
+      }
+      if (pricePerKg !== undefined && pricePerKg !== null && pricePerKg !== '') {
+        updateData.pricePerKg = parseFloat(pricePerKg)
+      }
     }
 
     const product = await prisma.product.update({
@@ -106,15 +113,18 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     })
 
     if (existingProduct.extension) {
-      await prisma.productExtension.update({
-        where: { productId: id },
-        data: {
-          unitTypeId: newUnitTypeId,
-          basePrice: basePrice ? parseFloat(basePrice) : existingProduct.extension?.basePrice,
-          stockQuantity: currentProductType === 'weight' ? undefined : (stockQuantity ? parseFloat(String(stockQuantity)) : 0),
-          pricingTemplateId: pricingTemplateId === 'none' ? null : (pricingTemplateId || existingProduct.extension?.pricingTemplateId)
-        }
-      })
+      const extensionData: any = {}
+      if (productType !== undefined) extensionData.unitTypeId = newUnitTypeId
+      if (basePrice !== undefined) extensionData.basePrice = basePrice ? parseFloat(basePrice) : existingProduct.extension?.basePrice
+      if (stockQuantity !== undefined) extensionData.stockQuantity = currentProductType === 'weight' ? undefined : (stockQuantity ? parseFloat(String(stockQuantity)) : 0)
+      if (pricingTemplateId !== undefined) extensionData.pricingTemplateId = pricingTemplateId === 'none' ? null : (pricingTemplateId || existingProduct.extension?.pricingTemplateId)
+
+      if (Object.keys(extensionData).length > 0) {
+        await prisma.productExtension.update({
+          where: { productId: id },
+          data: extensionData
+        })
+      }
     }
 
     if (variantIds && variantIds.length > 0) {

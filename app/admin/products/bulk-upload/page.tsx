@@ -409,13 +409,24 @@ export default function BulkUploadPage() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Bulk Product Upload</h1>
-        <a
-          href="/api/admin/products/bulk-template"
-          download="bulk-products-template.xlsx"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-semibold flex items-center gap-2 self-start"
-        >
-          📥 Download Template
-        </a>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              document.getElementById('bulk-upload-input-section')?.scrollIntoView({ behavior: 'smooth' })
+            }}
+            className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2.5 rounded-lg font-semibold flex items-center gap-2 self-start"
+          >
+            Import Products
+          </button>
+          <a
+            href="/api/admin/products/bulk-template"
+            download="bulk-products-template.xlsx"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-semibold flex items-center gap-2 self-start"
+          >
+            📥 Download Template
+          </a>
+        </div>
       </div>
 
       {toast && (
@@ -468,7 +479,7 @@ export default function BulkUploadPage() {
           </div>
 
           {step === 1 && (
-            <div className="space-y-4">
+            <div id="bulk-upload-input-section" className="space-y-4">
               <div>
                 <p className="text-sm text-gray-600 mb-2">Paste product data (tab-separated):</p>
                 <textarea
