@@ -31,10 +31,10 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     const { id } = await context.params
     const body = await req.json()
     
-    const { name, slug, description, shortDescription, pricePerKg, stockGrams, images, categoryId, isFeatured, isTodayOffer, isVisible, productOverview, whyChoose, ingredients, nutritionalInfo, storageInstructions, shelfLife, origin, benefits, shippingInfo, faqs, seoKeywords, productType, stockQuantity, variantIds, basePrice, pricingTemplateId } = body
+    const { name, slug, description, shortDescription, pricePerKg, stockGrams, images, categoryId, isFeatured, isTodayOffer, isVisible, productOverview, whyChoose, ingredients, nutritionalInfo, storageInstructions, shelfLife, origin, benefits, shippingInfo, faqs, seoKeywords, productType, stockQuantity, variantIds, basePrice, pricingTemplateId, productCode } = body
 
     const isPartialUpdate = [isFeatured, isTodayOffer, isVisible].some(field => field !== undefined) &&
-      !name && !slug && !description && !shortDescription && !pricePerKg && !stockGrams && !images && !productOverview && !whyChoose && !ingredients && !nutritionalInfo && !storageInstructions && !shelfLife && !origin && !benefits && !shippingInfo && !faqs && !seoKeywords && !productType && !stockQuantity && !variantIds && !basePrice && !pricingTemplateId
+      !name && !slug && !description && !shortDescription && !pricePerKg && !stockGrams && !images && !productOverview && !whyChoose && !ingredients && !nutritionalInfo && !storageInstructions && !shelfLife && !origin && !benefits && !shippingInfo && !faqs && !seoKeywords && !productType && !stockQuantity && !variantIds && !basePrice && !pricingTemplateId && !productCode
 
     if (!isPartialUpdate && !categoryId) {
       return NextResponse.json({ error: 'Category is required' }, { status: 400 })
@@ -96,6 +96,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     if (shippingInfo !== undefined) updateData.shippingInfo = shippingInfo
     if (faqs !== undefined) updateData.faqs = faqs && faqs.length > 0 ? JSON.stringify(faqs) : null
     if (seoKeywords !== undefined) updateData.seoKeywords = seoKeywords
+    if (productCode !== undefined) updateData.productCode = productCode || null
 
     if (currentProductType === 'weight') {
       if (stockGrams !== undefined && stockGrams !== null && stockGrams !== '') {
