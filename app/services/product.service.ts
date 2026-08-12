@@ -31,6 +31,7 @@ export interface CreateProductData {
   isTodayOffer?: boolean
   isVisible?: boolean
   variantIds?: string[]
+  productCode?: string | null
 }
 
 export class ProductService {
@@ -58,7 +59,8 @@ export class ProductService {
         shippingInfo: data.shippingInfo,
         whyChoose: data.whyChoose,
         productOverview: data.productOverview,
-        seoKeywords: data.seoKeywords
+        seoKeywords: data.seoKeywords,
+        productCode: data.productCode || null
       }
     })
 
@@ -106,7 +108,8 @@ export class ProductService {
         shippingInfo: data.shippingInfo,
         whyChoose: data.whyChoose,
         productOverview: data.productOverview,
-        seoKeywords: data.seoKeywords
+        seoKeywords: data.seoKeywords,
+        productCode: data.productCode !== undefined ? data.productCode : undefined
       }
     })
 

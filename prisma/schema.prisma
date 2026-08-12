@@ -129,6 +129,7 @@ model Product {
   shortDescription        String?
   pricePerKg              Float?
   stockGrams              Int                      @default(0)
+  productCode             String?
   orderItems              OrderItem[]
   category                Category                 @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   reviews                 Review[]

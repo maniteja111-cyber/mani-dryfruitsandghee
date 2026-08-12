@@ -214,7 +214,7 @@ export default function GlobalSearch({
   }
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className="relative w-full" suppressHydrationWarning>
       <div className="relative">
         <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,6 +233,7 @@ export default function GlobalSearch({
           onKeyDown={handleKeyDown}
           onClick={handleInputClick}
           className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+          suppressHydrationWarning
         />
         {loading && (
           <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">

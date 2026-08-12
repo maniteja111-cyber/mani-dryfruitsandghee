@@ -22,7 +22,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, slug, description, shortDescription, pricePerKg, stockGrams, images, categoryId, isFeatured, isTodayOffer, isVisible, productOverview, whyChoose, ingredients, nutritionalInfo, storageInstructions, shelfLife, origin, benefits, shippingInfo, faqs, seoKeywords, productType, stockQuantity, variantIds, basePrice, pricingTemplateId } = await req.json()
+    const { name, slug, description, shortDescription, pricePerKg, stockGrams, images, categoryId, isFeatured, isTodayOffer, isVisible, productOverview, whyChoose, ingredients, nutritionalInfo, storageInstructions, shelfLife, origin, benefits, shippingInfo, faqs, seoKeywords, productType, stockQuantity, variantIds, basePrice, pricingTemplateId, productCode } = await req.json()
 
     if (!categoryId) {
       return NextResponse.json({ error: 'Category is required' }, { status: 400 })
@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
         isFeatured: isFeatured || false,
         isTodayOffer: isTodayOffer || false,
         isVisible: isVisible !== false,
+        productCode: productCode || null,
         productOverview: productOverview || null,
         whyChoose: whyChoose || null,
         ingredients: ingredients || null,

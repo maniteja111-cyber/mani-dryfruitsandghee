@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import CloudinaryMediaPicker from '@/components/CloudinaryMediaPicker'
+import { processImage } from '@/lib/image-processor'
 
 interface Product {
   id: string
@@ -208,7 +209,8 @@ export default function AdminProductsPage() {
     faqs: [] as {question: string, answer: string}[],
     seoKeywords: '',
     variantIds: [] as string[],
-    pricingTemplateId: DEFAULT_TEMPLATE_ID
+    pricingTemplateId: DEFAULT_TEMPLATE_ID,
+    productCode: ''
   })
 
   const [searchTerm, setSearchTerm] = useState('')
@@ -230,6 +232,8 @@ export default function AdminProductsPage() {
   const [cloudinaryPickerOpen, setCloudinaryPickerOpen] = useState(false)
   const [cloudinaryPickerIndex, setCloudinaryPickerIndex] = useState<number | null>(null)
   const [customImageNames, setCustomImageNames] = useState<string[]>(['', '', ''])
+  const [uploadProcessing, setUploadProcessing] = useState<{[key: number]: boolean}>({})
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const fetchData = async () => {
     setLoading(true)
@@ -533,6 +537,7 @@ export default function AdminProductsPage() {
       isFeatured: false,
       isTodayOffer: false,
       isVisible: true,
+      productCode: '',
       productOverview: '',
       whyChoose: '',
       ingredients: '',
@@ -571,6 +576,7 @@ export default function AdminProductsPage() {
         isFeatured: formData.isFeatured,
         isTodayOffer: formData.isTodayOffer,
         isVisible: formData.isVisible !== false,
+        productCode: formData.productCode || null,
         productOverview: formData.productOverview,
         whyChoose: formData.whyChoose,
         ingredients: formData.ingredients,
@@ -614,14 +620,18 @@ export default function AdminProductsPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const formDataUpload = new FormData()
-    formDataUpload.append('image', file)
-    const customName = customImageNames[index]?.trim()
-    if (customName) {
-      formDataUpload.append('filename', customName)
-    }
+    setUploadProcessing(prev => ({ ...prev, [index]: true }))
+    setUploadError(null)
 
     try {
+      const processed = await processImage(file)
+      const formDataUpload = new FormData()
+      formDataUpload.append('image', processed.file)
+      const customName = customImageNames[index]?.trim()
+      if (customName) {
+        formDataUpload.append('filename', customName)
+      }
+
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: formDataUpload
@@ -634,9 +644,15 @@ export default function AdminProductsPage() {
           newImages[index] = imageUrl
           return { ...prev, images: newImages }
         })
+      } else {
+        const err = await res.json().catch(() => ({}))
+        setUploadError(err.error || 'Upload failed')
       }
     } catch (error) {
       console.error('Upload error:', error)
+      setUploadError(error instanceof Error ? error.message : 'Upload failed')
+    } finally {
+      setUploadProcessing(prev => ({ ...prev, [index]: false }))
     }
   }
 
@@ -690,6 +706,7 @@ export default function AdminProductsPage() {
       isFeatured: product.isFeatured || false,
       isTodayOffer: product.isTodayOffer || false,
       isVisible: product.isVisible !== false,
+      productCode: (product as any).productCode || '',
       productOverview: product.productOverview || '',
       whyChoose: product.whyChoose || '',
       ingredients: product.ingredients || '',
@@ -957,6 +974,18 @@ export default function AdminProductsPage() {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Code</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. PROD-001"
+                    value={formData.productCode}
+                    onChange={(e) => setFormData(prev => ({ ...prev, productCode: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Optional unique product code for inventory and reference.</p>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
                   <select
                     value={formData.categoryId}
@@ -1143,7 +1172,14 @@ export default function AdminProductsPage() {
                       accept="image/*"
                       onChange={(e) => handleImageUpload(e, index)}
                       className="block w-full text-sm mb-3"
+                      disabled={uploadProcessing[index]}
                     />
+                    {uploadProcessing[index] && (
+                      <p className="text-xs text-blue-600 mb-2">Processing image...</p>
+                    )}
+                    {uploadError && (
+                      <p className="text-xs text-red-600 mb-2">{uploadError}</p>
+                    )}
                     <button
                       type="button"
                       onClick={() => openCloudinaryPicker(index)}

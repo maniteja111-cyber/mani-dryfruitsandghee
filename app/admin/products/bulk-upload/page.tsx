@@ -55,6 +55,7 @@ interface ProductRow {
   whyChoose: string
   productOverview: string
   nutritionalInfo: string
+  productCode: string
   isValid: boolean
   errors: string[]
   isDuplicate: boolean
@@ -162,17 +163,74 @@ export default function BulkUploadPage() {
         setValidationResult(data)
         validatedFileRef.current = file
       } else {
-        const lines = textInput.trim().split('\n')
-        const headers = lines[0].split('\t').map(h => h.trim())
-        const rows: Record<string, any>[] = []
+        let rows: Record<string, any>[] = []
 
-        for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split('\t')
-          const row: Record<string, any> = {}
-          headers.forEach((header, idx) => {
-            row[header] = values[idx] || ''
-          })
-          rows.push(row)
+        if (textInput.trim().startsWith('[')) {
+          try {
+            const parsed = JSON.parse(textInput)
+            if (Array.isArray(parsed)) {
+              rows = parsed.map((item: any, idx) => ({
+                name: String(item.name || '').trim(),
+                slug: String(item.slug || '').trim(),
+                category: String(item.category || '').trim(),
+                description: String(item.description || '').trim(),
+                shortDescription: String(item.shortDescription || '').trim(),
+                pricePerKg: item.pricePerKg !== undefined && item.pricePerKg !== '' ? parseFloat(String(item.pricePerKg)) : 0,
+                stockKg: item.stockKg !== undefined && item.stockKg !== '' ? parseFloat(String(item.stockKg)) : 0,
+                images: item.images || '[]',
+                basePrice: item.basePrice !== undefined && item.basePrice !== '' ? parseFloat(String(item.basePrice)) : 0,
+                pricingTemplate: String(item.pricingTemplate || '').trim(),
+                stockQuantity: item.stockQuantity !== undefined && item.stockQuantity !== '' ? parseFloat(String(item.stockQuantity)) : 0,
+                productType: String(item.productType || 'weight').trim(),
+                variants: String(item.variants || '').trim(),
+                isFeatured: item.isFeatured === true || item.isFeatured === 'true',
+                isTodayOffer: item.isTodayOffer === true || item.isTodayOffer === 'false',
+                isVisible: item.isVisible !== false && item.isVisible !== 'false',
+                seoKeywords: String(item.seoKeywords || '').trim(),
+                faqs: item.faqs || '[]',
+                ingredients: String(item.ingredients || '').trim(),
+                benefits: String(item.benefits || '').trim(),
+                storageInstructions: String(item.storageInstructions || '').trim(),
+                shelfLife: String(item.shelfLife || '').trim(),
+                origin: String(item.origin || '').trim(),
+                shippingInfo: String(item.shippingInfo || '').trim(),
+                whyChoose: String(item.whyChoose || '').trim(),
+                productOverview: String(item.productOverview || '').trim(),
+                nutritionalInfo: String(item.nutritionalInfo || '').trim(),
+                productCode: String(item.productCode || '').trim()
+              }))
+            }
+          } catch (e) {
+            console.error('JSON parse error:', e)
+          }
+        }
+
+        if (rows.length === 0) {
+          const lines = textInput.trim().split('\n')
+          const firstLine = lines[0] || ''
+          const secondLine = lines[1] || ''
+          const hasTabs = firstLine.includes('\t') || secondLine.includes('\t')
+          const hasCommas = !hasTabs && (firstLine.includes(',') || secondLine.includes(','))
+          const delimiter = hasTabs ? '\t' : (hasCommas ? ',' : null)
+          const headers = firstLine.split(delimiter || /[,\t]/).map(h => h.trim())
+          const parsedRows: Record<string, any>[] = []
+
+          for (let i = 1; i < lines.length; i++) {
+            const row: Record<string, any> = {}
+            if (delimiter) {
+              const values = lines[i].split(delimiter)
+              headers.forEach((header, idx) => {
+                row[header] = (values[idx] || '').trim()
+              })
+            } else {
+              const parts = lines[i].split(/\s{2,}/).map(s => s.trim())
+              headers.forEach((header, idx) => {
+                row[header] = parts[idx] || ''
+              })
+            }
+            parsedRows.push(row)
+          }
+          rows = parsedRows
         }
 
         const res = await fetch('/api/admin/products/bulk-upload/validate-text', {
@@ -215,6 +273,7 @@ export default function BulkUploadPage() {
         whyChoose: row.whyChoose || '',
         productOverview: row.productOverview || '',
         nutritionalInfo: row.nutritionalInfo || '',
+        productCode: String(row.productCode || '').trim(),
         isValid: true,
         errors: [],
         isDuplicate: false,
@@ -481,12 +540,12 @@ export default function BulkUploadPage() {
           {step === 1 && (
             <div id="bulk-upload-input-section" className="space-y-4">
               <div>
-                <p className="text-sm text-gray-600 mb-2">Paste product data (tab-separated):</p>
+                 <p className="text-sm text-gray-600 mb-2">Paste product data as JSON array, tab-separated, or comma-separated text:</p>
                 <textarea
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
                   className="w-full h-32 p-3 border border-gray-300 rounded-lg font-mono text-sm resize-y"
-                  placeholder="name	slug	category	description	shortDescription	pricePerKg	stockKg	images	basePrice	pricingTemplate	stockQuantity	productType	variants	faqs	isFeatured	isTodayOffer	isVisible	productOverview	whyChoose	ingredients	benefits	storageInstructions	shelfLife	origin	shippingInfo	seoKeywords	nutritionalInfo"
+                   placeholder="name	slug	category	description	shortDescription	pricePerKg	stockKg	images	basePrice	pricingTemplate	stockQuantity	productType	variants	faqs	isFeatured	isTodayOffer	isVisible	productOverview	whyChoose	ingredients	benefits	storageInstructions	shelfLife	origin	shippingInfo	seoKeywords	nutritionalInfo	productCode"
                 />
               </div>
 

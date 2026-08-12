@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import CloudinaryMediaPicker from '@/components/CloudinaryMediaPicker'
+import { processImage } from '@/lib/image-processor'
 
 interface Product {
   id: string
@@ -125,6 +126,8 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
   const [cloudinaryPickerOpen, setCloudinaryPickerOpen] = useState(false)
   const [cloudinaryPickerIndex, setCloudinaryPickerIndex] = useState<number | null>(null)
   const [customImageNames, setCustomImageNames] = useState<string[]>(['', '', ''])
+  const [uploadProcessing, setUploadProcessing] = useState<{[key: number]: boolean}>({})
+  const [uploadError, setUploadError] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     name: '',
@@ -152,7 +155,8 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
     faqs: [] as {question: string, answer: string}[],
     seoKeywords: '',
     variantIds: [] as string[],
-    pricingTemplateId: DEFAULT_TEMPLATE_ID
+    pricingTemplateId: DEFAULT_TEMPLATE_ID,
+    productCode: ''
   })
 
   useEffect(() => {
@@ -199,6 +203,7 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
             isFeatured: prod.isFeatured || false,
             isTodayOffer: prod.isTodayOffer || false,
             isVisible: prod.isVisible !== false,
+            productCode: prod.productCode || '',
             productOverview: prod.productOverview || '',
             whyChoose: prod.whyChoose || '',
             ingredients: prod.ingredients || '',
@@ -234,14 +239,18 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
     const file = e.target.files?.[0]
     if (!file) return
 
-    const formDataUpload = new FormData()
-    formDataUpload.append('image', file)
-    const customName = customImageNames[index]?.trim()
-    if (customName) {
-      formDataUpload.append('filename', customName)
-    }
+    setUploadProcessing(prev => ({ ...prev, [index]: true }))
+    setUploadError(null)
 
     try {
+      const processed = await processImage(file)
+      const formDataUpload = new FormData()
+      formDataUpload.append('image', processed.file)
+      const customName = customImageNames[index]?.trim()
+      if (customName) {
+        formDataUpload.append('filename', customName)
+      }
+
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: formDataUpload
@@ -254,9 +263,15 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
           newImages[index] = imageUrl
           return { ...prev, images: newImages }
         })
+      } else {
+        const err = await res.json().catch(() => ({}))
+        setUploadError(err.error || 'Upload failed')
       }
     } catch (error) {
       console.error('Upload error:', error)
+      setUploadError(error instanceof Error ? error.message : 'Upload failed')
+    } finally {
+      setUploadProcessing(prev => ({ ...prev, [index]: false }))
     }
   }
 
@@ -299,6 +314,7 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
         isFeatured: formData.isFeatured,
         isTodayOffer: formData.isTodayOffer,
         isVisible: formData.isVisible !== false,
+        productCode: formData.productCode || null,
         productOverview: formData.productOverview,
         whyChoose: formData.whyChoose,
         ingredients: formData.ingredients,
@@ -437,10 +453,22 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
                 className="w-full border border-gray-300 bg-gray-100 rounded-lg px-4 py-3 text-gray-600"
               />
               <p className="text-xs text-green-600 mt-1">Automatically cleaned from the product name.</p>
-            </div>
+             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+             <div>
+               <label className="block text-sm font-medium text-gray-700 mb-1">Product Code</label>
+               <input
+                 type="text"
+                 placeholder="e.g. PROD-001"
+                 value={formData.productCode}
+                 onChange={(e) => setFormData(prev => ({ ...prev, productCode: e.target.value }))}
+                 className="w-full border border-gray-300 rounded-lg px-4 py-3"
+               />
+               <p className="text-xs text-gray-500 mt-1">Optional unique product code for inventory and reference.</p>
+             </div>
+
+             <div>
+               <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
               <select
                 value={formData.categoryId}
                 onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
@@ -626,7 +654,14 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
                   accept="image/*"
                   onChange={(e) => handleImageUpload(e, index)}
                   className="block w-full text-sm mb-3"
+                  disabled={uploadProcessing[index]}
                 />
+                {uploadProcessing[index] && (
+                  <p className="text-xs text-blue-600 mb-2">Processing image...</p>
+                )}
+                {uploadError && (
+                  <p className="text-xs text-red-600 mb-2">{uploadError}</p>
+                )}
                 <button
                   type="button"
                   onClick={() => openCloudinaryPicker(index)}

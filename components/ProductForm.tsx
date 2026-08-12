@@ -31,6 +31,7 @@ interface ProductRow {
   whyChoose: string
   productOverview: string
   nutritionalInfo: string
+  productCode: string
   isValid: boolean
   errors: string[]
   isDuplicate: boolean
@@ -142,6 +143,17 @@ export default function ProductForm({
             onChange={(e) => handleChange('slug', e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
             placeholder="premium-almonds"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Product Code</label>
+          <input
+            type="text"
+            value={localRow.productCode}
+            onChange={(e) => handleChange('productCode', e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            placeholder="e.g. PROD-001"
           />
         </div>
 

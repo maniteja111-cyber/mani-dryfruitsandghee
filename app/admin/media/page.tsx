@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { processImage } from '@/lib/image-processor'
 
 interface CloudinaryImage {
   url: string
@@ -26,6 +27,8 @@ export default function AdminMediaPage() {
   const [customFilenames, setCustomFilenames] = useState('')
   const [selectedImageIds, setSelectedImageIds] = useState<Set<string>>(new Set())
   const [isBulkDeleteLoading, setBulkDeleteLoading] = useState(false)
+  const [processingStatus, setProcessingStatus] = useState<string | null>(null)
+  const [perFileNames, setPerFileNames] = useState<string[]>([])
 
   const fetchImages = async (cursor?: string) => {
     setLoading(true)
@@ -63,10 +66,29 @@ export default function AdminMediaPage() {
 
     setUploading(true)
     setError(null)
+    setProcessingStatus('Processing images...')
 
     try {
+      const processedFiles: File[] = []
+      const filesArray = Array.from(selectedFiles)
+      
+      for (let i = 0; i < filesArray.length; i++) {
+        setProcessingStatus(`Processing image ${i + 1} of ${filesArray.length}...`)
+        try {
+          const processed = await processImage(filesArray[i])
+          processedFiles.push(processed.file)
+        } catch (err) {
+          console.error('Failed to process image:', filesArray[i].name, err)
+          setError(`Failed to process ${filesArray[i].name}: ${err instanceof Error ? err.message : 'Unknown error'}`)
+          setUploading(false)
+          setProcessingStatus(null)
+          return
+        }
+      }
+
+      setProcessingStatus('Uploading to Cloudinary...')
       const formData = new FormData()
-      Array.from(selectedFiles).forEach(file => {
+      processedFiles.forEach(file => {
         formData.append('images', file)
       })
 
@@ -76,6 +98,8 @@ export default function AdminMediaPage() {
         .filter(Boolean)
       if (names.length > 0) {
         formData.append('filenames', JSON.stringify(names))
+      } else if (perFileNames.some(n => n.trim())) {
+        formData.append('filenames', JSON.stringify(perFileNames.map(n => n.trim()).filter(Boolean)))
       }
 
       const res = await fetch('/api/admin/cloudinary/upload', {
@@ -92,9 +116,11 @@ export default function AdminMediaPage() {
       alert(`Successfully uploaded ${data.count} image(s)`)
       setSelectedFiles(null)
       setCustomFilenames('')
+      setProcessingStatus(null)
       fetchImages()
     } catch (err: any) {
       setError(err.message || 'Upload failed')
+      setProcessingStatus(null)
     } finally {
       setUploading(false)
     }
@@ -237,13 +263,45 @@ export default function AdminMediaPage() {
               type="file"
               accept="image/*"
               multiple
-              onChange={(e) => setSelectedFiles(e.target.files)}
+              onChange={(e) => {
+                const files = e.target.files
+                setSelectedFiles(files)
+                if (files) {
+                  setPerFileNames(Array.from(files).map(() => ''))
+                }
+              }}
               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
             {selectedFiles && selectedFiles.length > 0 && (
               <p className="mt-2 text-sm text-gray-600">
                 {selectedFiles.length} file(s) selected
               </p>
+            )}
+            {selectedFiles && selectedFiles.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {Array.from(selectedFiles).map((file, idx) => (
+                  <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="w-full h-24 object-cover"
+                    />
+                    <div className="p-2">
+                      <input
+                        type="text"
+                        placeholder="Filename (optional)"
+                        value={perFileNames[idx] || ''}
+                        onChange={(e) => {
+                          const next = [...perFileNames]
+                          next[idx] = e.target.value
+                          setPerFileNames(next)
+                        }}
+                        className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
           <div>
@@ -266,7 +324,7 @@ export default function AdminMediaPage() {
             disabled={!selectedFiles || selectedFiles.length === 0 || uploading}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {uploading ? 'Uploading...' : 'Upload to Cloudinary'}
+            {uploading ? (processingStatus || 'Uploading...') : 'Upload to Cloudinary'}
           </button>
         </form>
       </div>
@@ -381,23 +439,29 @@ export default function AdminMediaPage() {
                           </button>
                         </div>
                       ) : (
-                        <>
-                          <button
-                            onClick={() => {
-                              setRenamingId(image.publicId)
-                              setNewName(image.publicId.split('/').pop() || '')
-                            }}
-                            className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                          >
-                            Rename
-                          </button>
-                          <button
-                            onClick={() => handleDelete(image.publicId)}
-                            className="px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-                          >
-                            Delete
-                          </button>
-                        </>
+                         <>
+                           <button
+                             onClick={() => window.open(image.url, '_blank')}
+                             className="px-3 py-1.5 bg-gray-700 text-white text-xs rounded hover:bg-gray-800"
+                           >
+                             View
+                           </button>
+                           <button
+                             onClick={() => {
+                               setRenamingId(image.publicId)
+                               setNewName(image.publicId.split('/').pop() || '')
+                             }}
+                             className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                           >
+                             Rename
+                           </button>
+                           <button
+                             onClick={() => handleDelete(image.publicId)}
+                             className="px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                           >
+                             Delete
+                           </button>
+                         </>
                       )}
                     </div>
                   </div>

@@ -44,9 +44,10 @@ export async function POST(req: NextRequest) {
     const allErrors: ValidationError[] = []
     const seenNames = new Set<string>()
     const seenSlugs = new Set<string>()
+    const seenProductCodes = new Set<string>()
 
     for (let i = 0; i < rows.length; i++) {
-      const rowErrors = await validateRow(rows[i], i, seenNames, seenSlugs)
+      const rowErrors = await validateRow(rows[i], i, seenNames, seenSlugs, seenProductCodes)
       allErrors.push(...rowErrors)
     }
 
@@ -102,7 +103,8 @@ async function validateRow(
   row: Record<string, any>,
   rowIndex: number,
   seenNames: Set<string>,
-  seenSlugs: Set<string>
+  seenSlugs: Set<string>,
+  seenProductCodes: Set<string>
 ): Promise<ValidationError[]> {
   const errors: ValidationError[] = []
   const rowNum = rowIndex + 2
@@ -138,6 +140,19 @@ async function validateRow(
     const existingBySlug = await prisma.product.findUnique({ where: { slug } })
     if (existingBySlug) {
       errors.push({ row: rowNum, column: 'slug', message: `Slug "${slug}" already exists in database` })
+    }
+  }
+
+  const productCode = String(row.productCode || '').trim()
+  if (productCode) {
+    if (seenProductCodes.has(productCode.toLowerCase())) {
+      errors.push({ row: rowNum, column: 'productCode', message: `Duplicate productCode "${productCode}" in Excel` })
+    }
+    seenProductCodes.add(productCode.toLowerCase())
+
+    const existingByCode = await prisma.product.findFirst({ where: { productCode } })
+    if (existingByCode) {
+      errors.push({ row: rowNum, column: 'productCode', message: `productCode "${productCode}" already exists in database` })
     }
   }
 

@@ -49,9 +49,10 @@ export async function POST(req: NextRequest) {
     const allErrors: ValidationError[] = []
     const seenNames = new Set<string>()
     const seenSlugs = new Set<string>()
+    const seenProductCodes = new Set<string>()
 
     for (let i = 0; i < rows.length; i++) {
-      const rowErrors = await validateRow(rows[i], i, seenNames, seenSlugs)
+      const rowErrors = await validateRow(rows[i], i, seenNames, seenSlugs, seenProductCodes)
       allErrors.push(...rowErrors)
     }
 
@@ -85,7 +86,8 @@ async function validateRow(
   row: Record<string, any>,
   rowIndex: number,
   seenNames: Set<string>,
-  seenSlugs: Set<string>
+  seenSlugs: Set<string>,
+  seenProductCodes: Set<string>
 ): Promise<ValidationError[]> {
   const errors: ValidationError[] = []
   const rowNum = rowIndex + 2
@@ -124,6 +126,19 @@ async function validateRow(
     }
   }
 
+  const productCode = String(row.productCode || '').trim()
+  if (productCode) {
+    if (seenProductCodes.has(productCode.toLowerCase())) {
+      errors.push({ row: rowNum, column: 'productCode', message: `Duplicate productCode "${productCode}" in data` })
+    }
+    seenProductCodes.add(productCode.toLowerCase())
+
+    const existingByCode = await prisma.product.findFirst({ where: { productCode } })
+    if (existingByCode) {
+      errors.push({ row: rowNum, column: 'productCode', message: `productCode "${productCode}" already exists in database` })
+    }
+  }
+
   if (row.category) {
     const categorySlug = String(row.category).trim().toLowerCase().replace(/[^a-z0-9\s]+/g, '').replace(/\s+/g, '-')
     const category = await prisma.category.findUnique({ where: { slug: categorySlug } })
@@ -159,20 +174,21 @@ async function validateRow(
 
   validateNonNegative(row.pricePerKg, 'pricePerKg')
   validateNonNegative(row.basePrice, 'basePrice')
-            const stockKg = row.stockKg ? parseFloat(String(row.stockKg)) : null
-            const stockQty = row.stockQty ? parseFloat(String(row.stockQty)) : null
-            const stockLitres = row.stockLitres ? parseFloat(String(row.stockLitres)) : null
 
-            let stock: number | null = null
-            if (productType === 'weight') {
-              stock = stockKg
-            } else if (productType === 'quantity' || productType === 'pack') {
-              stock = stockQty ?? stockKg
-            } else if (productType === 'volume') {
-              stock = stockLitres ?? stockKg
-            }
+  const stockKg = row.stockKg ? parseFloat(String(row.stockKg)) : null
+  const stockQty = row.stockQty ? parseFloat(String(row.stockQty)) : null
+  const stockLitres = row.stockLitres ? parseFloat(String(row.stockLitres)) : null
 
-            validateNonNegative(stock, 'stock')
+  let stock: number | null = null
+  if (productType === 'weight') {
+    stock = stockKg
+  } else if (productType === 'quantity' || productType === 'pack') {
+    stock = stockQty ?? stockKg
+  } else if (productType === 'volume') {
+    stock = stockLitres ?? stockKg
+  }
+
+  validateNonNegative(stock, 'stock')
 
   if (row.images) {
     const imagesStr = String(row.images).trim()

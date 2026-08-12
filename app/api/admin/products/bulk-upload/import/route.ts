@@ -220,6 +220,7 @@ export async function POST(req: NextRequest) {
             isFeatured: row.isFeatured ?? false,
             isTodayOffer: row.isTodayOffer ?? false,
             isVisible: row.isVisible !== false,
+            productCode: row.productCode || null,
             variantIds
           })
 
