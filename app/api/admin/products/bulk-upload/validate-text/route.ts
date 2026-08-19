@@ -164,7 +164,7 @@ async function validateRow(
   }
 
   const validateNonNegative = (value: any, fieldName: string) => {
-    if (value !== undefined && value !== '') {
+    if (value !== undefined && value !== null && value !== '') {
       const num = parseFloat(String(value))
       if (isNaN(num) || num < 0) {
         errors.push({ row: rowNum, column: fieldName, message: `${fieldName} must be a non-negative number` })
@@ -175,9 +175,9 @@ async function validateRow(
   validateNonNegative(row.pricePerKg, 'pricePerKg')
   validateNonNegative(row.basePrice, 'basePrice')
 
-  const stockKg = row.stockKg ? parseFloat(String(row.stockKg)) : null
-  const stockQty = row.stockQty ? parseFloat(String(row.stockQty)) : null
-  const stockLitres = row.stockLitres ? parseFloat(String(row.stockLitres)) : null
+  const stockKg = row.stockKg !== undefined && row.stockKg !== '' ? parseFloat(String(row.stockKg)) : null
+  const stockQty = row.stockQuantity !== undefined && row.stockQuantity !== '' ? parseFloat(String(row.stockQuantity)) : null
+  const stockLitres = row.stockLitres !== undefined && row.stockLitres !== '' ? parseFloat(String(row.stockLitres)) : null
 
   let stock: number | null = null
   if (productType === 'weight') {

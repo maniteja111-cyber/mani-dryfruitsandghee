@@ -59,9 +59,9 @@ export async function POST(req: NextRequest) {
           const productType = String(row.productType || '').toLowerCase().trim()
           const basePrice = row.basePrice ? parseFloat(String(row.basePrice)) : null
           const pricePerKg = row.pricePerKg ? parseFloat(String(row.pricePerKg)) : null
-           const stockKg = row.stockKg ? parseFloat(String(row.stockKg)) : null
-           const stockQty = row.stockQty ? parseFloat(String(row.stockQty)) : null
-           const stockLitres = row.stockLitres ? parseFloat(String(row.stockLitres)) : null
+           const stockKg = row.stockKg !== undefined && row.stockKg !== '' ? parseFloat(String(row.stockKg)) : null
+           const stockQty = row.stockQuantity !== undefined && row.stockQuantity !== '' ? parseFloat(String(row.stockQuantity)) : null
+           const stockLitres = row.stockLitres !== undefined && row.stockLitres !== '' ? parseFloat(String(row.stockLitres)) : null
 
            let stock: number | null = null
            if (productType === 'weight') {

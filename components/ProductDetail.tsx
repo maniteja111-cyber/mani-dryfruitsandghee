@@ -98,6 +98,8 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
   const [pincode, setPincode] = useState('')
   const [deliveryInfo, setDeliveryInfo] = useState<{available: boolean, days: string, cod: boolean, shipping: string} | null>(null)
   const [activeTab, setActiveTab] = useState('description')
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
   const { addItem, items } = useCart()
   const [toasts, setToasts] = useState<Toast[]>([])
 
@@ -141,6 +143,15 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
   useEffect(() => {
     fetchReviews()
   }, [product.id])
+
+  useEffect(() => {
+    if (!lightboxOpen) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxOpen(false)
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [lightboxOpen])
 
   const fetchReviews = async () => {
     try {
@@ -273,16 +284,23 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
     <div suppressHydrationWarning className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_2fr] gap-8 mb-8">
           <div>
-            <div className="aspect-[1/1] relative mb-3 rounded-lg overflow-hidden bg-gray-100 shadow-md">
-              <Image
-                src={displayImage(selectedImageIndex)}
-                alt={`${product.name} - Buy ${product.name} Online at Mani Dry Fruits & Ghee Store`}
-                fill
-                sizes="(max-width: 768px) 90vw, 40vw"
-                loading="eager"
-                className="object-cover"
-                onError={handleImageError}
-              />
+            <div className="aspect-[1/1] relative mb-3 rounded-lg overflow-hidden bg-gray-100 shadow-md cursor-zoom-in">
+              <button
+                type="button"
+                onClick={() => { setLightboxIndex(selectedImageIndex); setLightboxOpen(true) }}
+                className="absolute inset-0 w-full h-full"
+                aria-label="View full image"
+              >
+                <Image
+                  src={displayImage(selectedImageIndex)}
+                  alt={`${product.name} - Buy ${product.name} Online at Mani Dry Fruits & Ghee Store`}
+                  fill
+                  sizes="(max-width: 768px) 90vw, 40vw"
+                  loading="eager"
+                  className="object-cover"
+                  onError={handleImageError}
+                />
+              </button>
             </div>
             {validImages.length > 1 && (
               <div className="flex space-x-2 overflow-x-auto pb-1">
@@ -670,6 +688,52 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
           </div>
         </div>
       </div>
+
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 z-[90] bg-black/90 flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setLightboxOpen(false) }}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl leading-none z-10"
+            aria-label="Close lightbox"
+          >
+            ×
+          </button>
+          {validImages.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => setLightboxIndex((prev) => (prev - 1 + validImages.length) % validImages.length)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white text-2xl px-3 py-2"
+                aria-label="Previous image"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={() => setLightboxIndex((prev) => (prev + 1) % validImages.length)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white text-2xl px-3 py-2"
+                aria-label="Next image"
+              >
+                ›
+              </button>
+            </>
+          )}
+          <div className="relative max-w-5xl max-h-[90vh] w-full">
+            <Image
+              src={validImages[lightboxIndex] || '/placeholder.svg'}
+              alt={`${product.name} - Full image`}
+              width={1200}
+              height={1200}
+              className="w-full h-auto max-h-[90vh] object-contain"
+              priority
+            />
+          </div>
+        </div>
+      )}
 
       {/* Toast Notifications */}
       <div 
