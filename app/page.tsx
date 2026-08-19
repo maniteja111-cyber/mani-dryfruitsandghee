@@ -1,5 +1,5 @@
 import Header from '@/components/Header'
-import Hero from '@/components/Hero'
+import Banner from '@/components/Banner'
 import Categories from '@/components/Categories'
 import FeaturedProducts from '@/components/FeaturedProducts'
 import TodaysOffers from '@/components/TodaysOffers'
@@ -94,17 +94,24 @@ async function getHomeData() {
     const featuredProducts = await enrichProducts(featuredProductsRaw)
     const todaysOffers = await enrichProducts(todaysOffersRaw)
 
-    return { settings: settingsObj, categories, featuredProducts, todaysOffers, topReviews }
+    let banners: any[] = []
+    try {
+      banners = JSON.parse(settingsObj.banners || '[]')
+    } catch {
+      banners = []
+    }
+
+    return { settings: settingsObj, categories, featuredProducts, todaysOffers, topReviews, banners }
   } catch (error) {
     console.error('Error fetching home data:', error)
-    return { settings: {}, categories: [], featuredProducts: [], todaysOffers: [], topReviews: [] }
+    return { settings: {}, categories: [], featuredProducts: [], todaysOffers: [], topReviews: [], banners: [] }
   }
 }
 
 export const revalidate = 0
 
 export default async function Home() {
-  const { settings, categories, featuredProducts, todaysOffers, topReviews } = await getHomeData()
+  const { settings, categories, featuredProducts, todaysOffers, topReviews, banners } = await getHomeData()
 
   const organizationSchema = generateOrganizationSchema({
     name: 'MANI DRY FRUITS, PICKLES AND GHEE STORES',
@@ -125,7 +132,7 @@ export default async function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
       <Header settings={settings} />
       <main>
-        <Hero title={settings.heroTitle || 'MANI DRY FRUITS, PICKLES AND GHEE STORES ABROAD PICKLES PACKING'} subtitle={settings.heroSubtitle || 'Healthy products delivered to your doorstep. Contact: +91 9515019393 | email: manidgs9393@gmail.com'} />
+        <Banner banners={banners} />
         <Categories categories={categories} />
         <FeaturedProducts products={featuredProducts} title="⭐ Featured Products" settings={settings} />
         <TodaysOffers products={todaysOffers} />

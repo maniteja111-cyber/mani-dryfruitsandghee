@@ -158,6 +158,93 @@ export default function AdminSettingsPage() {
     }
   }
 
+  const handleBannerUpload = async (file: File) => {
+    if (!file) return
+
+    setUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const currentBanners = settings.find(s => s.key === 'banners')
+        const currentBannersValue = currentBanners?.value || '[]'
+        let banners: any[] = []
+        try {
+          banners = JSON.parse(currentBannersValue)
+        } catch {
+          banners = []
+        }
+        banners.push({
+          image: data.url,
+          title: '',
+          description: ''
+        })
+        await updateSetting('banners', JSON.stringify(banners))
+      }
+    } catch (error) {
+      console.error('Banner upload error:', error)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleUpdateBanner = async (index: number, field: 'title' | 'description' | 'image', value: string) => {
+    const currentBanners = settings.find(s => s.key === 'banners')
+    const currentBannersValue = currentBanners?.value || '[]'
+    let banners: any[] = []
+    try {
+      banners = JSON.parse(currentBannersValue)
+    } catch {
+      banners = []
+    }
+    if (banners[index]) {
+      banners[index] = { ...banners[index], [field]: value }
+      await updateSetting('banners', JSON.stringify(banners))
+    }
+  }
+
+  const handleRemoveBanner = async (index: number) => {
+    const currentBanners = settings.find(s => s.key === 'banners')
+    const currentBannersValue = currentBanners?.value || '[]'
+    let banners: any[] = []
+    try {
+      banners = JSON.parse(currentBannersValue)
+    } catch {
+      banners = []
+    }
+    banners.splice(index, 1)
+    await updateSetting('banners', JSON.stringify(banners))
+  }
+
+  const handleBannerImageUpload = async (index: number, file: File) => {
+    if (!file) return
+
+    setUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData
+      })
+      if (res.ok) {
+        const data = await res.json()
+        await handleUpdateBanner(index, 'image', data.url)
+      }
+    } catch (error) {
+      console.error('Banner image upload error:', error)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-8">
@@ -169,22 +256,22 @@ export default function AdminSettingsPage() {
         <div className="bg-white rounded-2xl shadow p-6">
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-4">Current Settings</h2>
-<ul className="text-sm text-blue-700 space-y-1">
-                <li><strong>siteName:</strong> Main website title</li>
-                <li><strong>logo:</strong> Full URL to logo image</li>
-                <li><strong>themeColor:</strong> Hex color code (e.g., #ffd862)</li>
-                <li><strong>whatsappNumber:</strong> Business WhatsApp number (with country code)</li>
-                <li><strong>phone/email/address:</strong> Contact information</li>
-                <li><strong>banners:</strong> JSON array of banner objects with image, title, description</li>
-                <li><strong>heroTitle/heroSubtitle:</strong> Hero section titles</li>
-                <li><strong>aboutUsContent:</strong> About Us page content (multiline text)</li>
-                <li><strong>shippingPolicyContent:</strong> Shipping Policy page content</li>
-                <li><strong>refundPolicyContent:</strong> Refund Policy page content</li>
-                <li><strong>privacyPolicyContent:</strong> Privacy Policy page content</li>
-                <li><strong>termsAndConditionsContent:</strong> Terms & Conditions page content</li>
-                <li><strong>sendOrderEmails:</strong> Send order confirmation emails (true/false)</li>
-                <li><strong>seoTitle/seoDescription:</strong> Homepage SEO metadata</li>
-              </ul>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li><strong>siteName:</strong> Main website title</li>
+              <li><strong>logo:</strong> Full URL to logo image</li>
+              <li><strong>themeColor:</strong> Hex color code (e.g., #ffd862)</li>
+              <li><strong>whatsappNumber:</strong> Business WhatsApp number (with country code)</li>
+              <li><strong>phone/email/address:</strong> Contact information</li>
+              <li><strong>banners:</strong> JSON array of banner objects with image, title, description</li>
+              <li><strong>heroTitle/heroSubtitle:</strong> Hero section titles</li>
+              <li><strong>aboutUsContent:</strong> About Us page content (multiline text)</li>
+              <li><strong>shippingPolicyContent:</strong> Shipping Policy page content</li>
+              <li><strong>refundPolicyContent:</strong> Refund Policy page content</li>
+              <li><strong>privacyPolicyContent:</strong> Privacy Policy page content</li>
+              <li><strong>termsAndConditionsContent:</strong> Terms & Conditions page content</li>
+              <li><strong>sendOrderEmails:</strong> Send order confirmation emails (true/false)</li>
+              <li><strong>seoTitle/seoDescription:</strong> Homepage SEO metadata</li>
+            </ul>
           </div>
 
           <div className="border-t pt-6">
@@ -197,7 +284,7 @@ export default function AdminSettingsPage() {
                     <span className="text-xs text-gray-400">{setting.key === 'logo' || setting.key === 'themeColor' ? 'saved instantly' : 'auto-saved on blur'}</span>
                   </div>
 
-{setting.key === 'aboutUsContent' ? (
+                  {setting.key === 'aboutUsContent' ? (
                     <textarea
                       value={setting.value}
                       onChange={(e) => handleInputChange(setting.key, e.target.value)}
@@ -271,13 +358,104 @@ export default function AdminSettingsPage() {
                       <option value="true">Yes (Send Emails)</option>
                       <option value="false">No (Disable Emails)</option>
                     </select>
-                  ) : setting.key === 'banners' || setting.key === 'shippingPolicyContent' || setting.key === 'refundPolicyContent' || setting.key === 'privacyPolicyContent' || setting.key === 'termsAndConditionsContent' ? (
+                  ) : setting.key === 'banners' ? (
+                    <div className="space-y-3">
+                      {(() => {
+                        let banners: any[] = []
+                        try {
+                          banners = JSON.parse(setting.value || '[]')
+                        } catch {
+                          banners = []
+                        }
+                        return banners.map((banner: any, index: number) => (
+                          <div key={index} className="border border-gray-200 rounded-lg p-3 space-y-2">
+                            <div className="flex items-start gap-3">
+                              <div className="flex-1">
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Banner Image</label>
+                                <input
+                                  type="text"
+                                  value={banner.image || ''}
+                                  onChange={(e) => handleUpdateBanner(index, 'image', e.target.value)}
+                                  onBlur={(e) => handleSave('banners', JSON.stringify(banners))}
+                                  placeholder="https://.../banner.jpg"
+                                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                />
+                                {banner.image && (
+                                  <img src={banner.image} alt={`Banner ${index + 1}`} className="mt-2 h-32 w-full object-cover rounded" />
+                                )}
+                                <div className="mt-2">
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0]
+                                      if (file) handleBannerImageUpload(index, file)
+                                    }}
+                                    disabled={uploading}
+                                    className="text-xs"
+                                  />
+                                  {uploading && <span className="text-xs text-gray-500 ml-2">Uploading...</span>}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveBanner(index)}
+                                className="text-red-600 hover:text-red-800 text-sm"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Title (optional)</label>
+                              <input
+                                type="text"
+                                value={banner.title || ''}
+                                onChange={(e) => handleUpdateBanner(index, 'title', e.target.value)}
+                                onBlur={(e) => handleSave('banners', JSON.stringify(banners))}
+                                placeholder="Banner title"
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Description (optional)</label>
+                              <input
+                                type="text"
+                                value={banner.description || ''}
+                                onChange={(e) => handleUpdateBanner(index, 'description', e.target.value)}
+                                onBlur={(e) => handleSave('banners', JSON.stringify(banners))}
+                                placeholder="Banner description"
+                                className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                              />
+                            </div>
+                          </div>
+                        ))
+                      })()}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentBanners = settings.find(s => s.key === 'banners')
+                          const currentBannersValue = currentBanners?.value || '[]'
+                          let banners: any[] = []
+                          try {
+                            banners = JSON.parse(currentBannersValue)
+                          } catch {
+                            banners = []
+                          }
+                          banners.push({ image: '', title: '', description: '' })
+                          updateSetting('banners', JSON.stringify(banners))
+                        }}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+                      >
+                        + Add Banner
+                      </button>
+                    </div>
+                  ) : setting.key === 'shippingPolicyContent' || setting.key === 'refundPolicyContent' || setting.key === 'privacyPolicyContent' || setting.key === 'termsAndConditionsContent' ? (
                     <textarea
                       value={setting.value}
                       onChange={(e) => handleInputChange(setting.key, e.target.value)}
                       onBlur={(e) => handleSave(setting.key, e.target.value)}
-                      placeholder={`Enter ${setting.key === 'banners' ? 'JSON array' : setting.key.replace(/Content/g, '')} content...`}
-                      rows={setting.key === 'banners' ? 4 : 8}
+                      placeholder={`Enter ${setting.key.replace(/Content/g, '')} content...`}
+                      rows={8}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                     />
                   ) : (
