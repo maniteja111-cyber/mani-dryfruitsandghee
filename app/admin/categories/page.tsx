@@ -199,6 +199,9 @@ export default function AdminCategoriesPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Category ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Category
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -215,6 +218,9 @@ export default function AdminCategoriesPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {categories.map((category) => (
                 <tr key={category.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                    {category.id}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       {category.image && (
