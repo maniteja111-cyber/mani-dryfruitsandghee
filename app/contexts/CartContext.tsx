@@ -48,9 +48,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('cart', JSON.stringify(items))
   }, [items])
 
+const getVariantKey = (variant?: any): string => {
+  if (!variant) return ''
+  return String(variant.id || variant.size || '')
+}
+
 const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setItems(prev => {
-      const existing = prev.find(i => i.id === item.id)
+      const existing = prev.find(i => {
+        if (i.productId !== item.productId) return false
+        const existingVariantKey = getVariantKey(i.selectedVariant)
+        const newVariantKey = getVariantKey(item.selectedVariant)
+        return existingVariantKey === newVariantKey
+      })
       const variantGrams = item.selectedVariant?.grams || 1000
       const stockValue = item.stock || 0
       const maxItems = stockValue > 0 ? Math.floor(stockValue / variantGrams) : 0
@@ -58,7 +68,7 @@ const addItem = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
       if (existing) {
         const newQty = Math.min(maxItems, existing.quantity + (item.quantity || 1))
         return prev.map(i => 
-          i.id === item.id ? { ...i, quantity: newQty, stock: item.stock } : i
+          i === existing ? { ...i, quantity: newQty, stock: item.stock } : i
         )
       }
       const initialQty = Math.min(maxItems, item.quantity || 1)

@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useCart } from '@/app/contexts/CartContext'
 import { getUnitSymbol } from '@/app/services/pricing.service'
 import { isValidImageUrl, getCacheBustedImages } from '@/lib/image-utils'
+import { getCartItemId } from '@/lib/cart-utils'
 
 interface Toast {
   id: number
@@ -203,7 +204,7 @@ export default function FeaturedProducts({ products, title = "⭐ Featured Produ
                         }
                         
                         addItem({
-                          id: product.id,
+                          id: getCartItemId(product.id, selectedVariant),
                           productId: product.id,
                           name: product.name,
                           slug: product.slug,

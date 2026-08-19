@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/app/contexts/CartContext'
 import { isValidImageUrl, getCacheBustedImages } from '@/lib/image-utils'
+import { getCartItemId } from '@/lib/cart-utils'
 
 interface Toast {
   id: number
@@ -151,7 +152,7 @@ export default function TodaysOffers({ products }: TodaysOffersProps) {
                         }
                         
                         addItem({
-                          id: product.id,
+                          id: getCartItemId(product.id, selectedVariant),
                           productId: product.id,
                           name: product.name,
                           slug: product.slug,

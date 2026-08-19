@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useCart } from '@/app/contexts/CartContext'
 import { getUnitSymbol } from '@/app/services/pricing.service'
 import { isValidImageUrl, getCacheBustedImages } from '@/lib/image-utils'
+import { getCartItemId } from '@/lib/cart-utils'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -325,7 +326,7 @@ export function ProductList({ initialProducts, categories, searchParams, setting
                     <div className="flex space-x-1">
                       <button
                         onClick={() => handleAddToCart({
-                          id: product.id,
+                          id: getCartItemId(product.id, selectedVariant),
                           productId: product.id,
                           name: product.name,
                           slug: product.slug,

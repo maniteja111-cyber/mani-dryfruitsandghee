@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useCart } from '@/app/contexts/CartContext'
 import { getSelectorLabel, getUnitSymbol, VariantPrice } from '@/app/services/pricing.service'
 import { getCacheBustedImages, isValidImageUrl, shouldUseNextImage } from '@/lib/image-utils'
+import { getCartItemId } from '@/lib/cart-utils'
 
 interface Toast {
   id: number
@@ -465,7 +466,7 @@ export default function ProductDetail({ product, settings, relatedProducts = [] 
               <div className="space-y-2">
                 <button
                   onClick={() => handleAddToCart({
-                    id: product.id + `-${selectedVariant?.id || selectedVariant?.size}`,
+                    id: getCartItemId(product.id, selectedVariant),
                     productId: product.id,
                     name: `${product.name} (${displayLabel})`,
                     slug: product.slug,
